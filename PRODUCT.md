@@ -34,19 +34,19 @@ web - PWA, mobile-only (like routines, trainer and notes).
 - **Settings** (a drawer): language (English/Polish), app lock, backup
   export/import, install and update.
 
-## Starting point: the existing spreadsheet
+## Importing an existing list (CSV)
 
-The owner's list ("ALBUMY - LISTA" on Google Drive, ~1,150 rows) is the
-seed. It's imported in the app from a CSV export (Sheets → File →
-Download → CSV), so nothing talks to Google:
+An existing list kept in a spreadsheet is imported in the app from a CSV
+file (e.g. Google Sheets → File → Download → CSV). The file stays on the
+device: nothing talks to Google, and no personal list is ever committed
+to this repository.
 
-- Columns `Rok`, `Artysta`, `Tytuł`, `WRACAM?` map to year, artist, title,
-  status.
+- Expected header: `Rok`, `Artysta`, `Tytuł`, `WRACAM?` (year, artist,
+  title, status), in any column order.
 - `WRACAM?`: `GREEN` → coming back, `RED` → not coming back, empty → to
   listen.
-- Values are trimmed (several artist names carry trailing spaces); a row
-  matching an existing album (same artist, title and year) is skipped, so
-  re-importing is safe.
+- Values are trimmed; a row matching an existing album (same artist,
+  title and year) is skipped, so re-importing is safe.
 
 ## Covers
 
