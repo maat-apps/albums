@@ -1,0 +1,28 @@
+name: Deploy PR Preview
+
+# Calls maat-core's reusable app-deploy-preview.yml: builds a PR under
+# /<repo>/pr-<n>/ next to main's deployment. Manual (Actions tab → run with
+# the PR number) so previews only cost CI minutes when someone wants one.
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to build and deploy a preview for"
+        required: true
+        type: number
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  pull-requests: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  preview:
+    uses: maat-apps/maat-core/.github/workflows/app-deploy-preview.yml@main
+    with:
+      pr-number: ${{ inputs.pr_number }}

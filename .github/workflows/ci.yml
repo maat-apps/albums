@@ -1,0 +1,43 @@
+name: CI
+
+# Calls maat-core's reusable app-ci.yml (code-quality → test →
+# build-and-audit). This file keeps only what's per-repo: the triggers
+# (path-filtered to what could change the outcome), permissions and
+# concurrency. Required status checks: "ci / code-quality", "ci / test",
+# "ci / build-and-audit".
+on:
+  pull_request:
+    paths:
+      # Code linted/typechecked by ESLint + tsc
+      - "**/*.ts"
+      - "**/*.tsx"
+      - "**/*.js"
+      - "**/*.jsx"
+      - "**/*.mjs"
+      - "**/*.cjs"
+      # Other files Prettier formats (prettier --check .)
+      - "**/*.json"
+      - "**/*.css"
+      - "**/*.md"
+      - "**/*.yml"
+      - "**/*.yaml"
+      - "**/*.html"
+      # Tooling / dependency config that changes the outcome
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - ".prettierrc.json"
+      - ".prettierignore"
+      - "eslint.config.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    uses: maat-apps/maat-core/.github/workflows/app-ci.yml@main

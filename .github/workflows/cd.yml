@@ -1,0 +1,32 @@
+name: CD
+
+# Calls maat-core's reusable app-deploy.yml: deploys main to GitHub Pages,
+# keeping open PR previews. Only runs when something that reaches dist/
+# changed.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "index.html"
+      - "vite.config.ts"
+      - "tsconfig.json"
+      - "tsconfig.app.json"
+      - "package.json"
+      - "package-lock.json"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# Shared with the preview workflows; never cancel a live deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    uses: maat-apps/maat-core/.github/workflows/app-deploy.yml@main

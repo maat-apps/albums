@@ -1,0 +1,11 @@
+@import "tailwindcss";
+/* The Ma'at Apps theme — true black + white on Outfit, the tokens, base
+   styles, the phone-sized variant (MobileGate) and ProgressRing's
+   animation. Every app shares it; don't redefine those tokens here, only
+   add what's genuinely this app's own below. */
+@import "@maat-apps/ui/theme.css";
+
+/* @maat-apps/ui's compiled components live in node_modules, which Tailwind
+   doesn't scan by default — without this their classes get purged. The
+   whole dist/, because shared chunk-*.js files have no stable names. */
+@source "../../node_modules/@maat-apps/ui/dist";
