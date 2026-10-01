@@ -1,11 +1,43 @@
-import { updateApp as updateAppWith } from "@maat-apps/core/update";
+import {
+  createUpdateSnapshot,
+  updateApp as updateAppWith,
+} from "@maat-apps/core/update";
 
-// Settings' "Update app": the service worker never takes over on its own, so
-// a new deploy waits until this runs. Once the app keeps data worth keeping,
-// pass a pre-update snapshot built on its backup format (createUpdateSnapshot
-// from @maat-apps/core/update, as routines and trainer do).
+import {
+  applyBackup,
+  createBackup,
+  parseBackupValue,
+  type Backup,
+} from "./backup";
+import { encryptionKey } from "./encryption-key";
+import { keyValueStore } from "./idb-store";
+import { SNAPSHOT_KEY } from "./storage-keys";
 
-/** Activates the waiting worker, drops every cache, reloads. */
+// Settings' "Update app" and its pre-update snapshot (@maat-apps/core/update):
+// the albums backup, encrypted with the lock's key like the albums themselves.
+
+const snapshot = createUpdateSnapshot<Backup>({
+  storage: keyValueStore,
+  key: SNAPSHOT_KEY,
+  backup: {
+    create: createBackup,
+    parse: parseBackupValue,
+    apply: applyBackup,
+  },
+  encryption: { getKey: encryptionKey.get },
+});
+
+/** Test-only: resolves once the initial existence check has finished. */
+export const whenLoaded = snapshot.whenLoaded;
+export const subscribeToUpdateSnapshot = snapshot.subscribe;
+export const hasUpdateSnapshot = snapshot.has;
+export const hasNoUpdateSnapshotOnServer = snapshot.hasOnServer;
+export const saveUpdateSnapshot = snapshot.save;
+export const readUpdateSnapshot = snapshot.read;
+export const restoreUpdateSnapshot = snapshot.restore;
+export const discardUpdateSnapshot = snapshot.discard;
+
+/** Snapshot, activate the waiting worker, drop every cache, reload. */
 export function updateApp(): Promise<void> {
-  return updateAppWith();
+  return updateAppWith(snapshot);
 }

@@ -24,6 +24,6 @@ test.describe("app lock", () => {
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Unlock" }).click();
-    await expect(page.getByRole("heading", { name: "Welcome" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Albums" })).toBeVisible();
   });
 });
