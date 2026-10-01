@@ -1,0 +1,22 @@
+name: PR preview cleanup
+
+# Calls maat-core's reusable app-pr-preview-cleanup.yml: removes a closed
+# PR's preview. Separate from CI — closing a PR has nothing to validate.
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    uses: maat-apps/maat-core/.github/workflows/app-pr-preview-cleanup.yml@main
+    with:
+      pr-number: ${{ github.event.pull_request.number }}
