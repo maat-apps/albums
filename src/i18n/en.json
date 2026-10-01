@@ -1,5 +1,5 @@
 {
-  "welcome": "Welcome",
+  "welcome": "Albums",
   "desktopNotSupported": "This app is designed for mobile devices.",
   "installApp": "Install app",
   "installAppDescription": "Add this app to your home screen.",
@@ -22,5 +22,9 @@
   "eraseDataWarningTitle": "This will erase your data",
   "eraseDataWarningDescription": "Your data is encrypted and can only be read with a working fingerprint unlock. Since that isn't available right now, turning off the lock permanently erases it — there is no way to recover it afterwards.",
   "eraseDataConfirm": "Erase and continue",
-  "eraseDataCancel": "Cancel"
+  "eraseDataCancel": "Cancel",
+  "albumCounts": "{all} albums: {toListen} to listen, {comingBack} coming back, {notComingBack} not coming back.",
+  "importCsvAction": "Import from CSV",
+  "importCsvSummary": "Imported {imported}, skipped {skipped} already in the collection, {invalid} invalid rows.",
+  "importCsvFailed": "That file has no Artist and Title columns."
 }

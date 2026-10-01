@@ -7,5 +7,5 @@ import { goHome } from "./utils";
 // real specs as views are built.
 test("home screen renders", async ({ page }) => {
   await goHome(page);
-  await expect(page.getByRole("heading", { name: "Welcome" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Albums" })).toBeVisible();
 });

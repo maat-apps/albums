@@ -5,6 +5,7 @@ import { useInstallPrompt } from "../../hooks/use-install-prompt";
 import { useTranslation } from "../../i18n/use-translation";
 import { appLock } from "../../lib/app-lock";
 import { updateApp } from "../../lib/app-update";
+import { CsvImportSection } from "./csv-import-section";
 
 // A starting point, not a destination — this app's real Settings screen
 // (once it has one) is where install/update actions like these normally
@@ -47,6 +48,7 @@ export function HomeView() {
     <main className="grid min-h-dvh place-items-center gap-6 p-8 text-center">
       <h1 className="text-xl">{t("welcome")}</h1>
       <div className="flex flex-col gap-3 text-sm">
+        <CsvImportSection />
         <div className="flex flex-col gap-1">
           <span>
             {install.state === "installed"
