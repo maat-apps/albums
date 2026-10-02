@@ -92,5 +92,6 @@
   "importTitle": "Replace your collection?",
   "importDescription": "Every album on this device is replaced by the backup's. This can't be undone.",
   "importConfirm": "Replace",
-  "importDone": "Albums imported."
+  "importDone": "Albums imported.",
+  "coversNotice": "Covers are downloaded once from their URLs and kept on this device (encrypted with the lock), so they show offline. They aren't part of backups."
 }

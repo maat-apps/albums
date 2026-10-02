@@ -143,6 +143,9 @@ export function DataSection({
           className="hidden"
           onChange={(event) => void importCsv(event)}
         />
+        <p className="text-muted-foreground px-1 text-xs">
+          {t("coversNotice")}
+        </p>
       </SettingsSection>
       <ConfirmDrawer
         open={pendingBackup !== null}

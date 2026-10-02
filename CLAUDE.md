@@ -56,13 +56,21 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   `/new` and `/:id/edit` (`views/album/album-form-view.tsx`, validated by
   `lib/album-form.ts`), `/:id` (`album-view.tsx`: cover, one-tap status,
   Spotify link). Covers render through `components/album-cover.tsx`
-  (lazy, placeholder on a missing or broken URL). Back uses
+  (placeholder on a missing or broken URL) via `hooks/use-cover-src.ts`:
+  once in view, `lib/cover-store.ts` serves the IndexedDB copy or fetches
+  (CORS) and stores it — per album id, encrypted with the lock's key,
+  tracked in an index key since the store can't list keys; on failure the
+  `<img>` uses the URL directly. Covers are a cache: not in backups,
+  cleared by the lock's rewrite/erase and a backup restore, deleted with
+  their album. Back uses
   `useSmartBack`.
 - **i18n.** `src/i18n/en.json` and `pl.json` (core's `createTranslation`;
   device language on first launch, Settings → Language after). `t()`
   only accepts keys present in both — keep them in sync.
 - **E2E.** Settings persist in the background: before a reload that should
-  keep a pref, wait with `e2e/utils.ts`'s `waitForStoredPrefs`.
+  keep a pref, wait with `e2e/utils.ts`'s `waitForStoredPrefs`. A spec
+  that `page.route`s a cover blocks service workers (`covers.spec.ts`) —
+  the worker's own fetches bypass the route.
 - **CSV import.** `csv.ts` parses RFC 4180 CSV; `csv-import.ts` maps a
   `Rok`/`Artysta`/`Tytuł`/`WRACAM?` (or English) header to albums and
   skips duplicates. **Never commit the owner's own list** — tests and e2e

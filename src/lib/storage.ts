@@ -9,6 +9,7 @@ import {
   getSettingsSnapshot,
   whenLoaded as whenSettingsLoaded,
 } from "./app-settings";
+import { deleteCover } from "./cover-store";
 import { encryptionKey } from "./encryption-key";
 import { kvGet, kvSet } from "./idb-store";
 import { parseAlbums, type Album, type AlbumStatus } from "./schemas";
@@ -141,4 +142,5 @@ export function deleteAlbum(id: string): void {
   const current = getAlbumsSnapshot();
   if (!current.some((album) => album.id === id)) return;
   writeAlbums(current.filter((album) => album.id !== id));
+  void deleteCover(id);
 }
