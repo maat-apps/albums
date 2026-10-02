@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-// Guards maat-core#78: the font has to reach the production build, or the
-// app silently falls back to the system font. load() fetches the face and
-// rejects (or finds none) when its file is missing.
+// Wiring only: the app imports @maat-apps/ui/font, so Outfit's files reach
+// its production build (maat-core#78). The font module itself is tested in
+// @maat-apps/ui's browser tests.
 test("renders in Outfit", async ({ page }) => {
   await page.goto("");
   const loadedFaces = await page.evaluate(() =>
