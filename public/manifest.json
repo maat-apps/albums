@@ -1,7 +1,7 @@
 {
-  "name": "albums",
-  "short_name": "albums",
-  "description": "albums",
+  "name": "Albums",
+  "short_name": "Albums",
+  "description": "The albums you've listened to, kept on your device.",
   "start_url": "/albums/",
   "scope": "/albums/",
   "display": "standalone",
