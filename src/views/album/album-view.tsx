@@ -1,4 +1,4 @@
-import { PencilSimple, SpotifyLogo } from "@phosphor-icons/react";
+import { ImageSquare, PencilSimple, SpotifyLogo } from "@phosphor-icons/react";
 import { startTransition } from "react";
 import { useNavigate, useParams } from "react-router";
 
@@ -9,6 +9,7 @@ import { AlbumCover } from "../../components/album-cover";
 import { MissingAlbum } from "../../components/missing-album";
 import { useAlbum, useAlbumsReady } from "../../hooks/use-albums";
 import { useTranslation } from "../../i18n/use-translation";
+import { spotifySearchUrl } from "../../lib/cover-lookup";
 import { setStatus } from "../../lib/storage";
 
 import { StatusPicker } from "./status-picker";
@@ -59,15 +60,27 @@ export function AlbumView() {
         value={album.status}
         onChange={(status) => setStatus(album.id, status)}
       />
-      {album.spotifyUrl && (
-        <a
-          href={album.spotifyUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={buttonVariants({ variant: "outline", size: "lg" })}
+      <a
+        href={album.spotifyUrl ?? spotifySearchUrl(album)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={buttonVariants({ variant: "outline", size: "lg" })}
+      >
+        <SpotifyLogo aria-hidden="true" />{" "}
+        {t(album.spotifyUrl ? "openInSpotify" : "searchOnSpotify")}
+      </a>
+      {!album.coverUrl && (
+        <Button
+          variant="outline"
+          size="lg"
+          onClick={() =>
+            startTransition(() =>
+              navigate(`/covers/${encodeURIComponent(album.id)}`),
+            )
+          }
         >
-          <SpotifyLogo aria-hidden="true" /> {t("openInSpotify")}
-        </a>
+          <ImageSquare aria-hidden="true" /> {t("findCover")}
+        </Button>
       )}
     </div>
   );

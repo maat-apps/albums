@@ -20,6 +20,17 @@ const EditAlbumView = lazy(() =>
   })),
 );
 
+const CoversView = lazy(() =>
+  import("../views/covers/covers-view").then((m) => ({
+    default: m.CoversView,
+  })),
+);
+const PickCoverView = lazy(() =>
+  import("../views/covers/pick-cover-view").then((m) => ({
+    default: m.PickCoverView,
+  })),
+);
+
 export function AppRouter() {
   return (
     <AppLockGate>
@@ -27,6 +38,8 @@ export function AppRouter() {
         <Routes>
           <Route path="/" element={<HomeView />} />
           <Route path="/new" element={<NewAlbumView />} />
+          <Route path="/covers" element={<CoversView />} />
+          <Route path="/covers/:id" element={<PickCoverView />} />
           <Route path="/:id" element={<AlbumView />} />
           <Route path="/:id/edit" element={<EditAlbumView />} />
         </Routes>

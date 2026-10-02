@@ -1,4 +1,5 @@
-import { useRef, useState, type ChangeEvent } from "react";
+import { startTransition, useRef, useState, type ChangeEvent } from "react";
+import { useNavigate } from "react-router";
 
 import { Button } from "@maat-apps/ui/button";
 import { ConfirmDrawer } from "@maat-apps/ui/confirm-drawer";
@@ -26,6 +27,7 @@ export function DataSection({
   onStatus: (message: string | null) => void;
 }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const csvInput = useRef<HTMLInputElement>(null);
   const backupInput = useRef<HTMLInputElement>(null);
   const [pendingBackup, setPendingBackup] = useState<Backup | null>(null);
@@ -142,6 +144,19 @@ export function DataSection({
           aria-label={t("importCsv")}
           className="hidden"
           onChange={(event) => void importCsv(event)}
+        />
+        <SettingsRow
+          title={t("findCovers")}
+          description={t("findCoversDescription")}
+          action={
+            <Button
+              variant="outline"
+              className="min-h-10.5 px-4"
+              onClick={() => startTransition(() => navigate("/covers"))}
+            >
+              {t("openAction")}
+            </Button>
+          }
         />
         <p className="text-muted-foreground px-1 text-xs">
           {t("coversNotice")}
