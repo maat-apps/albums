@@ -16,6 +16,15 @@ const CORS = {
   "access-control-allow-headers": "authorization, content-type",
 };
 
+// Back to the app from the mocked login page. A page that redirects
+// itself, not an HTTP 302: WebKit can't fulfill a navigation with one.
+function redirectTo(route: Route, href: string) {
+  return route.fulfill({
+    contentType: "text/html",
+    body: `<script>location.replace(${JSON.stringify(href)})</script>`,
+  });
+}
+
 // Spotify's login: straight back to the app with a code, as after the
 // user agrees.
 function authorize(route: Route) {
@@ -23,7 +32,7 @@ function authorize(route: Route) {
   const back = new URL(url.searchParams.get("redirect_uri") ?? "");
   back.searchParams.set("code", "made-up-code");
   back.searchParams.set("state", url.searchParams.get("state") ?? "");
-  return route.fulfill({ status: 302, headers: { location: back.href } });
+  return redirectTo(route, back.href);
 }
 
 function token(route: Route) {
@@ -96,7 +105,7 @@ test("a refused Spotify login says so", async ({ page }) => {
     const back = new URL(url.searchParams.get("redirect_uri") ?? "");
     back.searchParams.set("error", "access_denied");
     back.searchParams.set("state", url.searchParams.get("state") ?? "");
-    return route.fulfill({ status: 302, headers: { location: back.href } });
+    return redirectTo(route, back.href);
   });
   await goHome(page);
 
