@@ -1,3 +1,4 @@
+import "@maat-apps/ui/font";
 import "./app/globals.css";
 
 import { StrictMode } from "react";
