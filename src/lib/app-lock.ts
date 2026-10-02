@@ -2,6 +2,7 @@ import { createAppLock } from "@maat-apps/core/lock";
 
 import { setLockEnrolment } from "./app-settings";
 import { discardUpdateSnapshot } from "./app-update";
+import { clearCovers } from "./cover-store";
 import { encryptionKey } from "./encryption-key";
 import { getAlbumsSnapshot, replaceAllAlbums } from "./storage";
 
@@ -18,10 +19,15 @@ export const appLock = createAppLock({
   keyHolder: encryptionKey,
   saveEnrolment: setLockEnrolment,
   data: {
-    rewrite: () => replaceAllAlbums(getAlbumsSnapshot()),
+    rewrite: () => {
+      replaceAllAlbums(getAlbumsSnapshot());
+      // Stored covers are a cache: rather than re-encrypting each one, drop
+      // them and let them load again under the new key.
+      void clearCovers();
+    },
     erase: async () => {
       replaceAllAlbums([]);
-      await discardUpdateSnapshot();
+      await Promise.all([discardUpdateSnapshot(), clearCovers()]);
     },
   },
 });

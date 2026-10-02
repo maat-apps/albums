@@ -4,3 +4,9 @@ export const SETTINGS_KEY = "albums-settings";
 export const LOCALE_KEY = "albums-locale";
 export const DATA_KEY = "albums-data";
 export const SNAPSHOT_KEY = "albums-update-snapshot";
+export const COVER_INDEX_KEY = "albums-cover-index";
+
+/** One stored cover per album (see cover-store.ts). */
+export function coverKey(albumId: string): string {
+  return `albums-cover:${albumId}`;
+}

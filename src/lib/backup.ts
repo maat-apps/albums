@@ -8,6 +8,7 @@ import {
 } from "@maat-apps/core/backup";
 import { isRecord } from "@maat-apps/core/validation";
 
+import { clearCovers } from "./cover-store";
 import { parseAlbums, type Album } from "./schemas";
 import { getAlbumsSnapshot, replaceAllAlbums } from "./storage";
 
@@ -59,6 +60,8 @@ export function parseBackupValue(parsed: unknown): Backup {
 /** Overwrites every album with the backup's. */
 export function applyBackup(backup: Backup): void {
   replaceAllAlbums(backup.data.albums);
+  // Covers of albums the backup doesn't have would otherwise linger.
+  void clearCovers();
 }
 
 export function backupFileName(date = new Date()): string {
