@@ -6,9 +6,9 @@ import { AppBar } from "@maat-apps/ui/app-bar";
 import { Button } from "@maat-apps/ui/button";
 import { ConfirmDrawer } from "@maat-apps/ui/confirm-drawer";
 import { Input } from "@maat-apps/ui/input";
+import { useSmartBack } from "@maat-apps/ui/smart-back";
 import { MissingAlbum } from "../../components/missing-album";
 import { useAlbum, useAlbumsReady } from "../../hooks/use-albums";
-import { useSmartBack } from "../../hooks/use-smart-back";
 import { useTranslation } from "../../i18n/use-translation";
 import {
   albumToForm,
@@ -91,9 +91,14 @@ function AlbumForm({ album }: { album: Album | null }) {
     if (Object.keys(found).length > 0) return;
     const saved = formToAlbum(values, album);
     saveAlbum(saved);
-    // Replace the form's history entry: saving is a forward step, and Back
-    // from the album shouldn't land on the form again.
-    navigate(`/${encodeURIComponent(saved.id)}`, { replace: true });
+    if (album) {
+      // Editing returns to the album it was opened from.
+      back();
+    } else {
+      // Creating is a forward step: the new album replaces the form's
+      // history entry, so Back from it doesn't land on the form again.
+      navigate(`/${encodeURIComponent(saved.id)}`, { replace: true });
+    }
   }
 
   function remove() {

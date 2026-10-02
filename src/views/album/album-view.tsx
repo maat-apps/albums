@@ -4,10 +4,10 @@ import { useNavigate, useParams } from "react-router";
 
 import { AppBar } from "@maat-apps/ui/app-bar";
 import { Button, buttonVariants } from "@maat-apps/ui/button";
+import { useSmartBack } from "@maat-apps/ui/smart-back";
 import { AlbumCover } from "../../components/album-cover";
 import { MissingAlbum } from "../../components/missing-album";
 import { useAlbum, useAlbumsReady } from "../../hooks/use-albums";
-import { useSmartBack } from "../../hooks/use-smart-back";
 import { useTranslation } from "../../i18n/use-translation";
 import { setStatus } from "../../lib/storage";
 
