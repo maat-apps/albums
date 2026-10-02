@@ -79,5 +79,18 @@
   "restoreAction": "Restore",
   "restoreDone": "Albums restored.",
   "updateConfirmTitle": "Update now?",
-  "updateConfirmDescription": "The app reloads. Your albums are backed up first."
+  "updateConfirmDescription": "The app reloads. Your albums are backed up first.",
+  "language": "Language",
+  "exportData": "Export albums",
+  "exportDataDescription": "Save a backup file of your whole collection.",
+  "exportAction": "Export",
+  "exportShared": "Backup shared.",
+  "exportDone": "Backup downloaded.",
+  "importData": "Import albums",
+  "importDataDescription": "Replace your collection with a backup file.",
+  "importFailed": "That file isn't an albums backup.",
+  "importTitle": "Replace your collection?",
+  "importDescription": "Every album on this device is replaced by the backup's. This can't be undone.",
+  "importConfirm": "Replace",
+  "importDone": "Albums imported."
 }
