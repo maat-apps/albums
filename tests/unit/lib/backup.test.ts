@@ -84,3 +84,13 @@ describe("backup", () => {
     vi.restoreAllMocks();
   });
 });
+
+describe("shareBackup", () => {
+  it("is unavailable without the Web Share API", async () => {
+    const { backup } = await freshBackup();
+    vi.stubGlobal("navigator", {});
+
+    await expect(backup.shareBackup()).resolves.toBe("unavailable");
+    vi.unstubAllGlobals();
+  });
+});

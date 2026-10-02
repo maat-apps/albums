@@ -6,7 +6,7 @@ import { LOCALE_KEY } from "./storage-keys";
 // The React-free half of i18n: first launch picks the device language (if
 // supported), then the stored choice always wins. Add a locale here and a
 // matching catalog in src/i18n/.
-const LOCALES = ["en"] as const;
+const LOCALES = ["en", "pl"] as const;
 
 export type Locale = (typeof LOCALES)[number];
 

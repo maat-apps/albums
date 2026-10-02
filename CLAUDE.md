@@ -58,6 +58,9 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   Spotify link). Covers render through `components/album-cover.tsx`
   (lazy, placeholder on a missing or broken URL). Back uses
   `useSmartBack`.
+- **i18n.** `src/i18n/en.json` and `pl.json` (core's `createTranslation`;
+  device language on first launch, Settings → Language after). `t()`
+  only accepts keys present in both — keep them in sync.
 - **E2E.** Settings persist in the background: before a reload that should
   keep a pref, wait with `e2e/utils.ts`'s `waitForStoredPrefs`.
 - **CSV import.** `csv.ts` parses RFC 4180 CSV; `csv-import.ts` maps a

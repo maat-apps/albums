@@ -2,6 +2,7 @@ import {
   BackupError,
   backupFileName as coreBackupFileName,
   downloadBackup as coreDownloadBackup,
+  shareBackup as coreShareBackup,
   readBackupEnvelope,
   readBackupJson,
 } from "@maat-apps/core/backup";
@@ -66,4 +67,9 @@ export function backupFileName(date = new Date()): string {
 
 export function downloadBackup(backup: Backup = createBackup()): void {
   coreDownloadBackup(backup);
+}
+
+/** Offers the backup to the share sheet; "unavailable" means download it. */
+export function shareBackup(backup: Backup = createBackup()) {
+  return coreShareBackup(backup);
 }

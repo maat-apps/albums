@@ -26,3 +26,14 @@ describe("useTranslation", () => {
     expect(result.current.t("updateApp")).toBe("Update app");
   });
 });
+
+describe("Polish", () => {
+  it("translates from the Polish catalog once chosen", async () => {
+    const { useTranslation } = await freshUseTranslation();
+    const { result } = renderHook(() => useTranslation());
+
+    act(() => result.current.setLocale("pl"));
+
+    expect(result.current.t("appName")).toBe("Albumy");
+  });
+});
