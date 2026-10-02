@@ -13,8 +13,9 @@ import type { Album } from "./schemas";
 import { COVER_INDEX_KEY, coverKey } from "./storage-keys";
 
 // Covers are fetched once from their URL and kept in IndexedDB, so they
-// work offline and survive cache clears and app updates (PRODUCT.md,
-// maat-core#77). They're a cache, never part of a backup: anything can be
+// work offline and survive cache clears and app updates (PRODUCT.md).
+// Albums is the only app storing remote images, so this stays here rather
+// than in @maat-apps/core. They're a cache, never part of a backup: anything can be
 // fetched again. Stored per album id — not per URL, which would reveal the
 // collection in plain key names even when the data is encrypted — and
 // encrypted with the lock's key like the albums themselves.
