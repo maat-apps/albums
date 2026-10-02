@@ -66,3 +66,35 @@ export async function waitForStoredPrefs(
     )
     .toMatchObject(expected);
 }
+
+/**
+ * Resolves once the app-lock enrolment has reached IndexedDB. Settings
+ * persist in the background, so a reload right after enrolling can lose
+ * it and the app comes back unlocked.
+ */
+export async function waitForStoredLock(page: Page) {
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          new Promise<boolean>((resolve) => {
+            const request = indexedDB.open("albums");
+            request.onerror = () => resolve(false);
+            request.onsuccess = () => {
+              const read = request.result
+                .transaction("kv")
+                .objectStore("kv")
+                .get("albums-settings");
+              read.onerror = () => resolve(false);
+              read.onsuccess = () =>
+                resolve(
+                  Boolean(
+                    (read.result as { lock?: unknown } | undefined)?.lock,
+                  ),
+                );
+            };
+          }),
+      ),
+    )
+    .toBe(true);
+}

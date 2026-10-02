@@ -1,7 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-import { goHome, openSettings } from "./utils";
+import { goHome, openSettings, waitForStoredLock } from "./utils";
 
+// Wiring only: the app's enrolment persists and its gate renders. The lock
+// screen's own behavior (escape hatch, erase warning) is tested in
+// @maat-apps/ui, the lock logic in @maat-apps/core.
 test.describe("app lock", () => {
   test("enrolling turns the lock on and unlocking with the same authenticator works", async ({
     page,
@@ -19,6 +22,7 @@ test.describe("app lock", () => {
 
     // Enrolling counts as unlocked, but that's per-session memory — a
     // reload shows the lock screen.
+    await waitForStoredLock(page);
     await page.reload();
     await expect(
       page.getByRole("heading", { name: "This app is locked" }),
