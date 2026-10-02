@@ -117,3 +117,45 @@ describe("setLockEnrolment", () => {
     expect(appSettings.isSettingsReadyOnServer()).toBe(false);
   });
 });
+
+describe("collection prefs", () => {
+  it("defaults to a grid sorted by artist, showing everything", async () => {
+    const appSettings = await freshAppSettings();
+    expect(appSettings.getSettingsSnapshot().collection).toEqual({
+      viewMode: "grid",
+      sortKey: "artist",
+      sortDirection: "asc",
+      statusFilter: "all",
+    });
+  });
+
+  it("merges changes", async () => {
+    const appSettings = await freshAppSettings();
+
+    appSettings.setCollectionPrefs({ viewMode: "list" });
+    appSettings.setCollectionPrefs({ statusFilter: "toListen" });
+
+    expect(appSettings.getSettingsSnapshot().collection).toMatchObject({
+      viewMode: "list",
+      statusFilter: "toListen",
+    });
+  });
+
+  it("falls back per field for stored values it doesn't know", async () => {
+    vi.resetModules();
+    const { kvSet } = await import("@/lib/idb-store");
+    const { SETTINGS_KEY } = await import("@/lib/storage-keys");
+    await kvSet(SETTINGS_KEY, {
+      collection: { viewMode: "list", sortKey: "rating", statusFilter: 3 },
+    });
+    const appSettings = await freshAppSettings();
+    await appSettings.whenLoaded();
+
+    expect(appSettings.getSettingsSnapshot().collection).toEqual({
+      viewMode: "list",
+      sortKey: "artist",
+      sortDirection: "asc",
+      statusFilter: "all",
+    });
+  });
+});

@@ -24,6 +24,7 @@ const EMPTY: Album[] = [];
 const listeners = new Set<() => void>();
 let albums: Album[] = EMPTY;
 let loaded: Promise<void> | null = null;
+let ready = false;
 
 function emitChange(): void {
   for (const listener of listeners) {
@@ -49,6 +50,7 @@ async function loadAlbums(): Promise<void> {
   } catch {
     // Keep what's in memory — same fallback as a corrupt or missing value.
   } finally {
+    ready = true;
     emitChange();
   }
 }
@@ -69,6 +71,19 @@ export function subscribe(listener: () => void): () => void {
 export function getAlbumsSnapshot(): Album[] {
   void whenLoaded();
   return albums;
+}
+
+/**
+ * Whether the initial read has finished — until then "no such album" can't
+ * be told apart from "not loaded yet" (a deep link on a cold start).
+ */
+export function isAlbumsReady(): boolean {
+  void whenLoaded();
+  return ready;
+}
+
+export function isAlbumsReadyOnServer(): boolean {
+  return false;
 }
 
 export function getServerAlbumsSnapshot(): Album[] {

@@ -50,6 +50,16 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   (`schemas.ts`). Filtering, sorting and duplicate detection are pure
   helpers in `album-utils.ts`. Backups and the pre-update snapshot share
   one format (`backup.ts`, `app-update.ts`).
+- **Screens.** `src/app/router.tsx`: `/` (`views/home`: the collection —
+  status filter chips with counts, sort key + direction, grid/list, all
+  remembered in `app-settings.ts`'s `collection` prefs; settings drawer),
+  `/new` and `/:id/edit` (`views/album/album-form-view.tsx`, validated by
+  `lib/album-form.ts`), `/:id` (`album-view.tsx`: cover, one-tap status,
+  Spotify link). Covers render through `components/album-cover.tsx`
+  (lazy, placeholder on a missing or broken URL). Back uses
+  `useSmartBack`.
+- **E2E.** Settings persist in the background: before a reload that should
+  keep a pref, wait with `e2e/utils.ts`'s `waitForStoredPrefs`.
 - **CSV import.** `csv.ts` parses RFC 4180 CSV; `csv-import.ts` maps a
   `Rok`/`Artysta`/`Tytuł`/`WRACAM?` (or English) header to albums and
   skips duplicates. **Never commit the owner's own list** — tests and e2e
