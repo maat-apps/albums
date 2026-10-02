@@ -70,16 +70,10 @@ the image itself — the user decides by adding a URL.
   review, where the user picks a match or "None of these". About one album
   a second (MusicBrainz's limit); stopping keeps what was found. An album
   without a cover also offers "Find a cover" from its own view.
-- **Spotify**: without an account the app can't look Spotify up, so an
-  album with no Spotify link of its own opens Spotify's search for its
-  artist and title instead.
-
-## Out of scope, on purpose
-
-Ratings, reviews, genres, tracklists, play counts, streaming playback in
-the app, sharing and sync.
-
-## Design direction
-
-The ecosystem's shared theme (`@maat-apps/ui/theme.css`): true black and
-white on Outfit — the covers provide all the color.
+- **Spotify** (optional): "Connect Spotify" on the covers screen signs in
+  with Spotify (PKCE — no server, no secret; the sign-in is kept on the
+  device, encrypted with the lock). While connected, finding covers
+  searches Spotify instead: faster, with better covers and the album's
+  exact Spotify link — albums that already have a cover still get their
+  link. Spotify sees only the searches. Without it, an album with no
+  Spotify link of its own opens Spotify's search for its artist and title.

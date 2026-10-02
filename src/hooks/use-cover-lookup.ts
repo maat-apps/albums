@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
+import type { LookupSource } from "../lib/cover-lookup";
 import { lookUpCovers, type LookupProgress } from "../lib/cover-lookup-runner";
 
 export type LookupPhase = "idle" | "running" | "done" | "stopped" | "failed";
@@ -9,7 +10,7 @@ export type LookupPhase = "idle" | "running" | "done" | "stopped" | "failed";
  * open: leaving it stops the run, and starting again carries on with the
  * albums still left.
  */
-export function useCoverLookup() {
+export function useCoverLookup(source: LookupSource) {
   const [phase, setPhase] = useState<LookupPhase>("idle");
   const [progress, setProgress] = useState<LookupProgress | null>(null);
   const controller = useRef<AbortController | null>(null);
@@ -20,7 +21,11 @@ export function useCoverLookup() {
     const current = new AbortController();
     controller.current = current;
     setPhase("running");
-    lookUpCovers({ signal: current.signal, onProgress: setProgress }).then(
+    lookUpCovers({
+      source,
+      signal: current.signal,
+      onProgress: setProgress,
+    }).then(
       (final) => {
         setProgress(final);
         setPhase(current.signal.aborted ? "stopped" : "done");

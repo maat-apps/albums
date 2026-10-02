@@ -8,9 +8,13 @@ import {
   notFound,
   pickMatch,
   spotifySearchUrl,
+  withVerdict,
+  type AlbumMatch,
 } from "@/lib/cover-lookup";
-import type { ReleaseGroup } from "@/lib/musicbrainz";
 import type { Album } from "@/lib/schemas";
+
+const COVER = "https://example.com/c.jpg";
+const LINK = "https://open.spotify.com/album/x";
 
 const album = (overrides: Partial<Album> = {}): Album => ({
   id: "a1",
@@ -23,12 +27,14 @@ const album = (overrides: Partial<Album> = {}): Album => ({
   ...overrides,
 });
 
-const group = (overrides: Partial<ReleaseGroup> = {}): ReleaseGroup => ({
-  id: "rg1",
+const match = (overrides: Partial<AlbumMatch> = {}): AlbumMatch => ({
+  id: "m1",
   title: "Made-up Title",
   artist: "Zeta Band",
   year: 1999,
-  primaryType: "Album",
+  type: "album",
+  coverUrl: COVER,
+  spotifyUrl: null,
   ...overrides,
 });
 
@@ -47,16 +53,16 @@ describe("pickMatch", () => {
   });
 
   it("matches the same artist, title and year", () => {
-    const match = group({ title: "made up title (2009 Remaster)" });
-    expect(pickMatch(album(), [group({ artist: "Other" }), match])).toEqual({
+    const sure = match({ title: "made up title (2009 Remaster)" });
+    expect(pickMatch(album(), [match({ artist: "Other" }), sure])).toEqual({
       kind: "match",
-      match,
+      match: sure,
     });
   });
 
   it("prefers an album over a single of the same name", () => {
-    const single = group({ id: "s", primaryType: "Single" });
-    const full = group({ id: "f" });
+    const single = match({ id: "s", type: "single" });
+    const full = match({ id: "f" });
     expect(pickMatch(album(), [single, full])).toMatchObject({
       match: { id: "f" },
     });
@@ -64,51 +70,89 @@ describe("pickMatch", () => {
   });
 
   it("sends a different year, or no exact title, to review", () => {
-    expect(pickMatch(album(), [group({ year: 2005 })])).toEqual({
+    expect(pickMatch(album(), [match({ year: 2005 })])).toEqual({
       kind: "review",
     });
-    expect(pickMatch(album(), [group({ title: "Other" })])).toEqual({
+    expect(pickMatch(album(), [match({ title: "Other" })])).toEqual({
       kind: "review",
     });
   });
 
   it("matches any year when the album has none", () => {
     expect(
-      pickMatch(album({ year: null }), [group({ year: 2005 })]),
+      pickMatch(album({ year: null }), [match({ year: 2005 })]),
     ).toMatchObject({ kind: "match" });
   });
 });
 
 describe("applyMatch", () => {
-  it("sets the cover, fills a missing year and clears the lookup", () => {
+  it("fills a missing cover, link and year, and clears the verdicts", () => {
     const applied = applyMatch(
-      album({ year: null, lookup: "review" }),
-      group(),
+      album({ year: null, lookup: "review", spotifyLookup: "none" }),
+      match({ spotifyUrl: LINK }),
     );
     expect(applied).toMatchObject({
-      coverUrl: "https://coverartarchive.org/release-group/rg1/front-250",
+      coverUrl: COVER,
+      spotifyUrl: LINK,
       year: 1999,
       lookup: undefined,
+      spotifyLookup: undefined,
     });
   });
 
-  it("keeps the album's own year", () => {
-    expect(applyMatch(album(), group({ year: 2005 })).year).toBe(1999);
+  it("keeps what the album already has", () => {
+    const own = album({
+      coverUrl: "https://example.com/own.jpg",
+      spotifyUrl: LINK,
+    });
+    const applied = applyMatch(
+      own,
+      match({ year: 2005, spotifyUrl: "https://open.spotify.com/album/y" }),
+    );
+    expect(applied).toMatchObject({
+      coverUrl: own.coverUrl,
+      spotifyUrl: LINK,
+      year: 1999,
+    });
+  });
+
+  it("leaves a cover or link the match doesn't have unset", () => {
+    const applied = applyMatch(album(), match({ coverUrl: null }));
+    expect(applied.coverUrl).toBeUndefined();
+    expect(applied.spotifyUrl).toBeUndefined();
   });
 });
 
 describe("lookup predicates", () => {
-  it("tell albums to search, review and not found apart", () => {
-    const cover = "https://example.com/c.jpg";
-    expect(needsLookup(album())).toBe(true);
-    expect(needsLookup(album({ coverUrl: cover }))).toBe(false);
-    expect(needsLookup(album({ lookup: "skipped" }))).toBe(false);
-    expect(awaitsReview(album({ lookup: "review" }))).toBe(true);
-    expect(awaitsReview(album({ lookup: "review", coverUrl: cover }))).toBe(
+  it("track MusicBrainz verdicts for albums without a cover", () => {
+    expect(needsLookup(album(), "musicbrainz")).toBe(true);
+    expect(needsLookup(album({ coverUrl: COVER }), "musicbrainz")).toBe(false);
+    expect(needsLookup(album({ lookup: "skipped" }), "musicbrainz")).toBe(
       false,
     );
-    expect(notFound(album({ lookup: "none" }))).toBe(true);
-    expect(notFound(album())).toBe(false);
+    expect(awaitsReview(album({ lookup: "review" }), "musicbrainz")).toBe(true);
+    expect(notFound(album({ lookup: "none" }), "musicbrainz")).toBe(true);
+    expect(notFound(album(), "musicbrainz")).toBe(false);
+  });
+
+  it("track Spotify verdicts for albums without a cover or a link", () => {
+    expect(needsLookup(album({ coverUrl: COVER }), "spotify")).toBe(true);
+    expect(
+      needsLookup(album({ coverUrl: COVER, spotifyUrl: LINK }), "spotify"),
+    ).toBe(false);
+    // A MusicBrainz verdict doesn't stop a Spotify lookup.
+    expect(needsLookup(album({ lookup: "none" }), "spotify")).toBe(true);
+    expect(awaitsReview(album({ spotifyLookup: "review" }), "spotify")).toBe(
+      true,
+    );
+    expect(notFound(album({ spotifyLookup: "none" }), "spotify")).toBe(true);
+  });
+
+  it("record a verdict for its source", () => {
+    expect(withVerdict(album(), "musicbrainz", "none").lookup).toBe("none");
+    expect(withVerdict(album(), "spotify", "skipped").spotifyLookup).toBe(
+      "skipped",
+    );
   });
 });
 
