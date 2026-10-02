@@ -62,7 +62,6 @@ the image itself — the user decides by adding a URL.
   updates. Where a server doesn't allow that, the cover is shown straight
   from its URL instead. Stored covers are a cache: never in a backup, and
   dropped (to load again) when the lock changes or a backup is restored.
-  Moving this pattern into maat-core is tracked in maat-core#77.
 - Looking covers up automatically (searching MusicBrainz by artist and
   title) is a candidate follow-up, not part of the first version.
 
