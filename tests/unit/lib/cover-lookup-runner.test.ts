@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ReleaseGroup } from "@/lib/musicbrainz";
+import type { AlbumMatch } from "@/lib/cover-lookup";
 import type { Album } from "@/lib/schemas";
 import { resetIndexedDb } from "../reset-indexeddb";
 
@@ -15,12 +15,14 @@ const album = (id: string, overrides: Partial<Album> = {}): Album => ({
   ...overrides,
 });
 
-const group = (title: string, year = 1999): ReleaseGroup => ({
+const group = (title: string, year = 1999): AlbumMatch => ({
   id: `rg-${title}`,
   title,
   artist: "Zeta Band",
   year,
-  primaryType: "Album",
+  type: "album",
+  coverUrl: `https://example.com/rg-${title}.jpg`,
+  spotifyUrl: null,
 });
 
 async function fresh(albums: Album[]) {
@@ -58,6 +60,7 @@ describe("lookUpCovers", () => {
     const onProgress = vi.fn();
 
     const progress = await runner.lookUpCovers({
+      source: "musicbrainz",
       signal: new AbortController().signal,
       onProgress,
       search,
@@ -87,6 +90,7 @@ describe("lookUpCovers", () => {
     });
 
     const progress = await runner.lookUpCovers({
+      source: "musicbrainz",
       signal: new AbortController().signal,
       onProgress: () => {},
       search,
@@ -106,6 +110,7 @@ describe("lookUpCovers", () => {
     });
 
     const progress = await runner.lookUpCovers({
+      source: "musicbrainz",
       signal: controller.signal,
       onProgress: () => {},
       search,
@@ -125,6 +130,7 @@ describe("lookUpCovers", () => {
     });
 
     const progress = await runner.lookUpCovers({
+      source: "musicbrainz",
       signal: controller.signal,
       onProgress: () => {},
       search,
@@ -144,6 +150,7 @@ describe("lookUpCovers", () => {
 
     await expect(
       runner.lookUpCovers({
+        source: "musicbrainz",
         signal: controller.signal,
         onProgress: () => {},
         search,
@@ -159,6 +166,7 @@ describe("lookUpCovers", () => {
       .mockResolvedValueOnce([group("a")]);
 
     const progress = await runner.lookUpCovers({
+      source: "musicbrainz",
       signal: new AbortController().signal,
       onProgress: () => {},
       search,
@@ -175,6 +183,7 @@ describe("lookUpCovers", () => {
     const limited = vi.fn().mockRejectedValue(new RateLimitedError());
     await expect(
       runner.lookUpCovers({
+        source: "musicbrainz",
         signal: new AbortController().signal,
         onProgress: () => {},
         search: limited,
@@ -186,6 +195,7 @@ describe("lookUpCovers", () => {
     const offline = vi.fn().mockRejectedValue(new TypeError("offline"));
     await expect(
       runner.lookUpCovers({
+        source: "musicbrainz",
         signal: new AbortController().signal,
         onProgress: () => {},
         search: offline,
@@ -203,6 +213,7 @@ describe("lookUpCovers", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const progress = await runner.lookUpCovers({
+      source: "musicbrainz",
       signal: new AbortController().signal,
       onProgress: () => {},
       pause: 0,
@@ -211,5 +222,49 @@ describe("lookUpCovers", () => {
     expect(fetchMock).toHaveBeenCalledOnce();
     expect(progress.notFound).toBe(1);
     vi.unstubAllGlobals();
+  });
+
+  it("records Spotify verdicts and looks up albums missing a link", async () => {
+    const { storage, runner } = await fresh([
+      album("linked", {
+        coverUrl: "https://example.com/c.jpg",
+        spotifyUrl: "https://open.spotify.com/album/x",
+      }),
+      album("covered", { coverUrl: "https://example.com/c.jpg" }),
+    ]);
+    const search = vi.fn().mockResolvedValue([]);
+
+    const progress = await runner.lookUpCovers({
+      source: "spotify",
+      signal: new AbortController().signal,
+      onProgress: () => {},
+      search,
+      pause: 0,
+    });
+
+    expect(progress).toMatchObject({ total: 1, notFound: 1 });
+    expect(byId(storage.getAlbumsSnapshot(), "covered")?.spotifyLookup).toBe(
+      "none",
+    );
+  });
+
+  it("waits as long as the service asks after a rate limit", async () => {
+    const { runner, RateLimitedError } = await fresh([album("a")]);
+    const search = vi
+      .fn()
+      .mockRejectedValueOnce(new RateLimitedError(60))
+      .mockResolvedValueOnce([group("a")]);
+    const started = Date.now();
+
+    const progress = await runner.lookUpCovers({
+      source: "spotify",
+      signal: new AbortController().signal,
+      onProgress: () => {},
+      search,
+      backoff: 0,
+    });
+
+    expect(Date.now() - started).toBeGreaterThanOrEqual(55);
+    expect(progress.matched).toBe(1);
   });
 });

@@ -30,7 +30,7 @@ describe("useCoverLookup", () => {
       onProgress(PROGRESS);
       return PROGRESS;
     });
-    const { result } = renderHook(() => useCoverLookup());
+    const { result } = renderHook(() => useCoverLookup("musicbrainz"));
     expect(result.current.phase).toBe("idle");
 
     act(() => result.current.start());
@@ -48,7 +48,7 @@ describe("useCoverLookup", () => {
           signal.addEventListener("abort", () => resolve(PROGRESS));
         }),
     );
-    const { result, unmount } = renderHook(() => useCoverLookup());
+    const { result, unmount } = renderHook(() => useCoverLookup("musicbrainz"));
 
     act(() => result.current.start());
     expect(result.current.phase).toBe("running");
@@ -64,7 +64,7 @@ describe("useCoverLookup", () => {
     const useCoverLookup = await load(() =>
       Promise.reject(new TypeError("offline")),
     );
-    const { result } = renderHook(() => useCoverLookup());
+    const { result } = renderHook(() => useCoverLookup("musicbrainz"));
 
     act(() => result.current.start());
 

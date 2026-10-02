@@ -4,6 +4,7 @@ import { setLockEnrolment } from "./app-settings";
 import { discardUpdateSnapshot } from "./app-update";
 import { clearCovers } from "./cover-store";
 import { encryptionKey } from "./encryption-key";
+import { disconnect, rewriteSpotifyToken } from "./spotify-session";
 import { getAlbumsSnapshot, replaceAllAlbums } from "./storage";
 
 // NEVER change this once the app has users: it's part of how their data is
@@ -24,10 +25,11 @@ export const appLock = createAppLock({
       // Stored covers are a cache: rather than re-encrypting each one, drop
       // them and let them load again under the new key.
       void clearCovers();
+      void rewriteSpotifyToken();
     },
     erase: async () => {
       replaceAllAlbums([]);
-      await Promise.all([discardUpdateSnapshot(), clearCovers()]);
+      await Promise.all([discardUpdateSnapshot(), clearCovers(), disconnect()]);
     },
   },
 });

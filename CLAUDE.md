@@ -66,9 +66,16 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   Archive URLs), `lib/cover-lookup.ts` (pure matching: `pickMatch`,
   `applyMatch`, the album's `lookup` verdict — review/none/skipped),
   `lib/cover-lookup-runner.ts` (bulk run at ~1 req/s, saves each album as
-  it goes) and `views/covers/` (`/covers`, `/covers/:id`). E2E mocks
-  MusicBrainz and the archive with `page.route` (service workers
-  blocked). Back uses
+  it goes) and `views/covers/` (`/covers`, `/covers/:id`). With Spotify
+  connected the lookup searches Spotify instead (`lib/spotify-api.ts`; its
+  verdict is the album's `spotifyLookup`): `lib/spotify-auth.ts` (PKCE,
+  the public client id, redirect URI = the app's root — registered for
+  `https://maat-apps.github.io/albums/` only, so PR previews can't
+  connect), `lib/spotify-session.ts` (token in IndexedDB, encrypted,
+  refreshed; rewritten/erased by the lock; never in backups) and
+  `SpotifyCallback` in `src/app/router.tsx` (finishes `?code=` and opens
+  `/covers`). E2E mocks MusicBrainz, the archive and Spotify (login
+  redirect, token, search) with `page.route` (service workers blocked). Back uses
   `useSmartBack`.
 - **i18n.** `src/i18n/en.json` and `pl.json` (core's `createTranslation`;
   device language on first launch, Settings → Language after). `t()`
