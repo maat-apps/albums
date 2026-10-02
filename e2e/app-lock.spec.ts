@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { goHome } from "./utils";
+import { goHome, openSettings } from "./utils";
 
 test.describe("app lock", () => {
   test("enrolling turns the lock on and unlocking with the same authenticator works", async ({
@@ -10,6 +10,7 @@ test.describe("app lock", () => {
     // navigation so the app's real create()/get() calls succeed against it.
     await page.context().credentials.install();
     await goHome(page);
+    await openSettings(page);
 
     const lockSwitch = page.getByRole("switch", { name: "App lock" });
     await expect(lockSwitch).toBeEnabled();
@@ -24,6 +25,8 @@ test.describe("app lock", () => {
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Unlock" }).click();
-    await expect(page.getByRole("heading", { name: "Albums" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Albums", exact: true }),
+    ).toBeVisible();
   });
 });

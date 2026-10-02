@@ -2,10 +2,11 @@ import { expect, test } from "@playwright/test";
 
 import { goHome } from "./utils";
 
-// A minimal smoke test so `npm run test:e2e` has something to run against
-// the freshly scaffolded app, before any real screens exist — replace with
-// real specs as views are built.
-test("home screen renders", async ({ page }) => {
+test("an empty collection points to the CSV import", async ({ page }) => {
   await goHome(page);
-  await expect(page.getByRole("heading", { name: "Albums" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "No albums yet" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Import from CSV" }).click();
+  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
 });

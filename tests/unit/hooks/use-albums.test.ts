@@ -30,3 +30,33 @@ describe("useAlbums", () => {
     expect(result.current).toHaveLength(1);
   });
 });
+
+describe("useAlbum / useAlbumsReady", () => {
+  it("finds an album and reports readiness once loaded", async () => {
+    vi.resetModules();
+    const { useAlbum, useAlbumsReady } = await import("@/hooks/use-albums");
+    const storage = await import("@/lib/storage");
+    const { result } = renderHook(() => ({
+      album: useAlbum("a1"),
+      ready: useAlbumsReady(),
+    }));
+
+    await act(() => storage.whenLoaded());
+    expect(result.current.ready).toBe(true);
+    expect(result.current.album).toBeUndefined();
+    expect(storage.isAlbumsReadyOnServer()).toBe(false);
+
+    act(() =>
+      storage.saveAlbum({
+        id: "a1",
+        year: null,
+        artist: "Artist",
+        title: "Title",
+        status: "toListen",
+        createdAt: "2026-10-01T10:00:00.000Z",
+        updatedAt: "2026-10-01T10:00:00.000Z",
+      }),
+    );
+    expect(result.current.album?.title).toBe("Title");
+  });
+});
