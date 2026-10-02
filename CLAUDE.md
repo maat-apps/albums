@@ -62,7 +62,13 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   tracked in an index key since the store can't list keys; on failure the
   `<img>` uses the URL directly. Covers are a cache: not in backups,
   cleared by the lock's rewrite/erase and a backup restore, deleted with
-  their album. Back uses
+  their album. Finding covers: `lib/musicbrainz.ts` (search + Cover Art
+  Archive URLs), `lib/cover-lookup.ts` (pure matching: `pickMatch`,
+  `applyMatch`, the album's `lookup` verdict — review/none/skipped),
+  `lib/cover-lookup-runner.ts` (bulk run at ~1 req/s, saves each album as
+  it goes) and `views/covers/` (`/covers`, `/covers/:id`). E2E mocks
+  MusicBrainz and the archive with `page.route` (service workers
+  blocked). Back uses
   `useSmartBack`.
 - **i18n.** `src/i18n/en.json` and `pl.json` (core's `createTranslation`;
   device language on first launch, Settings → Language after). `t()`

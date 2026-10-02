@@ -62,8 +62,17 @@ the image itself — the user decides by adding a URL.
   updates. Where a server doesn't allow that, the cover is shown straight
   from its URL instead. Stored covers are a cache: never in a backup, and
   dropped (to load again) when the lock changes or a backup is restored.
-- Looking covers up automatically (searching MusicBrainz by artist and
-  title) is a candidate follow-up, not part of the first version.
+- **Finding covers** (Settings → Data → Find covers): every album without
+  a cover is searched on MusicBrainz by artist and title — nothing else
+  leaves the device, and no account is needed. A sure match (same artist,
+  title and year, an album preferred over a single) gets its Cover Art
+  Archive cover and, if it had none, its year; anything else is listed to
+  review, where the user picks a match or "None of these". About one album
+  a second (MusicBrainz's limit); stopping keeps what was found. An album
+  without a cover also offers "Find a cover" from its own view.
+- **Spotify**: without an account the app can't look Spotify up, so an
+  album with no Spotify link of its own opens Spotify's search for its
+  artist and title instead.
 
 ## Out of scope, on purpose
 

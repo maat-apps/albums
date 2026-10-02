@@ -11,6 +11,8 @@ export const ALBUM_STATUSES = [
   "notComingBack",
 ] as const;
 
+export const LOOKUP_RESULTS = ["review", "none", "skipped"] as const;
+
 const HttpsUrlSchema = v.pipe(v.string(), v.url(), v.startsWith("https://"));
 
 const AlbumSchema = v.object({
@@ -22,6 +24,10 @@ const AlbumSchema = v.object({
   // A malformed URL is dropped rather than dropping the whole album.
   coverUrl: v.fallback(v.optional(HttpsUrlSchema), undefined),
   spotifyUrl: v.fallback(v.optional(HttpsUrlSchema), undefined),
+  // The last cover lookup's verdict for an album still without a cover
+  // (cover-lookup.ts): "review" — candidates to pick from, "none" — nothing
+  // found, "skipped" — the user rejected them. Absent until looked up.
+  lookup: v.fallback(v.optional(v.picklist(LOOKUP_RESULTS)), undefined),
   createdAt: v.string(),
   updatedAt: v.string(),
 });
