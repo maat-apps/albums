@@ -61,7 +61,7 @@ export function CollectionToolbar({
             key={filter}
             variant={prefs.statusFilter === filter ? "default" : "outline"}
             size="sm"
-            className="shrink-0 rounded-full"
+            className="shrink-0 rounded-lg"
             aria-pressed={prefs.statusFilter === filter}
             onClick={() => onChange({ statusFilter: filter })}
           >
