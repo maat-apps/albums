@@ -93,7 +93,7 @@ test("an album without a cover offers to find one", async ({ page }) => {
   await page.getByRole("button", { name: /Title, With Comma/ }).click();
   await page.getByRole("button", { name: "Find a cover" }).click();
 
-  await expect(page.getByText("Nothing found on MusicBrainz.")).toBeVisible();
+  await expect(page.getByText("Nothing found.")).toBeVisible();
   await page.getByRole("button", { name: "None of these" }).click();
   // Back on the album it was opened from.
   await expect(
