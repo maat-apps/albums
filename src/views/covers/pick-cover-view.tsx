@@ -26,7 +26,7 @@ type Search =
 function CandidateCover({ url }: { url: string | null }) {
   const [failed, setFailed] = useState(url === null);
   return (
-    <span className="bg-muted text-muted-foreground grid size-16 shrink-0 place-items-center overflow-hidden rounded-md">
+    <span className="bg-muted text-muted-foreground grid size-16 shrink-0 place-items-center overflow-hidden rounded-none">
       {failed ? (
         <VinylRecord aria-hidden="true" className="size-1/3" />
       ) : (

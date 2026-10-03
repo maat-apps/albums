@@ -22,7 +22,7 @@ export function AlbumCover({
   return (
     <div
       ref={container}
-      className={`bg-muted text-muted-foreground grid aspect-square place-items-center overflow-hidden rounded-md ${className ?? ""}`}
+      className={`bg-muted text-muted-foreground grid aspect-square place-items-center overflow-hidden rounded-none ${className ?? ""}`}
     >
       {shown ? (
         <img
