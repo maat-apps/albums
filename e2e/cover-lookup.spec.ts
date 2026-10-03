@@ -35,9 +35,15 @@ function musicBrainz(route: Route) {
   return route.fulfill({ json: { "release-groups": groups }, headers: CORS });
 }
 
+// Nothing on iTunes, the fallback after MusicBrainz.
+function iTunes(route: Route) {
+  return route.fulfill({ json: { results: [] }, headers: CORS });
+}
+
 test("finds covers for imported albums and lets the user pick the unsure ones", async ({
   page,
 }) => {
+  await page.route("https://itunes.apple.com/search**", iTunes);
   await page.route(
     "https://musicbrainz.org/ws/2/release-group/**",
     musicBrainz,
@@ -54,7 +60,7 @@ test("finds covers for imported albums and lets the user pick the unsure ones", 
   await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(
     page.getByText("Found: 1 · To review: 1 · Not found: 1"),
-  ).toBeVisible({ timeout: 15_000 });
+  ).toBeVisible({ timeout: 30_000 });
 
   const toReview = page.getByRole("list", { name: "To review (1)" });
   await toReview.getByRole("button", { name: /Middle/ }).click();
@@ -76,6 +82,7 @@ test("finds covers for imported albums and lets the user pick the unsure ones", 
 });
 
 test("an album without a cover offers to find one", async ({ page }) => {
+  await page.route("https://itunes.apple.com/search**", iTunes);
   await page.route(
     "https://musicbrainz.org/ws/2/release-group/**",
     musicBrainz,

@@ -65,8 +65,10 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   their album. Finding covers: `lib/musicbrainz.ts` (search + Cover Art
   Archive URLs), `lib/cover-lookup.ts` (pure matching: `pickMatch`,
   `applyMatch`, the album's `lookup` verdict — review/none/skipped),
-  `lib/cover-lookup-runner.ts` (bulk run at ~1 req/s, saves each album as
-  it goes) and `views/covers/` (`/covers`, `/covers/:id`). With Spotify
+  `lib/itunes.ts` (iTunes Search, the fallback source; `itunesLookup`
+  verdict), `lib/cover-lookup-runner.ts` (bulk run, tries `sources` in
+  order per album — ~1 req/s on MusicBrainz, ~20/min on iTunes — saves each
+  album as it goes) and `views/covers/` (`/covers`, `/covers/:id`). With Spotify
   connected the lookup searches Spotify instead (`lib/spotify-api.ts`; its
   verdict is the album's `spotifyLookup`): `lib/spotify-auth.ts` (PKCE,
   the public client id, redirect URI = the app's root — registered for

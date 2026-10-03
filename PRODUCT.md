@@ -63,11 +63,15 @@ the image itself — the user decides by adding a URL.
   from its URL instead. Stored covers are a cache: never in a backup, and
   dropped (to load again) when the lock changes or a backup is restored.
 - **Finding covers** (Settings → Data → Find covers): every album without
-  a cover is searched on MusicBrainz by artist and title — nothing else
-  leaves the device, and no account is needed. A sure match (same artist,
-  title and year, an album preferred over a single) gets its Cover Art
-  Archive cover and, if it had none, its year; anything else is listed to
-  review, where the user picks a match or "None of these". About one album
+  a cover is searched on MusicBrainz — then on iTunes (Apple's free search,
+  no key; about 20 requests a minute) for what MusicBrainz didn't match —
+  by artist and title; nothing else leaves the device, and no account is
+  needed. The first result with the album's artist and title (editions like
+  "Deluxe" or "Remastered" ignored) is taken without asking — preferring
+  the album's year, then a plain release, then an album over a single —
+  and gets its cover and, if the album had none, its year. Only albums
+  with no result of that artist and title are listed to review, where the
+  user picks a match or "None of these". About one album
   a second (MusicBrainz's limit); stopping keeps what was found. An album
   without a cover also offers "Find a cover" from its own view.
 - **Spotify** (optional): "Connect Spotify" on the covers screen signs in

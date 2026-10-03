@@ -30,6 +30,8 @@ const AlbumSchema = v.object({
   lookup: v.fallback(v.optional(v.picklist(LOOKUP_RESULTS)), undefined),
   // The same verdict from a Spotify lookup, which also fills missing links.
   spotifyLookup: v.fallback(v.optional(v.picklist(LOOKUP_RESULTS)), undefined),
+  // And from an iTunes lookup, the fallback for what the others missed.
+  itunesLookup: v.fallback(v.optional(v.picklist(LOOKUP_RESULTS)), undefined),
   createdAt: v.string(),
   updatedAt: v.string(),
 });
