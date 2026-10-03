@@ -10,6 +10,15 @@ export async function goHome(page: Page) {
   ).toBeVisible();
 }
 
+/**
+ * Closes the settings drawer and waits until no dialog is left — a click
+ * right after Escape can land on a drawer that's still closing.
+ */
+export async function closeSettings(page: Page) {
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+}
+
 export async function openSettings(page: Page) {
   await page.getByRole("button", { name: "Settings" }).click();
 }
@@ -31,7 +40,7 @@ export async function importCsv(page: Page, csv = SAMPLE_CSV) {
     buffer: Buffer.from(csv),
   });
   await expect(page.getByText(/^Imported \d+/)).toBeVisible();
-  await page.keyboard.press("Escape");
+  await closeSettings(page);
 }
 
 /**

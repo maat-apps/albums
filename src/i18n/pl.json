@@ -95,7 +95,7 @@
   "importDone": "Albumy zaimportowane.",
   "coversNotice": "Okładki są pobierane raz z ich adresów i zapisywane na tym urządzeniu (zaszyfrowane razem z blokadą), więc działają offline. Nie trafiają do kopii zapasowych.",
   "findCovers": "Znajdź okładki",
-  "findCoversDescription": "Wyszukaj okładki i brakujące lata w MusicBrainz.",
+  "findCoversDescription": "Wyszukaj okładki, brakujące lata i linki do Spotify.",
   "findCoversIntro": "Wyszukuje w MusicBrainz każdy album bez okładki — wysyłane są tylko artysta i tytuł. Pewne trafienie (ten sam artysta, tytuł i rok) uzupełnia się samo; gdy nie jest pewne, album czeka niżej, aż wybierzesz. Około jednego albumu na sekundę.",
   "openAction": "Otwórz",
   "albumsWithoutCover": "Albumy do wyszukania: {count}",
@@ -112,5 +112,13 @@
   "candidates": "Wyniki",
   "noneOfThese": "Żadna z tych",
   "findCover": "Znajdź okładkę",
-  "searchOnSpotify": "Szukaj w Spotify"
+  "searchOnSpotify": "Szukaj w Spotify",
+  "findCoversIntroSpotify": "Wyszukuje w Spotify każdy album bez okładki lub linku do Spotify — wysyłane są tylko artysta i tytuł. Pewne trafienie (ten sam artysta, tytuł i rok) uzupełnia się samo; gdy nie jest pewne, album czeka niżej, aż wybierzesz.",
+  "spotifyConnected": "Połączono ze Spotify",
+  "spotifyNotConnected": "Spotify nie jest połączone",
+  "spotifyConnectHint": "Po połączeniu ze Spotify aplikacja znajdzie dokładne linki do albumów i lepsze okładki, dużo szybciej. Spotify widzi tylko wyszukiwania; logowanie zostaje na tym urządzeniu. Bez tego okładki i lata znajdzie MusicBrainz.",
+  "spotifyConnectedHint": "Wyszukiwanie korzysta ze Spotify. Logowanie jest zapisane tylko na tym urządzeniu.",
+  "spotifyConnect": "Połącz ze Spotify",
+  "spotifyDisconnect": "Rozłącz",
+  "spotifyConnectFailed": "Nie udało się połączyć ze Spotify. Spróbuj ponownie."
 }

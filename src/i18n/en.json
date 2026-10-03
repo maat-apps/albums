@@ -95,7 +95,7 @@
   "importDone": "Albums imported.",
   "coversNotice": "Covers are downloaded once from their URLs and kept on this device (encrypted with the lock), so they show offline. They aren't part of backups.",
   "findCovers": "Find covers",
-  "findCoversDescription": "Look up covers and missing years on MusicBrainz.",
+  "findCoversDescription": "Look up covers, missing years and Spotify links.",
   "findCoversIntro": "Searches MusicBrainz for every album without a cover — only its artist and title are sent. A sure match (same artist, title and year) is filled in for you; when it's not sure, the album waits below for you to pick. About one album a second.",
   "openAction": "Open",
   "albumsWithoutCover": "Albums left to search: {count}",
@@ -112,5 +112,13 @@
   "candidates": "Matches",
   "noneOfThese": "None of these",
   "findCover": "Find a cover",
-  "searchOnSpotify": "Search on Spotify"
+  "searchOnSpotify": "Search on Spotify",
+  "findCoversIntroSpotify": "Searches Spotify for every album missing a cover or a Spotify link — only its artist and title are sent. A sure match (same artist, title and year) is filled in for you; when it's not sure, the album waits below for you to pick.",
+  "spotifyConnected": "Connected to Spotify",
+  "spotifyNotConnected": "Spotify not connected",
+  "spotifyConnectHint": "Connecting Spotify finds exact album links and better covers, much faster. Spotify sees only the searches; the sign-in stays on this device. Without it, MusicBrainz finds covers and years.",
+  "spotifyConnectedHint": "Searches use Spotify. The sign-in is kept on this device only.",
+  "spotifyConnect": "Connect Spotify",
+  "spotifyDisconnect": "Disconnect",
+  "spotifyConnectFailed": "Couldn't connect to Spotify. Try again."
 }

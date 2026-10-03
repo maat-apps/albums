@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 
 import { expect, test } from "@playwright/test";
 
-import { goHome, importCsv, openSettings } from "./utils";
+import { closeSettings, goHome, importCsv, openSettings } from "./utils";
 
 test("switching to Polish translates the app", async ({ page }) => {
   await goHome(page);
@@ -12,7 +12,7 @@ test("switching to Polish translates the app", async ({ page }) => {
   await page.getByRole("option", { name: "Polski" }).click();
 
   await expect(page.getByRole("heading", { name: "Ustawienia" })).toBeVisible();
-  await page.keyboard.press("Escape");
+  await closeSettings(page);
   await expect(
     page.getByRole("heading", { name: "Albumy", exact: true }),
   ).toBeVisible();
@@ -54,7 +54,11 @@ test("a backup exports and imports by merging", async ({ page }) => {
     ),
   });
   await page.getByRole("button", { name: "Import", exact: true }).click();
-  await page.keyboard.press("Escape");
+  // Let the confirmation close first, or Escape lands on it, not Settings.
+  await expect(
+    page.getByRole("dialog", { name: "Add albums from the backup?" }),
+  ).toHaveCount(0);
+  await closeSettings(page);
 
   await expect(page.getByRole("button", { name: /Zeta/ })).toBeVisible();
 
@@ -66,7 +70,11 @@ test("a backup exports and imports by merging", async ({ page }) => {
     buffer: backup,
   });
   await page.getByRole("button", { name: "Import", exact: true }).click();
-  await page.keyboard.press("Escape");
+  // Let the confirmation close first, or Escape lands on it, not Settings.
+  await expect(
+    page.getByRole("dialog", { name: "Add albums from the backup?" }),
+  ).toHaveCount(0);
+  await closeSettings(page);
 
   await expect(page.getByRole("button", { name: /Alpha/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Zeta/ })).toBeVisible();

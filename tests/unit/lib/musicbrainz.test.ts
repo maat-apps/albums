@@ -4,6 +4,7 @@ import {
   coverArtUrl,
   parseReleaseGroups,
   RateLimitedError,
+  searchMusicBrainz,
   searchReleaseGroups,
   searchUrl,
 } from "@/lib/musicbrainz";
@@ -107,5 +108,29 @@ describe("searchReleaseGroups", () => {
   it("rejects on any other failed response", async () => {
     respond(500);
     await expect(searchReleaseGroups(album)).rejects.toThrow("HTTP 500");
+  });
+
+  it("returns matches with the archive's cover", async () => {
+    respond(200, { "release-groups": [GROUP] });
+
+    expect(await searchMusicBrainz(album)).toEqual([
+      {
+        id: "rg1",
+        title: "Made-up Title",
+        artist: "Zeta & Band",
+        year: 1999,
+        type: "album",
+        coverUrl: "https://coverartarchive.org/release-group/rg1/front-250",
+        spotifyUrl: null,
+      },
+    ]);
+  });
+
+  it("leaves an unknown type empty in a match", async () => {
+    respond(200, {
+      "release-groups": [{ ...GROUP, "primary-type": undefined }],
+    });
+    const [match] = await searchMusicBrainz(album);
+    expect(match.type).toBeNull();
   });
 });

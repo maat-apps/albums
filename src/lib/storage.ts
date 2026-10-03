@@ -107,7 +107,7 @@ function writeAlbums(next: Album[]): void {
   emitChange();
 }
 
-/** Replaces every album — backup import and the app lock's rewrite/erase. */
+/** Replaces every album — the update snapshot restore and the app lock's rewrite/erase. */
 export function replaceAllAlbums(next: Album[]): void {
   writeAlbums(next);
 }

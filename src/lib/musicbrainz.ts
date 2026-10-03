@@ -1,6 +1,7 @@
 import { parseEach } from "@maat-apps/core/validation";
 import * as v from "valibot";
 
+import type { AlbumMatch } from "./cover-lookup";
 import type { Album } from "./schemas";
 
 // MusicBrainz's release-group search and the Cover Art Archive (both free,
@@ -19,11 +20,15 @@ export type ReleaseGroup = {
   primaryType: string | null;
 };
 
-/** MusicBrainz asked us to slow down (HTTP 503/429). */
+/** A service asked us to slow down (HTTP 503/429). */
 export class RateLimitedError extends Error {
-  constructor() {
-    super("MusicBrainz rate limit");
+  /** How long the service asked to wait, when it said (ms). */
+  readonly retryAfter: number | null;
+
+  constructor(retryAfter: number | null = null) {
+    super("Rate limited");
     this.name = "RateLimitedError";
+    this.retryAfter = retryAfter;
   }
 }
 
@@ -90,4 +95,25 @@ export async function searchReleaseGroups(
   }
   if (!response.ok) throw new Error(`MusicBrainz: HTTP ${response.status}`);
   return parseReleaseGroups(await response.json());
+}
+
+/** A release group as a lookup match, its cover from the archive. */
+export function toMatch(group: ReleaseGroup): AlbumMatch {
+  return {
+    id: group.id,
+    title: group.title,
+    artist: group.artist,
+    year: group.year,
+    type: group.primaryType?.toLowerCase() ?? null,
+    coverUrl: coverArtUrl(group.id),
+    spotifyUrl: null,
+  };
+}
+
+/** MusicBrainz's matches for the album. */
+export async function searchMusicBrainz(
+  album: Pick<Album, "artist" | "title">,
+  signal?: AbortSignal,
+): Promise<AlbumMatch[]> {
+  return (await searchReleaseGroups(album, signal)).map(toMatch);
 }
