@@ -24,13 +24,13 @@ function releaseGroup(id: string, title: string, artist: string, date: string) {
 }
 
 // Made-up answers for SAMPLE_CSV's made-up albums: a sure match for
-// "Alpha", only a different year for "Middle", nothing for the third.
+// "Alpha", only another artist for "Middle", nothing for the third.
 function musicBrainz(route: Route) {
   const query = new URL(route.request().url()).searchParams.get("query") ?? "";
   const groups = query.includes("Alpha")
     ? [releaseGroup("rg-alpha", "Alpha", "Zeta Band", "1999-01-01")]
     : query.includes("Middle")
-      ? [releaseGroup("rg-middle", "Middle", "Another Artist", "1990-01-01")]
+      ? [releaseGroup("rg-middle", "Middle", "Someone Else", "1990-01-01")]
       : [];
   return route.fulfill({ json: { "release-groups": groups }, headers: CORS });
 }
