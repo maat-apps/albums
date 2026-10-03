@@ -42,7 +42,7 @@ test("a backup exports and imports by merging", async ({ page }) => {
             {
               id: "imported-1",
               artist: "Imported Artist",
-              title: "Zeta",
+              title: "Quokka",
               year: 2001,
               status: "toListen",
               createdAt: "2026-10-02T00:00:00.000Z",
@@ -53,14 +53,17 @@ test("a backup exports and imports by merging", async ({ page }) => {
       }),
     ),
   });
-  await page.getByRole("button", { name: "Import", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "Add albums from the backup?" })
+    .getByRole("button", { name: "Import" })
+    .click();
   // Let the confirmation close first, or Escape lands on it, not Settings.
   await expect(
     page.getByRole("dialog", { name: "Add albums from the backup?" }),
   ).toHaveCount(0);
   await closeSettings(page);
 
-  await expect(page.getByRole("button", { name: /Zeta/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Quokka/ })).toBeVisible();
 
   // Importing the exported file again changes nothing: both are still there.
   await openSettings(page);
@@ -69,7 +72,10 @@ test("a backup exports and imports by merging", async ({ page }) => {
     mimeType: "text/plain",
     buffer: backup,
   });
-  await page.getByRole("button", { name: "Import", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "Add albums from the backup?" })
+    .getByRole("button", { name: "Import" })
+    .click();
   // Let the confirmation close first, or Escape lands on it, not Settings.
   await expect(
     page.getByRole("dialog", { name: "Add albums from the backup?" }),
@@ -77,5 +83,5 @@ test("a backup exports and imports by merging", async ({ page }) => {
   await closeSettings(page);
 
   await expect(page.getByRole("button", { name: /Alpha/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Zeta/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Quokka/ })).toBeVisible();
 });
