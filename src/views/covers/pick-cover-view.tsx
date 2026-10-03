@@ -13,6 +13,7 @@ import {
   applyMatch,
   withVerdict,
   type AlbumMatch,
+  type LookupSource,
 } from "../../lib/cover-lookup";
 import { SEARCHES } from "../../lib/cover-lookup-runner";
 import { saveAlbum } from "../../lib/storage";
@@ -44,7 +45,7 @@ function CandidateCover({ url }: { url: string | null }) {
 
 /**
  * "/covers/:id": the matches for one album (Spotify's when connected,
- * MusicBrainz's otherwise); picking one fills in what the album is missing,
+ * MusicBrainz's otherwise, plus iTunes'); picking one fills in what the album is missing,
  * "None of these" stops offering it.
  */
 export function PickCoverView() {
@@ -62,15 +63,24 @@ export function PickCoverView() {
   useEffect(() => {
     if (artist === undefined || title === undefined) return;
     const controller = new AbortController();
+    const sources: LookupSource[] = [source, "itunes"];
     const query = `${source}|${artist}|${title}`;
-    SEARCHES[source]({ artist, title }, controller.signal).then(
-      (matches) => setAnswer({ query, search: { state: "done", matches } }),
-      () => {
-        if (!controller.signal.aborted) {
-          setAnswer({ query, search: { state: "failed" } });
-        }
-      },
-    );
+    // The main source's matches first, then iTunes'; one failing is fine.
+    Promise.allSettled(
+      sources.map((item) =>
+        SEARCHES[item]({ artist, title }, controller.signal),
+      ),
+    ).then((results) => {
+      if (controller.signal.aborted) return;
+      const matches = results.flatMap((result) =>
+        result.status === "fulfilled" ? result.value : [],
+      );
+      const failed = results.every((result) => result.status === "rejected");
+      setAnswer({
+        query,
+        search: failed ? { state: "failed" } : { state: "done", matches },
+      });
+    });
     return () => controller.abort();
   }, [artist, title, source]);
 

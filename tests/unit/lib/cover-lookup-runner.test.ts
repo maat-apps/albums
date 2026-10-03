@@ -54,13 +54,13 @@ describe("lookUpCovers", () => {
       item.id === "sure"
         ? [group("sure")]
         : item.id === "unsure"
-          ? [group("unsure", 2005)]
+          ? [{ ...group("unsure"), artist: "Someone Else" }]
           : [],
     );
     const onProgress = vi.fn();
 
     const progress = await runner.lookUpCovers({
-      source: "musicbrainz",
+      sources: ["musicbrainz"],
       signal: new AbortController().signal,
       onProgress,
       search,
@@ -82,6 +82,39 @@ describe("lookUpCovers", () => {
     expect(byId(albums, "missing")?.lookup).toBe("none");
   });
 
+  it("tries the next source for what the first didn't match", async () => {
+    const { storage, runner } = await fresh([
+      album("first"),
+      album("second"),
+      album("neither"),
+    ]);
+    const search = vi.fn(async (item: Album) => {
+      // Called once per source, in order, for albums not yet matched.
+      const calls = search.mock.calls.filter(([a]) => a.id === item.id).length;
+      return item.id === "first" || (item.id === "second" && calls === 2)
+        ? [group(item.id)]
+        : [];
+    });
+
+    const progress = await runner.lookUpCovers({
+      sources: ["musicbrainz", "itunes"],
+      signal: new AbortController().signal,
+      onProgress: () => {},
+      search,
+      pause: 0,
+    });
+
+    expect(progress).toMatchObject({ matched: 2, notFound: 1 });
+    expect(search).toHaveBeenCalledTimes(5);
+    const albums = storage.getAlbumsSnapshot();
+    expect(byId(albums, "second")?.coverUrl).toContain("rg-second");
+    expect(byId(albums, "second")?.lookup).toBeUndefined();
+    expect(byId(albums, "neither")).toMatchObject({
+      lookup: "none",
+      itunesLookup: "none",
+    });
+  });
+
   it("skips an album deleted or given a cover mid-run", async () => {
     const { storage, runner } = await fresh([album("a"), album("b")]);
     const search = vi.fn(async (item: Album) => {
@@ -90,7 +123,7 @@ describe("lookUpCovers", () => {
     });
 
     const progress = await runner.lookUpCovers({
-      source: "musicbrainz",
+      sources: ["musicbrainz"],
       signal: new AbortController().signal,
       onProgress: () => {},
       search,
@@ -110,7 +143,7 @@ describe("lookUpCovers", () => {
     });
 
     const progress = await runner.lookUpCovers({
-      source: "musicbrainz",
+      sources: ["musicbrainz"],
       signal: controller.signal,
       onProgress: () => {},
       search,
@@ -130,7 +163,7 @@ describe("lookUpCovers", () => {
     });
 
     const progress = await runner.lookUpCovers({
-      source: "musicbrainz",
+      sources: ["musicbrainz"],
       signal: controller.signal,
       onProgress: () => {},
       search,
@@ -150,7 +183,7 @@ describe("lookUpCovers", () => {
 
     await expect(
       runner.lookUpCovers({
-        source: "musicbrainz",
+        sources: ["musicbrainz"],
         signal: controller.signal,
         onProgress: () => {},
         search,
@@ -166,7 +199,7 @@ describe("lookUpCovers", () => {
       .mockResolvedValueOnce([group("a")]);
 
     const progress = await runner.lookUpCovers({
-      source: "musicbrainz",
+      sources: ["musicbrainz"],
       signal: new AbortController().signal,
       onProgress: () => {},
       search,
@@ -183,7 +216,7 @@ describe("lookUpCovers", () => {
     const limited = vi.fn().mockRejectedValue(new RateLimitedError());
     await expect(
       runner.lookUpCovers({
-        source: "musicbrainz",
+        sources: ["musicbrainz"],
         signal: new AbortController().signal,
         onProgress: () => {},
         search: limited,
@@ -195,7 +228,7 @@ describe("lookUpCovers", () => {
     const offline = vi.fn().mockRejectedValue(new TypeError("offline"));
     await expect(
       runner.lookUpCovers({
-        source: "musicbrainz",
+        sources: ["musicbrainz"],
         signal: new AbortController().signal,
         onProgress: () => {},
         search: offline,
@@ -213,7 +246,7 @@ describe("lookUpCovers", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const progress = await runner.lookUpCovers({
-      source: "musicbrainz",
+      sources: ["musicbrainz"],
       signal: new AbortController().signal,
       onProgress: () => {},
       pause: 0,
@@ -235,7 +268,7 @@ describe("lookUpCovers", () => {
     const search = vi.fn().mockResolvedValue([]);
 
     const progress = await runner.lookUpCovers({
-      source: "spotify",
+      sources: ["spotify"],
       signal: new AbortController().signal,
       onProgress: () => {},
       search,
@@ -257,7 +290,7 @@ describe("lookUpCovers", () => {
     const started = Date.now();
 
     const progress = await runner.lookUpCovers({
-      source: "spotify",
+      sources: ["spotify"],
       signal: new AbortController().signal,
       onProgress: () => {},
       search,

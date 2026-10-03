@@ -10,7 +10,7 @@ export type LookupPhase = "idle" | "running" | "done" | "stopped" | "failed";
  * open: leaving it stops the run, and starting again carries on with the
  * albums still left.
  */
-export function useCoverLookup(source: LookupSource) {
+export function useCoverLookup(sources: LookupSource[]) {
   const [phase, setPhase] = useState<LookupPhase>("idle");
   const [progress, setProgress] = useState<LookupProgress | null>(null);
   const controller = useRef<AbortController | null>(null);
@@ -22,7 +22,7 @@ export function useCoverLookup(source: LookupSource) {
     controller.current = current;
     setPhase("running");
     lookUpCovers({
-      source,
+      sources,
       signal: current.signal,
       onProgress: setProgress,
     }).then(

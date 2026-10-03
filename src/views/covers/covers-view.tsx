@@ -9,7 +9,12 @@ import { useAlbums } from "../../hooks/use-albums";
 import { useCoverLookup } from "../../hooks/use-cover-lookup";
 import { useSpotifyConnected } from "../../hooks/use-spotify";
 import { useTranslation } from "../../i18n/use-translation";
-import { awaitsReview, needsLookup, notFound } from "../../lib/cover-lookup";
+import {
+  awaitsReview,
+  needsLookup,
+  notFound,
+  type LookupSource,
+} from "../../lib/cover-lookup";
 import type { Album } from "../../lib/schemas";
 import { beginConnect, disconnect } from "../../lib/spotify-session";
 
@@ -84,8 +89,8 @@ function SpotifyConnection({ connected }: { connected: boolean }) {
 
 /**
  * "/covers": looks covers, years and Spotify links up — on Spotify when
- * it's connected, on MusicBrainz otherwise — for every album missing them,
- * then lists what needs a decision.
+ * it's connected, on MusicBrainz otherwise, then on iTunes — for every album
+ * missing them, then lists what needs a decision.
  */
 export function CoversView() {
   const { t } = useTranslation();
@@ -94,8 +99,11 @@ export function CoversView() {
   const albums = useAlbums();
   const connected = useSpotifyConnected();
   const source = connected ? "spotify" : "musicbrainz";
-  const { phase, progress, start, stop } = useCoverLookup(source);
-  const remaining = albums.filter((album) => needsLookup(album, source)).length;
+  const sources: LookupSource[] = [source, "itunes"];
+  const { phase, progress, start, stop } = useCoverLookup(sources);
+  const remaining = albums.filter((album) =>
+    sources.some((item) => needsLookup(album, item)),
+  ).length;
   const toReview = albums.filter((album) => awaitsReview(album, source));
   const missing = albums.filter((album) => notFound(album, source));
 

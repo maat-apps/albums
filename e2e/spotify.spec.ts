@@ -70,6 +70,9 @@ test("connects Spotify and fills covers and exact links from it", async ({
   await page.route("https://accounts.spotify.com/authorize**", authorize);
   await page.route("https://accounts.spotify.com/api/token", token);
   await page.route("https://api.spotify.com/v1/search**", search);
+  await page.route("https://itunes.apple.com/search**", (route) =>
+    route.fulfill({ json: { results: [] }, headers: CORS }),
+  );
   await page.route("https://i.scdn.co/**", (route) =>
     route.fulfill({ body: PNG, contentType: "image/png", headers: CORS }),
   );
@@ -84,7 +87,7 @@ test("connects Spotify and fills covers and exact links from it", async ({
   await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(
     page.getByText("Found: 1 · To review: 0 · Not found: 2"),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 30_000 });
 
   await page.goto("");
   await page.getByRole("button", { name: /Alpha/ }).click();

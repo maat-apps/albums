@@ -5,7 +5,7 @@ import type { Album } from "./schemas";
 // runner (cover-lookup-runner.ts) and the pick view share one definition of
 // "a sure match".
 
-export type LookupSource = "musicbrainz" | "spotify";
+export type LookupSource = "musicbrainz" | "spotify" | "itunes";
 
 /** One search result, whichever service it came from. */
 export type AlbumMatch = {
@@ -19,21 +19,67 @@ export type AlbumMatch = {
   spotifyUrl: string | null;
 };
 
+// Words that only mark a reissue ("Deluxe Edition", "2009 Remaster"): left
+// off the end of a title when comparing, so the original matches them all.
+const EDITION_WORDS = new Set([
+  "remaster",
+  "remastered",
+  "deluxe",
+  "expanded",
+  "edition",
+  "version",
+  "anniversary",
+  "reissue",
+  "bonus",
+  "track",
+  "tracks",
+  "special",
+  "limited",
+  "collectors",
+  "collector",
+  "super",
+  "legacy",
+  "mono",
+  "stereo",
+]);
+
+const EDITION_PATTERN =
+  /remaster|deluxe|expanded|edition|version|anniversary|reissue|bonus/i;
+
+const isCount = (word: string) => /^\d+(st|nd|rd|th)?$/.test(word);
+
+function withoutEditionWords(text: string): string {
+  const words = text.split(" ");
+  let end = words.length;
+  let stripped = false;
+  while (end > 1) {
+    const word = words[end - 1];
+    if (EDITION_WORDS.has(word) || (stripped && isCount(word))) {
+      stripped ||= EDITION_WORDS.has(word);
+      end--;
+    } else {
+      break;
+    }
+  }
+  return words.slice(0, end).join(" ");
+}
+
 /**
- * Comparable text: lower case, no diacritics, punctuation or bracketed
- * suffixes ("(Remastered)", "[Deluxe]"), "&" read as "and", no leading
+ * Comparable text: lower case, no diacritics, punctuation, bracketed
+ * suffixes ("(Remastered)", "[Deluxe]") or trailing edition words
+ * ("Deluxe Edition", "- 2009 Remaster"), "&" read as "and", no leading
  * "the".
  */
 export function normalize(text: string): string {
-  return text
+  const plain = text
     .normalize("NFKD")
     .replace(/\p{Diacritic}/gu, "")
     .toLowerCase()
     .replace(/[([].*?[)\]]/g, " ")
     .replace(/&/g, " and ")
     .replace(/[^\p{L}\p{N}]+/gu, " ")
-    .trim()
-    .replace(/^the /, "");
+    .trim();
+  return withoutEditionWords(plain).replace(/^the /, "");
 }
 
 export type LookupOutcome =
@@ -42,21 +88,34 @@ export type LookupOutcome =
 function sameAlbum(album: Album, match: AlbumMatch): boolean {
   return (
     normalize(match.title) === normalize(album.title) &&
-    normalize(match.artist) === normalize(album.artist) &&
-    (album.year === null || match.year === album.year)
+    normalize(match.artist) === normalize(album.artist)
+  );
+}
+
+// Between releases of the same album: the album's own year, then the plain
+// release over a deluxe or remaster, then an album over a single or EP.
+function rank(album: Album, match: AlbumMatch): number {
+  const sameYear = album.year === null || match.year === album.year;
+  return (
+    (sameYear ? 4 : 0) +
+    (EDITION_PATTERN.test(match.title) ? 0 : 2) +
+    (match.type === "album" ? 1 : 0)
   );
 }
 
 /**
- * A sure match is one with the album's artist and title (and year, when the
- * album has one) — preferring an album over a single or EP of the same
- * name. Anything else found waits for review.
+ * The first found release with the album's artist and title — editions
+ * ignored — that ranks best (see `rank`); a different year doesn't stop it.
+ * Results with another artist or title wait for review.
  */
 export function pickMatch(album: Album, matches: AlbumMatch[]): LookupOutcome {
   if (matches.length === 0) return { kind: "none" };
-  const same = matches.filter((match) => sameAlbum(album, match));
-  const match = same.find((item) => item.type === "album") ?? same.at(0);
-  return match ? { kind: "match", match } : { kind: "review" };
+  let best: AlbumMatch | undefined;
+  for (const match of matches) {
+    if (!sameAlbum(album, match)) continue;
+    if (!best || rank(album, match) > rank(album, best)) best = match;
+  }
+  return best ? { kind: "match", match: best } : { kind: "review" };
 }
 
 /**
@@ -71,6 +130,7 @@ export function applyMatch(album: Album, match: AlbumMatch): Album {
     year: album.year ?? match.year,
     lookup: undefined,
     spotifyLookup: undefined,
+    itunesLookup: undefined,
   };
 }
 
@@ -81,8 +141,14 @@ function isMissing(album: Album, source: LookupSource): boolean {
     : !album.coverUrl;
 }
 
+const VERDICT_FIELDS = {
+  musicbrainz: "lookup",
+  spotify: "spotifyLookup",
+  itunes: "itunesLookup",
+} as const;
+
 function verdict(album: Album, source: LookupSource) {
-  return source === "spotify" ? album.spotifyLookup : album.lookup;
+  return album[VERDICT_FIELDS[source]];
 }
 
 /** The album with `source`'s lookup verdict recorded. */
@@ -91,9 +157,7 @@ export function withVerdict(
   source: LookupSource,
   result: NonNullable<Album["lookup"]>,
 ): Album {
-  return source === "spotify"
-    ? { ...album, spotifyLookup: result }
-    : { ...album, lookup: result };
+  return { ...album, [VERDICT_FIELDS[source]]: result };
 }
 
 /** Albums a bulk lookup from `source` still has to try. */

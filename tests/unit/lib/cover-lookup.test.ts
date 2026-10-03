@@ -45,6 +45,17 @@ describe("normalize", () => {
     );
     expect(normalize("  Kid-A! ")).toBe("kid a");
   });
+
+  it("drops trailing edition words, with their year", () => {
+    expect(normalize("Abbey Road - 2019 Remaster")).toBe("abbey road");
+    expect(normalize("Nevermind: Deluxe Edition")).toBe("nevermind");
+    expect(normalize("Rumours (Super Deluxe)")).toBe("rumours");
+  });
+
+  it("keeps a title that is only a number or edition word", () => {
+    expect(normalize("1989")).toBe("1989");
+    expect(normalize("Deluxe")).toBe("deluxe");
+  });
 });
 
 describe("pickMatch", () => {
@@ -69,11 +80,44 @@ describe("pickMatch", () => {
     expect(pickMatch(album(), [single])).toMatchObject({ match: { id: "s" } });
   });
 
-  it("sends a different year, or no exact title, to review", () => {
-    expect(pickMatch(album(), [match({ year: 2005 })])).toEqual({
+  it("matches a different year too", () => {
+    expect(pickMatch(album(), [match({ year: 2005 })])).toMatchObject({
+      kind: "match",
+    });
+  });
+
+  it("matches an edition of the album", () => {
+    expect(
+      pickMatch(album(), [match({ title: "Made-up Title - Deluxe Edition" })]),
+    ).toMatchObject({ kind: "match" });
+  });
+
+  it("prefers the album's year, then a plain release, over the first found", () => {
+    const deluxe = match({ id: "d", title: "Made-up Title (Deluxe)" });
+    const plain = match({ id: "p" });
+    const reissue = match({ id: "r", year: 2015 });
+    expect(pickMatch(album(), [deluxe, plain])).toMatchObject({
+      match: { id: "p" },
+    });
+    expect(pickMatch(album(), [reissue, deluxe])).toMatchObject({
+      match: { id: "d" },
+    });
+    expect(pickMatch(album(), [reissue, plain])).toMatchObject({
+      match: { id: "p" },
+    });
+  });
+
+  it("takes the first of equally good matches", () => {
+    expect(
+      pickMatch(album(), [match({ id: "x" }), match({ id: "y" })]),
+    ).toMatchObject({ match: { id: "x" } });
+  });
+
+  it("sends results of another title or artist to review", () => {
+    expect(pickMatch(album(), [match({ title: "Other" })])).toEqual({
       kind: "review",
     });
-    expect(pickMatch(album(), [match({ title: "Other" })])).toEqual({
+    expect(pickMatch(album(), [match({ artist: "Other" })])).toEqual({
       kind: "review",
     });
   });
@@ -88,7 +132,12 @@ describe("pickMatch", () => {
 describe("applyMatch", () => {
   it("fills a missing cover, link and year, and clears the verdicts", () => {
     const applied = applyMatch(
-      album({ year: null, lookup: "review", spotifyLookup: "none" }),
+      album({
+        year: null,
+        lookup: "review",
+        spotifyLookup: "none",
+        itunesLookup: "none",
+      }),
       match({ spotifyUrl: LINK }),
     );
     expect(applied).toMatchObject({
@@ -97,6 +146,7 @@ describe("applyMatch", () => {
       year: 1999,
       lookup: undefined,
       spotifyLookup: undefined,
+      itunesLookup: undefined,
     });
   });
 
@@ -153,6 +203,15 @@ describe("lookup predicates", () => {
     expect(withVerdict(album(), "spotify", "skipped").spotifyLookup).toBe(
       "skipped",
     );
+    expect(withVerdict(album(), "itunes", "none").itunesLookup).toBe("none");
+  });
+});
+
+describe("iTunes lookup predicates", () => {
+  it("need a cover, and ignore other sources' verdicts", () => {
+    expect(needsLookup(album({ lookup: "none" }), "itunes")).toBe(true);
+    expect(needsLookup(album({ itunesLookup: "none" }), "itunes")).toBe(false);
+    expect(needsLookup(album({ coverUrl: COVER }), "itunes")).toBe(false);
   });
 });
 
