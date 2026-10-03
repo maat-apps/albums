@@ -32,7 +32,8 @@ web - PWA, mobile-only (like routines, trainer and notes).
 - **Add / edit / delete** an album; changing its status is one tap from
   the album view.
 - **Settings** (a drawer): language (English/Polish), app lock, backup
-  export/import, install and update.
+  export/import (import merges into the collection on the device; it never
+  replaces or deletes albums), install and update.
 
 ## Importing an existing list (CSV)
 
@@ -61,7 +62,8 @@ the image itself — the user decides by adding a URL.
   rest), so covers keep working offline and survive cache clears and app
   updates. Where a server doesn't allow that, the cover is shown straight
   from its URL instead. Stored covers are a cache: never in a backup, and
-  dropped (to load again) when the lock changes or a backup is restored.
+  dropped (to load again) when the lock changes or the pre-update snapshot
+  is restored.
 - **Finding covers** (Settings → Data → Find covers): every album without
   a cover is searched on MusicBrainz — then on iTunes (Apple's free search,
   no key; about 20 requests a minute) for what MusicBrainz didn't match —

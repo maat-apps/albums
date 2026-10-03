@@ -37,6 +37,21 @@ describe("backup", () => {
     expect(storage.getAlbumsSnapshot()).toHaveLength(1);
   });
 
+  it("merges a backup into the albums already on the device", async () => {
+    const { storage, backup } = await freshBackup();
+    storage.saveAlbum(album);
+    const text = JSON.stringify(backup.createBackup());
+    storage.replaceAllAlbums([]);
+    storage.saveAlbum({ ...album, id: "a2", artist: "Other" });
+
+    backup.mergeBackup(backup.parseBackup(text));
+
+    expect(storage.getAlbumsSnapshot().map((item) => item.id)).toEqual([
+      "a2",
+      "a1",
+    ]);
+  });
+
   it("rejects another app's backup and non-JSON text", async () => {
     const { backup } = await freshBackup();
     const other = JSON.stringify({
