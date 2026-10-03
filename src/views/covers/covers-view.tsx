@@ -61,7 +61,7 @@ function SpotifyConnection({ connected }: { connected: boolean }) {
   const location = useLocation();
   const result = (location.state as { spotify?: string } | null)?.spotify;
   return (
-    <section className="bg-muted/40 grid gap-3 rounded-xl p-4">
+    <section className="bg-muted/40 grid gap-3 rounded-lg p-4">
       <p className="m-0 flex items-center gap-2 font-semibold">
         <SpotifyLogo aria-hidden="true" className="size-5" />
         {t(connected ? "spotifyConnected" : "spotifyNotConnected")}
