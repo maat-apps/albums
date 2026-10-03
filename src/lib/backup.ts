@@ -10,7 +10,11 @@ import { isRecord } from "@maat-apps/core/validation";
 
 import { clearCovers } from "./cover-store";
 import { parseAlbums, type Album } from "./schemas";
-import { getAlbumsSnapshot, replaceAllAlbums } from "./storage";
+import {
+  getAlbumsSnapshot,
+  mergeIntoAlbums,
+  replaceAllAlbums,
+} from "./storage";
 
 // albums' backup format on top of @maat-apps/core/backup, which handles the
 // envelope checks, the backup file and the download.
@@ -57,7 +61,12 @@ export function parseBackupValue(parsed: unknown): Backup {
   };
 }
 
-/** Overwrites every album with the backup's. */
+/** Import from Settings: keeps the albums on the device and adds the backup's. */
+export function mergeBackup(backup: Backup): void {
+  mergeIntoAlbums(backup.data.albums);
+}
+
+/** Overwrites every album with the backup's (restoring the update snapshot). */
 export function applyBackup(backup: Backup): void {
   replaceAllAlbums(backup.data.albums);
   // Covers of albums the backup doesn't have would otherwise linger.

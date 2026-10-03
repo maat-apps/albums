@@ -18,7 +18,7 @@ test("switching to Polish translates the app", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("a backup exports and imports back", async ({ page }) => {
+test("a backup exports and imports by merging", async ({ page }) => {
   await goHome(page);
   await importCsv(page);
   await openSettings(page);
@@ -28,33 +28,46 @@ test("a backup exports and imports back", async ({ page }) => {
   const download = await downloadPromise;
   const backup = await readFile(await download.path());
 
-  // Replace the collection with a different one, then restore the backup.
+  // Importing merges: a backup holding another album adds it and keeps Alpha.
   await page.getByLabel("Import albums").setInputFiles({
-    name: "empty.txt",
+    name: "other.txt",
     mimeType: "text/plain",
     buffer: Buffer.from(
       JSON.stringify({
         app: "albums",
         version: 1,
         exportedAt: "2026-10-02T00:00:00.000Z",
-        data: { albums: [] },
+        data: {
+          albums: [
+            {
+              id: "imported-1",
+              artist: "Imported Artist",
+              title: "Zeta",
+              year: 2001,
+              status: "toListen",
+              createdAt: "2026-10-02T00:00:00.000Z",
+              updatedAt: "2026-10-02T00:00:00.000Z",
+            },
+          ],
+        },
       }),
     ),
   });
-  await page.getByRole("button", { name: "Replace" }).click();
+  await page.getByRole("button", { name: "Import", exact: true }).click();
   await page.keyboard.press("Escape");
-  await expect(
-    page.getByRole("heading", { name: "No albums yet" }),
-  ).toBeVisible();
 
+  await expect(page.getByRole("button", { name: /Zeta/ })).toBeVisible();
+
+  // Importing the exported file again changes nothing: both are still there.
   await openSettings(page);
   await page.getByLabel("Import albums").setInputFiles({
     name: download.suggestedFilename(),
     mimeType: "text/plain",
     buffer: backup,
   });
-  await page.getByRole("button", { name: "Replace" }).click();
+  await page.getByRole("button", { name: "Import", exact: true }).click();
   await page.keyboard.press("Escape");
 
   await expect(page.getByRole("button", { name: /Alpha/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Zeta/ })).toBeVisible();
 });

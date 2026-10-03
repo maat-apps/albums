@@ -72,3 +72,27 @@ export function sortAlbums(
     return 0;
   });
 }
+
+/**
+ * `current` plus the `incoming` albums it lacks; an album in both (by id)
+ * keeps the more recently edited version, and ties keep the current one. An
+ * incoming album that is the same album as a current one under another id
+ * (see `albumIdentity`) is skipped. A merge never deletes.
+ */
+export function mergeAlbums(current: Album[], incoming: Album[]): Album[] {
+  const incomingById = new Map(incoming.map((album) => [album.id, album]));
+  const merged = current.map((album) => {
+    const other = incomingById.get(album.id);
+    return other && other.updatedAt > album.updatedAt ? other : album;
+  });
+  const knownIds = new Set(current.map((album) => album.id));
+  const knownIdentities = new Set(current.map(albumIdentity));
+  const added = incoming.filter((album) => {
+    if (knownIds.has(album.id)) return false;
+    const identity = albumIdentity(album);
+    if (knownIdentities.has(identity)) return false;
+    knownIdentities.add(identity);
+    return true;
+  });
+  return [...merged, ...added];
+}

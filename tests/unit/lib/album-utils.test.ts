@@ -4,6 +4,7 @@ import {
   albumIdentity,
   countByStatus,
   filterByStatus,
+  mergeAlbums,
   sortAlbums,
 } from "@/lib/album-utils";
 import type { Album } from "@/lib/schemas";
@@ -120,5 +121,40 @@ describe("sortAlbums", () => {
     const copy = [...albums];
     sortAlbums(albums, "title", "asc");
     expect(albums).toEqual(copy);
+  });
+});
+
+describe("mergeAlbums", () => {
+  const older = album({ id: "a", title: "Older", updatedAt: "2026-10-01" });
+  const newer = album({ id: "a", title: "Older", updatedAt: "2026-10-02" });
+  const other = album({ id: "b", title: "Other" });
+
+  it("adds the incoming albums the current ones lack", () => {
+    expect(mergeAlbums([older], [other])).toEqual([older, other]);
+  });
+
+  it("keeps an album missing from the incoming ones", () => {
+    expect(mergeAlbums([older, other], [])).toEqual([older, other]);
+  });
+
+  it("takes the incoming copy when it is newer", () => {
+    expect(mergeAlbums([older], [newer])).toEqual([newer]);
+  });
+
+  it("keeps the current copy when it is newer or equally old", () => {
+    expect(mergeAlbums([newer], [older])).toEqual([newer]);
+    expect(mergeAlbums([older], [{ ...older, status: "comingBack" }])).toEqual([
+      older,
+    ]);
+  });
+
+  it("skips an incoming album that is already there under another id", () => {
+    const twin = { ...other, id: "c", title: "OTHER" };
+    expect(mergeAlbums([other], [twin])).toEqual([other]);
+  });
+
+  it("adds an album once when the backup holds it twice", () => {
+    const twin = { ...other, id: "c" };
+    expect(mergeAlbums([], [other, twin])).toEqual([other]);
   });
 });
