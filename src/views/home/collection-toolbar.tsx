@@ -76,7 +76,7 @@ export function CollectionToolbar({
           onValueChange={(value) => onChange({ sortKey: value as SortKey })}
         >
           <SelectTrigger
-            className="h-9 w-auto min-w-32 text-sm"
+            className="w-auto min-w-32 text-sm"
             aria-label={t("sortBy")}
           >
             <SelectValue>{(value) => sortLabel[value as SortKey]}</SelectValue>
