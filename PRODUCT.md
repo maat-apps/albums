@@ -13,13 +13,13 @@ web - PWA, mobile-only (like routines, trainer and notes).
 
 ## An album
 
-| Field   | Notes                                                                |
-| ------- | -------------------------------------------------------------------- |
-| Year    | Release year.                                                        |
-| Artist  | Artist or band.                                                      |
-| Title   | Album title.                                                         |
-| Status  | `to listen`, `listened — coming back`, `listened — not coming back`. |
-| Cover   | Optional URL of the cover image from a public source.                |
+| Field  | Notes                                                                |
+| ------ | -------------------------------------------------------------------- |
+| Year   | Release year.                                                        |
+| Artist | Artist or band.                                                      |
+| Title  | Album title.                                                         |
+| Status | `to listen`, `listened — coming back`, `listened — not coming back`. |
+| Cover  | Optional URL of the cover image from a public source.                |
 
 ## Behavior
 
