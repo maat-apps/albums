@@ -13,14 +13,13 @@ web - PWA, mobile-only (like routines, trainer and notes).
 
 ## An album
 
-| Field   | Notes                                                                |
-| ------- | -------------------------------------------------------------------- |
-| Year    | Release year.                                                        |
-| Artist  | Artist or band.                                                      |
-| Title   | Album title.                                                         |
-| Status  | `to listen`, `listened — coming back`, `listened — not coming back`. |
-| Cover   | Optional URL of the cover image from a public source.                |
-| Spotify | Optional URL; the album view opens it in Spotify.                    |
+| Field  | Notes                                                                |
+| ------ | -------------------------------------------------------------------- |
+| Year   | Release year.                                                        |
+| Artist | Artist or band.                                                      |
+| Title  | Album title.                                                         |
+| Status | `to listen`, `listened — coming back`, `listened — not coming back`. |
+| Cover  | Optional URL of the cover image from a public source.                |
 
 ## Behavior
 
@@ -74,10 +73,3 @@ the image itself — the user decides by adding a URL.
   user picks a match or "None of these". About one album
   a second (MusicBrainz's limit); stopping keeps what was found. An album
   without a cover also offers "Find a cover" from its own view.
-- **Spotify** (optional): "Connect Spotify" on the covers screen signs in
-  with Spotify (PKCE — no server, no secret; the sign-in is kept on the
-  device, encrypted with the lock). While connected, finding covers
-  searches Spotify instead: faster, with better covers and the album's
-  exact Spotify link — albums that already have a cover still get their
-  link. Spotify sees only the searches. Without it, an album with no
-  Spotify link of its own opens Spotify's search for its artist and title.

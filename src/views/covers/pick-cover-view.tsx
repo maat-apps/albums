@@ -7,7 +7,6 @@ import { Button } from "@maat-apps/ui/button";
 import { useSmartBack } from "@maat-apps/ui/smart-back";
 import { MissingAlbum } from "../../components/missing-album";
 import { useAlbum, useAlbumsReady } from "../../hooks/use-albums";
-import { useSpotifyConnected } from "../../hooks/use-spotify";
 import { useTranslation } from "../../i18n/use-translation";
 import {
   applyMatch,
@@ -17,6 +16,9 @@ import {
 } from "../../lib/cover-lookup";
 import { SEARCHES } from "../../lib/cover-lookup-runner";
 import { saveAlbum } from "../../lib/storage";
+
+/** Searched in this order; the first one's verdict records a skip. */
+const SOURCES: LookupSource[] = ["musicbrainz", "itunes"];
 
 type Search =
   | { state: "loading" }
@@ -44,9 +46,9 @@ function CandidateCover({ url }: { url: string | null }) {
 }
 
 /**
- * "/covers/:id": the matches for one album (Spotify's when connected,
- * MusicBrainz's otherwise, plus iTunes'); picking one fills in what the album is missing,
- * "None of these" stops offering it.
+ * "/covers/:id": the matches for one album (MusicBrainz's, then iTunes');
+ * picking one fills in what the album is missing, "None of these" stops
+ * offering it.
  */
 export function PickCoverView() {
   const { t } = useTranslation();
@@ -54,7 +56,6 @@ export function PickCoverView() {
   const ready = useAlbumsReady();
   const album = useAlbum(id);
   const back = useSmartBack("/covers");
-  const source = useSpotifyConnected() ? "spotify" : "musicbrainz";
   // Tagged with the query it answers, so a stale answer reads as loading.
   const [answer, setAnswer] = useState<{ query: string; search: Search }>();
   const artist = album?.artist;
@@ -63,11 +64,10 @@ export function PickCoverView() {
   useEffect(() => {
     if (artist === undefined || title === undefined) return;
     const controller = new AbortController();
-    const sources: LookupSource[] = [source, "itunes"];
-    const query = `${source}|${artist}|${title}`;
-    // The main source's matches first, then iTunes'; one failing is fine.
+    const query = `${artist}|${title}`;
+    // MusicBrainz's matches first, then iTunes'; one failing is fine.
     Promise.allSettled(
-      sources.map((item) =>
+      SOURCES.map((item) =>
         SEARCHES[item]({ artist, title }, controller.signal),
       ),
     ).then((results) => {
@@ -82,11 +82,11 @@ export function PickCoverView() {
       });
     });
     return () => controller.abort();
-  }, [artist, title, source]);
+  }, [artist, title]);
 
   if (!album) return ready ? <MissingAlbum /> : null;
   const search: Search =
-    answer?.query === `${source}|${album.artist}|${album.title}`
+    answer?.query === `${album.artist}|${album.title}`
       ? answer.search
       : { state: "loading" };
 
@@ -98,7 +98,7 @@ export function PickCoverView() {
 
   function skip() {
     if (!album) return;
-    saveAlbum(withVerdict(album, source, "skipped"));
+    saveAlbum(withVerdict(album, SOURCES[0], "skipped"));
     startTransition(back);
   }
 

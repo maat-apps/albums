@@ -55,7 +55,6 @@ describe("parseItunesAlbums", () => {
         type: "album",
         coverUrl:
           "https://is1-ssl.mzstatic.com/image/thumb/Music/x/600x600bb.jpg",
-        spotifyUrl: null,
       },
     ]);
   });

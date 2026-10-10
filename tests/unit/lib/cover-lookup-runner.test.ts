@@ -22,7 +22,6 @@ const group = (title: string, year = 1999): AlbumMatch => ({
   year,
   type: "album",
   coverUrl: `https://example.com/rg-${title}.jpg`,
-  spotifyUrl: null,
 });
 
 async function fresh(albums: Album[]) {
@@ -257,30 +256,6 @@ describe("lookUpCovers", () => {
     vi.unstubAllGlobals();
   });
 
-  it("records Spotify verdicts and looks up albums missing a link", async () => {
-    const { storage, runner } = await fresh([
-      album("linked", {
-        coverUrl: "https://example.com/c.jpg",
-        spotifyUrl: "https://open.spotify.com/album/x",
-      }),
-      album("covered", { coverUrl: "https://example.com/c.jpg" }),
-    ]);
-    const search = vi.fn().mockResolvedValue([]);
-
-    const progress = await runner.lookUpCovers({
-      sources: ["spotify"],
-      signal: new AbortController().signal,
-      onProgress: () => {},
-      search,
-      pause: 0,
-    });
-
-    expect(progress).toMatchObject({ total: 1, notFound: 1 });
-    expect(byId(storage.getAlbumsSnapshot(), "covered")?.spotifyLookup).toBe(
-      "none",
-    );
-  });
-
   it("waits as long as the service asks after a rate limit", async () => {
     const { runner, RateLimitedError } = await fresh([album("a")]);
     const search = vi
@@ -290,7 +265,7 @@ describe("lookUpCovers", () => {
     const started = Date.now();
 
     const progress = await runner.lookUpCovers({
-      sources: ["spotify"],
+      sources: ["musicbrainz"],
       signal: new AbortController().signal,
       onProgress: () => {},
       search,

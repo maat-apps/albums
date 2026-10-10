@@ -7,14 +7,12 @@ import {
   normalize,
   notFound,
   pickMatch,
-  spotifySearchUrl,
   withVerdict,
   type AlbumMatch,
 } from "@/lib/cover-lookup";
 import type { Album } from "@/lib/schemas";
 
 const COVER = "https://example.com/c.jpg";
-const LINK = "https://open.spotify.com/album/x";
 
 const album = (overrides: Partial<Album> = {}): Album => ({
   id: "a1",
@@ -34,7 +32,6 @@ const match = (overrides: Partial<AlbumMatch> = {}): AlbumMatch => ({
   year: 1999,
   type: "album",
   coverUrl: COVER,
-  spotifyUrl: null,
   ...overrides,
 });
 
@@ -130,46 +127,28 @@ describe("pickMatch", () => {
 });
 
 describe("applyMatch", () => {
-  it("fills a missing cover, link and year, and clears the verdicts", () => {
+  it("fills a missing cover and year, and clears the verdicts", () => {
     const applied = applyMatch(
-      album({
-        year: null,
-        lookup: "review",
-        spotifyLookup: "none",
-        itunesLookup: "none",
-      }),
-      match({ spotifyUrl: LINK }),
+      album({ year: null, lookup: "review", itunesLookup: "none" }),
+      match(),
     );
     expect(applied).toMatchObject({
       coverUrl: COVER,
-      spotifyUrl: LINK,
       year: 1999,
       lookup: undefined,
-      spotifyLookup: undefined,
       itunesLookup: undefined,
     });
   });
 
   it("keeps what the album already has", () => {
-    const own = album({
-      coverUrl: "https://example.com/own.jpg",
-      spotifyUrl: LINK,
-    });
-    const applied = applyMatch(
-      own,
-      match({ year: 2005, spotifyUrl: "https://open.spotify.com/album/y" }),
-    );
-    expect(applied).toMatchObject({
-      coverUrl: own.coverUrl,
-      spotifyUrl: LINK,
-      year: 1999,
-    });
+    const own = album({ coverUrl: "https://example.com/own.jpg" });
+    const applied = applyMatch(own, match({ year: 2005 }));
+    expect(applied).toMatchObject({ coverUrl: own.coverUrl, year: 1999 });
   });
 
-  it("leaves a cover or link the match doesn't have unset", () => {
+  it("leaves a cover the match doesn't have unset", () => {
     const applied = applyMatch(album(), match({ coverUrl: null }));
     expect(applied.coverUrl).toBeUndefined();
-    expect(applied.spotifyUrl).toBeUndefined();
   });
 });
 
@@ -185,24 +164,8 @@ describe("lookup predicates", () => {
     expect(notFound(album(), "musicbrainz")).toBe(false);
   });
 
-  it("track Spotify verdicts for albums without a cover or a link", () => {
-    expect(needsLookup(album({ coverUrl: COVER }), "spotify")).toBe(true);
-    expect(
-      needsLookup(album({ coverUrl: COVER, spotifyUrl: LINK }), "spotify"),
-    ).toBe(false);
-    // A MusicBrainz verdict doesn't stop a Spotify lookup.
-    expect(needsLookup(album({ lookup: "none" }), "spotify")).toBe(true);
-    expect(awaitsReview(album({ spotifyLookup: "review" }), "spotify")).toBe(
-      true,
-    );
-    expect(notFound(album({ spotifyLookup: "none" }), "spotify")).toBe(true);
-  });
-
   it("record a verdict for its source", () => {
     expect(withVerdict(album(), "musicbrainz", "none").lookup).toBe("none");
-    expect(withVerdict(album(), "spotify", "skipped").spotifyLookup).toBe(
-      "skipped",
-    );
     expect(withVerdict(album(), "itunes", "none").itunesLookup).toBe("none");
   });
 });
@@ -212,13 +175,5 @@ describe("iTunes lookup predicates", () => {
     expect(needsLookup(album({ lookup: "none" }), "itunes")).toBe(true);
     expect(needsLookup(album({ itunesLookup: "none" }), "itunes")).toBe(false);
     expect(needsLookup(album({ coverUrl: COVER }), "itunes")).toBe(false);
-  });
-});
-
-describe("spotifySearchUrl", () => {
-  it("searches Spotify for artist and title", () => {
-    expect(spotifySearchUrl(album({ title: "A/B & C" }))).toBe(
-      "https://open.spotify.com/search/Zeta%20Band%20A%2FB%20%26%20C",
-    );
   });
 });

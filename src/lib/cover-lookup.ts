@@ -1,11 +1,10 @@
 import type { Album } from "./schemas";
 
-// Matching an album to search results — from MusicBrainz, or from Spotify
-// once it's connected — and the Spotify search link. Pure, so the bulk
-// runner (cover-lookup-runner.ts) and the pick view share one definition of
-// "a sure match".
+// Matching an album to search results — from MusicBrainz or iTunes. Pure, so
+// the bulk runner (cover-lookup-runner.ts) and the pick view share one
+// definition of "a sure match".
 
-export type LookupSource = "musicbrainz" | "spotify" | "itunes";
+export type LookupSource = "musicbrainz" | "itunes";
 
 /** One search result, whichever service it came from. */
 export type AlbumMatch = {
@@ -16,7 +15,6 @@ export type AlbumMatch = {
   /** "album", "single", "ep"… (lower case). */
   type: string | null;
   coverUrl: string | null;
-  spotifyUrl: string | null;
 };
 
 // Words that only mark a reissue ("Deluxe Edition", "2009 Remaster"): left
@@ -119,31 +117,21 @@ export function pickMatch(album: Album, matches: AlbumMatch[]): LookupOutcome {
 }
 
 /**
- * The album with what the match adds — a cover, a Spotify link, a year —
- * where it had none; the lookup verdicts are cleared.
+ * The album with what the match adds — a cover, a year — where it had none;
+ * the lookup verdicts are cleared.
  */
 export function applyMatch(album: Album, match: AlbumMatch): Album {
   return {
     ...album,
     coverUrl: album.coverUrl ?? match.coverUrl ?? undefined,
-    spotifyUrl: album.spotifyUrl ?? match.spotifyUrl ?? undefined,
     year: album.year ?? match.year,
     lookup: undefined,
-    spotifyLookup: undefined,
     itunesLookup: undefined,
   };
 }
 
-/** What a lookup from `source` can still add to the album. */
-function isMissing(album: Album, source: LookupSource): boolean {
-  return source === "spotify"
-    ? !album.coverUrl || !album.spotifyUrl
-    : !album.coverUrl;
-}
-
 const VERDICT_FIELDS = {
   musicbrainz: "lookup",
-  spotify: "spotifyLookup",
   itunes: "itunesLookup",
 } as const;
 
@@ -162,25 +150,15 @@ export function withVerdict(
 
 /** Albums a bulk lookup from `source` still has to try. */
 export function needsLookup(album: Album, source: LookupSource): boolean {
-  return isMissing(album, source) && verdict(album, source) === undefined;
+  return !album.coverUrl && verdict(album, source) === undefined;
 }
 
 /** Albums whose lookup found candidates for the user to pick from. */
 export function awaitsReview(album: Album, source: LookupSource): boolean {
-  return isMissing(album, source) && verdict(album, source) === "review";
+  return !album.coverUrl && verdict(album, source) === "review";
 }
 
 /** Albums the lookup found nothing for. */
 export function notFound(album: Album, source: LookupSource): boolean {
-  return isMissing(album, source) && verdict(album, source) === "none";
-}
-
-/**
- * Spotify's search for the album — used when the album has no Spotify link
- * of its own.
- */
-export function spotifySearchUrl(
-  album: Pick<Album, "artist" | "title">,
-): string {
-  return `https://open.spotify.com/search/${encodeURIComponent(`${album.artist} ${album.title}`)}`;
+  return !album.coverUrl && verdict(album, source) === "none";
 }

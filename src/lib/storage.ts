@@ -11,9 +11,9 @@ import {
 } from "./app-settings";
 import { deleteCover } from "./cover-store";
 import { encryptionKey } from "./encryption-key";
-import { kvGet, kvSet } from "./idb-store";
+import { kvDelete, kvGet, kvSet } from "./idb-store";
 import { parseAlbums, type Album, type AlbumStatus } from "./schemas";
-import { DATA_KEY } from "./storage-keys";
+import { DATA_KEY, LEGACY_SPOTIFY_KEY } from "./storage-keys";
 
 // An in-memory copy of the albums is the source of truth once loaded;
 // IndexedDB is the write-through backing store — read once in the background
@@ -54,6 +54,8 @@ async function loadAlbums(): Promise<void> {
     ready = true;
     emitChange();
   }
+  // Spotify was removed from the app: drop the token it left behind.
+  void kvDelete(LEGACY_SPOTIFY_KEY).catch(() => {});
 }
 
 /** Starts the background read on first use; test-only to await directly. */

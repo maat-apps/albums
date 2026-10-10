@@ -14,7 +14,6 @@ test("adding, viewing, changing status, editing and deleting an album", async ({
   await page.getByLabel("Artist").fill("Test Artist");
   await page.getByLabel("Title").fill("Test Album");
   await page.getByLabel("Year").fill("1999");
-  await page.getByLabel("Spotify URL").fill("https://open.spotify.com/album/x");
   await page.getByRole("button", { name: "Save" }).click();
 
   // Saving lands on the album.
@@ -22,9 +21,6 @@ test("adding, viewing, changing status, editing and deleting an album", async ({
     page.getByRole("heading", { name: "Test Album" }).first(),
   ).toBeVisible();
   await expect(page.getByText("Test Artist · 1999")).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: "Open in Spotify" }),
-  ).toHaveAttribute("href", "https://open.spotify.com/album/x");
 
   await page.getByRole("button", { name: "Coming back", exact: true }).click();
   await expect(

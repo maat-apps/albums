@@ -76,9 +76,6 @@ test("finds covers for imported albums and lets the user pick the unsure ones", 
     page.getByRole("heading", { name: "Middle", level: 2 }),
   ).toBeVisible();
   await expect(page.locator("img")).toHaveAttribute("src", /^blob:/);
-  await expect(
-    page.getByRole("link", { name: "Search on Spotify" }),
-  ).toHaveAttribute("href", /^https:\/\/open\.spotify\.com\/search\//);
 });
 
 test("an album without a cover offers to find one", async ({ page }) => {
