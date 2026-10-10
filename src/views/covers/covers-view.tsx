@@ -83,9 +83,7 @@ export function CoversView() {
         backLabel={t("back")}
         onBack={() => startTransition(back)}
       />
-      <p className="text-muted-foreground m-0">
-        {t("findCoversIntro")}
-      </p>
+      <p className="text-muted-foreground m-0">{t("findCoversIntro")}</p>
       <div className="grid gap-3">
         <p className="m-0" aria-live="polite">
           {phase === "running" && progress
