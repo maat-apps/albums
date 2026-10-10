@@ -54,9 +54,8 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   status filter chips with counts, sort key + direction, grid/list, all
   remembered in `app-settings.ts`'s `collection` prefs; settings drawer),
   `/new` and `/:id/edit` (`views/album/album-form-view.tsx`, validated by
-  `lib/album-form.ts`), `/:id` (`album-view.tsx`: cover, one-tap status,
-  Spotify link). Covers render through `components/album-cover.tsx`
-  (placeholder on a missing or broken URL) via `hooks/use-cover-src.ts`:
+  `lib/album-form.ts`), `/:id` (`album-view.tsx`: cover, one-tap status).
+  Covers render through `components/album-cover.tsx` (placeholder on a missing or broken URL) via `hooks/use-cover-src.ts`:
   once in view, `lib/cover-store.ts` serves the IndexedDB copy or fetches
   (CORS) and stores it — per album id, encrypted with the lock's key,
   tracked in an index key since the store can't list keys; on failure the
@@ -68,17 +67,9 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   `lib/itunes.ts` (iTunes Search, the fallback source; `itunesLookup`
   verdict), `lib/cover-lookup-runner.ts` (bulk run, tries `sources` in
   order per album — ~1 req/s on MusicBrainz, ~20/min on iTunes — saves each
-  album as it goes) and `views/covers/` (`/covers`, `/covers/:id`). With Spotify
-  connected the lookup searches Spotify instead (`lib/spotify-api.ts`; its
-  verdict is the album's `spotifyLookup`): `lib/spotify-auth.ts` (PKCE,
-  the public client id, redirect URI = the app's root — registered for
-  `https://maat-apps.github.io/albums/` only, so PR previews can't
-  connect), `lib/spotify-session.ts` (token in IndexedDB, encrypted,
-  refreshed; rewritten/erased by the lock; never in backups) and
-  `SpotifyCallback` in `src/app/router.tsx` (finishes `?code=` and opens
-  `/covers`). E2E mocks MusicBrainz, the archive and Spotify (login
-  redirect, token, search) with `page.route` (service workers blocked). Back uses
-  `useSmartBack`.
+  album as it goes) and `views/covers/` (`/covers`, `/covers/:id`). E2E
+  mocks MusicBrainz, the archive and iTunes with `page.route` (service
+  workers blocked). Back uses `useSmartBack`.
 - **i18n.** `src/i18n/en.json` and `pl.json` (core's `createTranslation`;
   device language on first launch, Settings → Language after). `t()`
   only accepts keys present in both — keep them in sync.

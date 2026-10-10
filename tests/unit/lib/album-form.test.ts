@@ -29,18 +29,11 @@ describe("albumToForm", () => {
       title: "Title",
       status: "comingBack",
       coverUrl: "https://example.com/cover.jpg",
-      spotifyUrl: "",
     });
   });
 
-  it("fills the Spotify URL and leaves a missing cover empty", () => {
-    expect(
-      albumToForm({
-        ...album,
-        coverUrl: undefined,
-        spotifyUrl: "https://open.spotify.com/x",
-      }),
-    ).toMatchObject({ coverUrl: "", spotifyUrl: "https://open.spotify.com/x" });
+  it("leaves a missing cover empty", () => {
+    expect(albumToForm({ ...album, coverUrl: undefined }).coverUrl).toBe("");
   });
 
   it("leaves an unknown year empty", () => {
@@ -73,16 +66,15 @@ describe("validateAlbumForm", () => {
     ).toEqual({ year: "year" });
   });
 
-  it("rejects URLs that aren't https", () => {
+  it("rejects a cover URL that isn't https", () => {
     expect(
       validateAlbumForm({
         ...EMPTY_ALBUM_FORM,
         artist: "A",
         title: "T",
         coverUrl: "http://example.com/a.jpg",
-        spotifyUrl: "spotify",
       }),
-    ).toEqual({ coverUrl: "url", spotifyUrl: "url" });
+    ).toEqual({ coverUrl: "url" });
   });
 });
 
@@ -94,7 +86,6 @@ describe("formToAlbum", () => {
         year: " 1999 ",
         artist: " A ",
         title: " T ",
-        spotifyUrl: " https://open.spotify.com/album/x ",
       },
       null,
       NOW,
@@ -104,11 +95,20 @@ describe("formToAlbum", () => {
       artist: "A",
       title: "T",
       status: "toListen",
-      spotifyUrl: "https://open.spotify.com/album/x",
       createdAt: NOW.toISOString(),
       updatedAt: NOW.toISOString(),
     });
     expect(created).not.toHaveProperty("coverUrl");
+  });
+
+  it("trims the cover URL", () => {
+    expect(
+      formToAlbum(
+        { ...EMPTY_ALBUM_FORM, coverUrl: " https://example.com/c.jpg " },
+        null,
+        NOW,
+      ).coverUrl,
+    ).toBe("https://example.com/c.jpg");
   });
 
   it("keeps an edited album's id and createdAt, and clears emptied fields", () => {
