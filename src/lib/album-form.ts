@@ -9,7 +9,6 @@ export type AlbumFormValues = {
   title: string;
   status: AlbumStatus;
   coverUrl: string;
-  spotifyUrl: string;
 };
 
 export type AlbumFormField = keyof AlbumFormValues;
@@ -22,7 +21,6 @@ export const EMPTY_ALBUM_FORM: AlbumFormValues = {
   title: "",
   status: "toListen",
   coverUrl: "",
-  spotifyUrl: "",
 };
 
 export function albumToForm(album: Album): AlbumFormValues {
@@ -32,7 +30,6 @@ export function albumToForm(album: Album): AlbumFormValues {
     title: album.title,
     status: album.status,
     coverUrl: album.coverUrl ?? "",
-    spotifyUrl: album.spotifyUrl ?? "",
   };
 }
 
@@ -45,10 +42,8 @@ export function validateAlbumForm(values: AlbumFormValues): AlbumFormErrors {
   if (values.year.trim() && !YEAR_PATTERN.test(values.year.trim())) {
     errors.year = "year";
   }
-  for (const field of ["coverUrl", "spotifyUrl"] as const) {
-    const url = values[field].trim();
-    if (url && !isHttpsUrl(url)) errors[field] = "url";
-  }
+  const coverUrl = values.coverUrl.trim();
+  if (coverUrl && !isHttpsUrl(coverUrl)) errors.coverUrl = "url";
   return errors;
 }
 
@@ -63,7 +58,6 @@ export function formToAlbum(
 ): Album {
   const year = values.year.trim();
   const coverUrl = values.coverUrl.trim();
-  const spotifyUrl = values.spotifyUrl.trim();
   return {
     id: base?.id ?? crypto.randomUUID(),
     createdAt: base?.createdAt ?? now.toISOString(),
@@ -73,6 +67,5 @@ export function formToAlbum(
     title: values.title.trim(),
     status: values.status,
     ...(coverUrl && { coverUrl }),
-    ...(spotifyUrl && { spotifyUrl }),
   };
 }

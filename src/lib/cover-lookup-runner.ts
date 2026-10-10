@@ -9,14 +9,12 @@ import {
 import { searchItunes } from "./itunes";
 import { RateLimitedError, searchMusicBrainz } from "./musicbrainz";
 import type { Album } from "./schemas";
-import { searchSpotify } from "./spotify-api";
 import { getAlbumsSnapshot, saveAlbum } from "./storage";
 
-// Looks every album missing something up — on Spotify when it's connected
-// (cover, link, year; fast), otherwise on MusicBrainz (cover, year; one
-// request a second, so a 1000-album CSV takes about 20 minutes) — and
-// then, for what that didn't match, on iTunes. Stopping keeps everything
-// found so far: each album is saved as it's done, and the next run skips it.
+// Looks every album missing a cover up on MusicBrainz (cover, year; one
+// request a second, so a 1000-album CSV takes about 20 minutes) and then,
+// for what that didn't match, on iTunes. Stopping keeps everything found so
+// far: each album is saved as it's done, and the next run skips it.
 
 export type LookupProgress = {
   total: number;
@@ -33,14 +31,12 @@ type Search = (
 
 export const SEARCHES: Record<LookupSource, Search> = {
   musicbrainz: searchMusicBrainz,
-  spotify: searchSpotify,
   itunes: searchItunes,
 };
 
 /** Milliseconds between requests, within each service's limits. */
 const PAUSES: Record<LookupSource, number> = {
   musicbrainz: 1100,
-  spotify: 200,
   itunes: 3100,
 };
 

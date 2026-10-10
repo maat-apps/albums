@@ -23,13 +23,10 @@ const AlbumSchema = v.object({
   status: v.fallback(v.picklist(ALBUM_STATUSES), "toListen"),
   // A malformed URL is dropped rather than dropping the whole album.
   coverUrl: v.fallback(v.optional(HttpsUrlSchema), undefined),
-  spotifyUrl: v.fallback(v.optional(HttpsUrlSchema), undefined),
   // The last MusicBrainz lookup's verdict for an album still without a
   // cover (cover-lookup.ts): "review" — candidates to pick from, "none" — nothing
   // found, "skipped" — the user rejected them. Absent until looked up.
   lookup: v.fallback(v.optional(v.picklist(LOOKUP_RESULTS)), undefined),
-  // The same verdict from a Spotify lookup, which also fills missing links.
-  spotifyLookup: v.fallback(v.optional(v.picklist(LOOKUP_RESULTS)), undefined),
   // And from an iTunes lookup, the fallback for what the others missed.
   itunesLookup: v.fallback(v.optional(v.picklist(LOOKUP_RESULTS)), undefined),
   createdAt: v.string(),
