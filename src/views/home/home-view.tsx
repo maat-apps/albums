@@ -5,7 +5,7 @@ import { useNavigate } from "react-router";
 import { Button } from "@maat-apps/ui/button";
 import { EmptyState } from "@maat-apps/ui/empty-state";
 import { FabButton } from "@maat-apps/ui/fab-button";
-import { PageHeader } from "@maat-apps/ui/page-header";
+import { PageHeader, PageTitle } from "@maat-apps/ui/page-header";
 import { useAlbums } from "../../hooks/use-albums";
 import { useAppSettings } from "../../hooks/use-app-settings";
 import { useTranslation } from "../../i18n/use-translation";
@@ -37,11 +37,9 @@ export function HomeView() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh w-[min(100%,480px)] flex-col gap-5 px-5 pt-27 pb-[calc(96px+env(safe-area-inset-bottom))]">
+    <div className="mx-auto flex min-h-dvh w-[min(100%,480px)] flex-col gap-5 px-5 pt-27 pb-[calc(128px+env(safe-area-inset-bottom))]">
       <PageHeader>
-        <h1 className="font-heading m-0 text-3xl leading-[1.05] font-bold tracking-tight">
-          {t("appName")}
-        </h1>
+        <PageTitle>{t("appName")}</PageTitle>
         <Button
           variant="ghost"
           size="icon-lg"
