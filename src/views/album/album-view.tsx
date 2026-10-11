@@ -27,7 +27,6 @@ export function AlbumView() {
   return (
     <div className="mx-auto grid min-h-dvh w-[min(100%,480px)] content-start gap-5 px-5 pt-27 pb-[calc(32px+env(safe-area-inset-bottom))]">
       <AppBar
-        title={album.title}
         backLabel={t("back")}
         onBack={() => startTransition(back)}
         action={

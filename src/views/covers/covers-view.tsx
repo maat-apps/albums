@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 
 import { AppBar } from "@maat-apps/ui/app-bar";
 import { Button } from "@maat-apps/ui/button";
+import { SectionTitle } from "@maat-apps/ui/page-header";
 import { useSmartBack } from "@maat-apps/ui/smart-back";
 import { useAlbums } from "../../hooks/use-albums";
 import { useCoverLookup } from "../../hooks/use-cover-lookup";
@@ -31,7 +32,7 @@ function AlbumLinks({
   if (albums.length === 0) return null;
   return (
     <section className="grid gap-2">
-      <h2 className="m-0 text-base font-semibold">{label}</h2>
+      <SectionTitle>{label}</SectionTitle>
       <ul className="m-0 grid list-none gap-1 p-0" aria-label={label}>
         {albums.map((album) => (
           <li key={album.id}>
