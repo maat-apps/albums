@@ -71,5 +71,6 @@ the image itself — the user decides by adding a URL.
   and gets its cover and, if the album had none, its year. Only albums
   with no result of that artist and title are listed to review, where the
   user picks a match or "None of these". About one album
-  a second (MusicBrainz's limit); stopping keeps what was found. An album
+  a second (MusicBrainz's limit); it keeps going after leaving the covers
+  screen, and stopping keeps what was found. An album
   without a cover also offers "Find a cover" from its own view.

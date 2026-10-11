@@ -67,7 +67,9 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   `lib/itunes.ts` (iTunes Search, the fallback source; `itunesLookup`
   verdict), `lib/cover-lookup-runner.ts` (bulk run, tries `sources` in
   order per album — ~1 req/s on MusicBrainz, ~20/min on iTunes — saves each
-  album as it goes) and `views/covers/` (`/covers`, `/covers/:id`). E2E
+  album as it goes; `lib/cover-lookup-job.ts` runs it app-wide, so leaving
+  `/covers` doesn't stop it) and `views/covers/` (`/covers`,
+  `/covers/:id`). E2E
   mocks MusicBrainz, the archive and iTunes with `page.route` (service
   workers blocked). Back uses `useSmartBack`.
 - **i18n.** `src/i18n/en.json` and `pl.json` (core's `createTranslation`;
