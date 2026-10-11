@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  albumIdentity,
+  albumKey,
   countByStatus,
   filterByStatus,
+  sameAlbum,
   sortAlbums,
 } from "@/lib/album-utils";
 import type { Album } from "@/lib/schemas";
@@ -35,17 +36,54 @@ const albums = [
 
 const titles = (list: Album[]) => list.map((item) => item.title);
 
-describe("albumIdentity", () => {
+describe("albumKey", () => {
   it("ignores case, accents and surrounding spaces", () => {
-    expect(albumIdentity({ artist: " Émile ", title: "ALPHA", year: 1 })).toBe(
-      albumIdentity({ artist: "emile", title: "alpha", year: 1 }),
+    expect(albumKey({ artist: " Émile ", title: "ALPHA" })).toBe(
+      albumKey({ artist: "emile", title: "alpha" }),
     );
   });
 
-  it("tells different years apart", () => {
-    expect(albumIdentity({ artist: "a", title: "b", year: 1 })).not.toBe(
-      albumIdentity({ artist: "a", title: "b", year: null }),
+  it("ignores punctuation, repeated spaces and a leading The", () => {
+    expect(albumKey({ artist: "The Band", title: "Hello,  World!" })).toBe(
+      albumKey({ artist: "band", title: "hello world" }),
     );
+  });
+
+  it("treats & as and", () => {
+    expect(albumKey({ artist: "A & B", title: "T" })).toBe(
+      albumKey({ artist: "A and B", title: "T" }),
+    );
+  });
+
+  it("folds letters without an accent decomposition", () => {
+    expect(albumKey({ artist: "Łódź", title: "T" })).toBe(
+      albumKey({ artist: "lodz", title: "T" }),
+    );
+  });
+
+  it("tells different titles apart", () => {
+    expect(albumKey({ artist: "a", title: "b" })).not.toBe(
+      albumKey({ artist: "a", title: "c" }),
+    );
+  });
+});
+
+describe("sameAlbum", () => {
+  const base = { artist: "a", title: "b" };
+
+  it("tells two known years apart", () => {
+    expect(sameAlbum({ ...base, year: 1 }, { ...base, year: 2 })).toBe(false);
+  });
+
+  it("matches when either year is missing", () => {
+    expect(sameAlbum({ ...base, year: 1 }, { ...base, year: null })).toBe(true);
+    expect(sameAlbum({ ...base, year: null }, { ...base, year: 2 })).toBe(true);
+  });
+
+  it("never matches different albums", () => {
+    expect(
+      sameAlbum({ ...base, year: 1 }, { artist: "a", title: "c", year: 1 }),
+    ).toBe(false);
   });
 });
 

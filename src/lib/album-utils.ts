@@ -6,17 +6,39 @@ export type StatusFilter = AlbumStatus | "all";
 
 const collator = new Intl.Collator(undefined, { sensitivity: "base" });
 
-/** Case- and accent-insensitive identity: the same album twice is a duplicate. */
-export function albumIdentity(
-  album: Pick<Album, "artist" | "title" | "year">,
-): string {
-  const normalize = (text: string) =>
-    text
-      .normalize("NFD")
-      .replace(/\p{Diacritic}/gu, "")
-      .trim()
-      .toLowerCase();
-  return `${normalize(album.artist)}\u0000${normalize(album.title)}\u0000${album.year ?? ""}`;
+// Letters that don't decompose into base + accent under NFD.
+const FOLDED_LETTERS: Record<string, string> = { ł: "l", ø: "o", đ: "d" };
+
+function normalizeText(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[łøđ]/g, (letter) => FOLDED_LETTERS[letter] ?? letter)
+    .replace(/&/g, " and ")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()
+    .replace(/^the /, "");
+}
+
+/**
+ * Artist and title with case, accents, punctuation, spacing, "&" vs "and"
+ * and a leading "The" ignored. The year is compared apart (`sameAlbum`).
+ */
+export function albumKey(album: Pick<Album, "artist" | "title">): string {
+  return `${normalizeText(album.artist)}\u0000${normalizeText(album.title)}`;
+}
+
+/**
+ * Whether two albums are the same record: equal `albumKey`, and equal years
+ * unless one of them has none (a missing year can't tell a reissue apart).
+ */
+export function sameAlbum(
+  a: Pick<Album, "artist" | "title" | "year">,
+  b: Pick<Album, "artist" | "title" | "year">,
+): boolean {
+  if (albumKey(a) !== albumKey(b)) return false;
+  return a.year === null || b.year === null || a.year === b.year;
 }
 
 export function filterByStatus(albums: Album[], filter: StatusFilter): Album[] {

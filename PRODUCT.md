@@ -44,8 +44,11 @@ to this repository.
   title, status), in any column order.
 - `WRACAM?`: `GREEN` → coming back, `RED` → not coming back, empty → to
   listen.
-- Values are trimmed; a row matching an existing album (same artist,
-  title and year) is skipped, so re-importing is safe.
+- Values are trimmed. A row matching an existing album keeps that album
+  (and its cover) and only updates its status when the file's status
+  differs; an empty status never overrides one. Matching ignores case,
+  accents, punctuation, `&` vs `and` and a leading "The"; the year must
+  match unless one side has none. Re-importing is safe.
 
 ## Covers
 
