@@ -4,8 +4,8 @@ import { useNavigate } from "react-router";
 
 import { AppBar } from "@maat-apps/ui/app-bar";
 import { Button } from "@maat-apps/ui/button";
-import { useSmartBack } from "@maat-apps/ui/smart-back";
 import { SectionTitle } from "@maat-apps/ui/page-header";
+import { useSmartBack } from "@maat-apps/ui/smart-back";
 import { useAlbums } from "../../hooks/use-albums";
 import { useCoverLookup } from "../../hooks/use-cover-lookup";
 import { useTranslation } from "../../i18n/use-translation";
