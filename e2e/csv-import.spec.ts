@@ -15,8 +15,12 @@ test("importing a CSV adds its albums and skips them on re-import", async ({
   const input = page.getByLabel("Import from CSV");
 
   await input.setInputFiles(file);
-  await expect(page.getByText("Imported 3, skipped 0")).toBeVisible();
+  await expect(
+    page.getByText("Imported 3, updated 0, skipped 0"),
+  ).toBeVisible();
 
   await input.setInputFiles(file);
-  await expect(page.getByText("Imported 0, skipped 3")).toBeVisible();
+  await expect(
+    page.getByText("Imported 0, updated 0, skipped 3"),
+  ).toBeVisible();
 });

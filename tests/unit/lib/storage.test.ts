@@ -108,6 +108,27 @@ describe("addAlbums", () => {
   });
 });
 
+describe("applyImport", () => {
+  it("adds and updates in one write and ignores an empty import", async () => {
+    const storage = await freshStorage();
+    storage.saveAlbum(album({ id: "a" }));
+    const listener = vi.fn();
+    storage.subscribe(listener);
+
+    storage.applyImport([], []);
+    storage.applyImport(
+      [album({ id: "b" })],
+      [album({ id: "a", status: "comingBack" })],
+    );
+
+    expect(storage.getAlbumsSnapshot().map((item) => item.status)).toEqual([
+      "comingBack",
+      "toListen",
+    ]);
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("loading", () => {
   it("persists to IndexedDB for the next session", async () => {
     const storage = await freshStorage();

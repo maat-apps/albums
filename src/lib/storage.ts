@@ -119,6 +119,16 @@ export function addAlbums(added: Album[]): void {
   writeAlbums([...getAlbumsSnapshot(), ...added]);
 }
 
+/** Applies a CSV import — new albums and changed ones — in one write. */
+export function applyImport(added: Album[], updated: Album[]): void {
+  if (added.length === 0 && updated.length === 0) return;
+  const replacements = new Map(updated.map((album) => [album.id, album]));
+  writeAlbums([
+    ...getAlbumsSnapshot().map((album) => replacements.get(album.id) ?? album),
+    ...added,
+  ]);
+}
+
 /** Saves a new or changed album, stamping `updatedAt`. */
 export function saveAlbum(album: Album, now = new Date()): void {
   const saved = { ...album, updatedAt: now.toISOString() };
