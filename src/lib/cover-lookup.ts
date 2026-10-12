@@ -1,10 +1,11 @@
 import type { Album } from "./schemas";
 
-// Matching an album to search results — from MusicBrainz or iTunes. Pure, so
+// Matching an album to search results — from Deezer, MusicBrainz or iTunes.
+// Pure, so
 // the bulk runner (cover-lookup-runner.ts) and the pick view share one
 // definition of "a sure match".
 
-export type LookupSource = "musicbrainz" | "itunes";
+export type LookupSource = "deezer" | "musicbrainz" | "itunes";
 
 /** One search result, whichever service it came from. */
 export type AlbumMatch = {
@@ -15,6 +16,7 @@ export type AlbumMatch = {
   /** "album", "single", "ep"… (lower case). */
   type: string | null;
   coverUrl: string | null;
+  deezerUrl: string | null;
 };
 
 // Words that only mark a reissue ("Deluxe Edition", "2009 Remaster"): left
@@ -117,20 +119,35 @@ export function pickMatch(album: Album, matches: AlbumMatch[]): LookupOutcome {
 }
 
 /**
- * The album with what the match adds — a cover, a year — where it had none;
- * the lookup verdicts are cleared.
+ * The album with what the match adds — a cover, a Deezer link, a year —
+ * where it had none. The lookup verdicts are cleared, except Deezer's while
+ * the album still has no Deezer link.
  */
 export function applyMatch(album: Album, match: AlbumMatch): Album {
+  const deezerUrl = album.deezerUrl ?? match.deezerUrl ?? undefined;
   return {
     ...album,
     coverUrl: album.coverUrl ?? match.coverUrl ?? undefined,
+    deezerUrl,
     year: album.year ?? match.year,
     lookup: undefined,
+    deezerLookup: deezerUrl ? undefined : album.deezerLookup,
     itunesLookup: undefined,
   };
 }
 
+/**
+ * What a lookup from `source` can still add to the album: a cover from any
+ * of them, a Deezer link from Deezer, a year from MusicBrainz.
+ */
+function isMissing(album: Album, source: LookupSource): boolean {
+  if (!album.coverUrl) return true;
+  if (source === "deezer") return !album.deezerUrl;
+  return source === "musicbrainz" && album.year === null;
+}
+
 const VERDICT_FIELDS = {
+  deezer: "deezerLookup",
   musicbrainz: "lookup",
   itunes: "itunesLookup",
 } as const;
@@ -150,15 +167,15 @@ export function withVerdict(
 
 /** Albums a bulk lookup from `source` still has to try. */
 export function needsLookup(album: Album, source: LookupSource): boolean {
-  return !album.coverUrl && verdict(album, source) === undefined;
+  return isMissing(album, source) && verdict(album, source) === undefined;
 }
 
 /** Albums whose lookup found candidates for the user to pick from. */
 export function awaitsReview(album: Album, source: LookupSource): boolean {
-  return !album.coverUrl && verdict(album, source) === "review";
+  return isMissing(album, source) && verdict(album, source) === "review";
 }
 
 /** Albums the lookup found nothing for. */
 export function notFound(album: Album, source: LookupSource): boolean {
-  return !album.coverUrl && verdict(album, source) === "none";
+  return isMissing(album, source) && verdict(album, source) === "none";
 }

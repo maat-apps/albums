@@ -20,6 +20,7 @@ web - PWA, mobile-only (like routines, trainer and notes).
 | Title  | Album title.                                                         |
 | Status | `to listen`, `listened — coming back`, `listened — not coming back`. |
 | Cover  | Optional URL of the cover image from a public source.                |
+| Deezer | Optional link to the album on Deezer.                                |
 
 ## Behavior
 
@@ -30,6 +31,9 @@ web - PWA, mobile-only (like routines, trainer and notes).
   in both view modes.
 - **Add / edit / delete** an album; changing its status is one tap from
   the album view.
+- **Open in Deezer** from the album view, straight to the album when it has
+  a Deezer link, otherwise "Search on Deezer" for its artist and title.
+  Links are the user's data: they're part of backups.
 - **Settings** (a drawer): language (English/Polish), app lock, backup
   export/import, install and update.
 
@@ -64,16 +68,19 @@ the image itself — the user decides by adding a URL.
   updates. Where a server doesn't allow that, the cover is shown straight
   from its URL instead. Stored covers are a cache: never in a backup, and
   dropped (to load again) when the lock changes or a backup is restored.
-- **Finding covers** (Settings → Data → Find covers): every album without
-  a cover is searched on MusicBrainz — then on iTunes (Apple's free search,
-  no key; about 20 requests a minute) for what MusicBrainz didn't match —
-  by artist and title; nothing else leaves the device, and no account is
-  needed. The first result with the album's artist and title (editions like
-  "Deluxe" or "Remastered" ignored) is taken without asking — preferring
-  the album's year, then a plain release, then an album over a single —
-  and gets its cover and, if the album had none, its year. Only albums
-  with no result of that artist and title are listed to review, where the
-  user picks a match or "None of these". About one album
-  a second (MusicBrainz's limit); it keeps going after leaving the covers
-  screen, and stopping keeps what was found. An album
+- **Finding covers and links** (Settings → Data → Find covers): every
+  album without a cover or a Deezer link is searched on Deezer (public
+  API, no key; 50 requests per 5 seconds, the app sends about 4 a
+  second), which gives both. What's still missing a cover — or a year —
+  is then searched on MusicBrainz, and a cover still missing after that on
+  iTunes (Apple's free search, no key; about 20 requests a minute). Only
+  the artist and title leave the device, and no account is needed. The
+  first result with the album's artist and title (editions like "Deluxe"
+  or "Remastered" ignored) is taken without asking — preferring the
+  album's year, then a plain release, then an album over a single — and
+  fills what the album lacks: cover, Deezer link, year. Only albums with
+  no Deezer result of that artist and title are listed to review, where
+  the user picks a match or "None of these". A service that can't be
+  reached is left out for the rest of the run. It keeps going after
+  leaving the covers screen, and stopping keeps what was found. An album
   without a cover also offers "Find a cover" from its own view.

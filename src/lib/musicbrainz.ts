@@ -106,6 +106,7 @@ export function toMatch(group: ReleaseGroup): AlbumMatch {
     year: group.year,
     type: group.primaryType?.toLowerCase() ?? null,
     coverUrl: coverArtUrl(group.id),
+    deezerUrl: null,
   };
 }
 

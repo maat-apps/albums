@@ -22,6 +22,7 @@ const group = (title: string, year = 1999): AlbumMatch => ({
   year,
   type: "album",
   coverUrl: `https://example.com/rg-${title}.jpg`,
+  deezerUrl: null,
 });
 
 async function fresh(albums: Album[]) {
@@ -112,6 +113,101 @@ describe("lookUpCovers", () => {
       lookup: "none",
       itunesLookup: "none",
     });
+  });
+
+  it("asks the next source for what a match left missing", async () => {
+    const { storage, runner } = await fresh([album("a")]);
+    const search = vi.fn(async () =>
+      search.mock.calls.length === 1
+        ? [{ ...group("a"), coverUrl: null, deezerUrl: "https://dz/a" }]
+        : [group("a")],
+    );
+
+    const progress = await runner.lookUpCovers({
+      sources: ["deezer", "musicbrainz", "itunes"],
+      signal: new AbortController().signal,
+      onProgress: () => {},
+      search,
+      pause: 0,
+    });
+
+    expect(search).toHaveBeenCalledTimes(2);
+    expect(progress.matched).toBe(1);
+    expect(byId(storage.getAlbumsSnapshot(), "a")).toMatchObject({
+      coverUrl: "https://example.com/rg-a.jpg",
+      deezerUrl: "https://dz/a",
+    });
+  });
+
+  it("looks a Deezer link up for an album that has a cover", async () => {
+    const { storage, runner } = await fresh([
+      album("a", { coverUrl: "https://example.com/own.jpg" }),
+    ]);
+    const search = vi.fn(async () => []);
+
+    const progress = await runner.lookUpCovers({
+      sources: ["deezer", "musicbrainz", "itunes"],
+      signal: new AbortController().signal,
+      onProgress: () => {},
+      search,
+      pause: 0,
+    });
+
+    expect(search).toHaveBeenCalledOnce();
+    expect(progress).toMatchObject({ total: 1, notFound: 1 });
+    expect(byId(storage.getAlbumsSnapshot(), "a")?.deezerLookup).toBe("none");
+  });
+
+  it("leaves out a source that fails, and goes on with the others", async () => {
+    const { storage, runner } = await fresh([
+      album("a"),
+      album("b"),
+      album("linkless", { coverUrl: "https://example.com/own.jpg" }),
+    ]);
+    // Deezer (the first call) is unreachable; MusicBrainz finds everything.
+    const search = vi.fn(async (item: Album) => {
+      if (search.mock.calls.length === 1) throw new TypeError("CORS");
+      return [group(item.id)];
+    });
+    const onProgress = vi.fn();
+
+    const progress = await runner.lookUpCovers({
+      sources: ["deezer", "musicbrainz"],
+      signal: new AbortController().signal,
+      onProgress,
+      search,
+      pause: 0,
+    });
+
+    // Deezer once, then MusicBrainz for "a" and "b"; "linkless" only
+    // needed Deezer, so it's left for the next run.
+    expect(search).toHaveBeenCalledTimes(3);
+    expect(progress).toEqual({
+      total: 3,
+      done: 3,
+      matched: 2,
+      review: 0,
+      notFound: 0,
+    });
+    const albums = storage.getAlbumsSnapshot();
+    expect(byId(albums, "b")?.coverUrl).toContain("rg-b");
+    expect(byId(albums, "linkless")?.deezerLookup).toBeUndefined();
+  });
+
+  it("rejects once every source has failed", async () => {
+    const { runner } = await fresh([album("a"), album("b")]);
+    const search = vi.fn().mockRejectedValue(new TypeError("offline"));
+
+    await expect(
+      runner.lookUpCovers({
+        sources: ["deezer", "musicbrainz"],
+        signal: new AbortController().signal,
+        onProgress: () => {},
+        search,
+        pause: 0,
+      }),
+    ).rejects.toThrow("offline");
+    expect(search).toHaveBeenCalledTimes(2);
   });
 
   it("skips an album deleted or given a cover mid-run", async () => {

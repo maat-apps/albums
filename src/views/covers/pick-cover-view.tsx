@@ -18,7 +18,7 @@ import { SEARCHES } from "../../lib/cover-lookup-runner";
 import { saveAlbum } from "../../lib/storage";
 
 /** Searched in this order; the first one's verdict records a skip. */
-const SOURCES: LookupSource[] = ["musicbrainz", "itunes"];
+const SOURCES: LookupSource[] = ["deezer", "musicbrainz", "itunes"];
 
 type Search =
   | { state: "loading" }
@@ -46,9 +46,10 @@ function CandidateCover({ url }: { url: string | null }) {
 }
 
 /**
- * "/covers/:id": the matches for one album (MusicBrainz's, then iTunes');
- * picking one fills in what the album is missing, "None of these" stops
- * offering it.
+ * "/covers/:id": the matches for one album (Deezer's, MusicBrainz's, then
+ * iTunes'); picking one fills in what the album is missing, "None of these"
+ * stops offering it. Picking one without a Deezer link counts as skipping
+ * Deezer's.
  */
 export function PickCoverView() {
   const { t } = useTranslation();
@@ -65,7 +66,7 @@ export function PickCoverView() {
     if (artist === undefined || title === undefined) return;
     const controller = new AbortController();
     const query = `${artist}|${title}`;
-    // MusicBrainz's matches first, then iTunes'; one failing is fine.
+    // Each source's matches in order; some failing is fine.
     Promise.allSettled(
       SOURCES.map((item) =>
         SEARCHES[item]({ artist, title }, controller.signal),
@@ -92,7 +93,10 @@ export function PickCoverView() {
 
   function pick(match: AlbumMatch) {
     if (!album) return;
-    saveAlbum(applyMatch(album, match));
+    const picked = applyMatch(album, match);
+    saveAlbum(
+      picked.deezerUrl ? picked : withVerdict(picked, SOURCES[0], "skipped"),
+    );
     startTransition(back);
   }
 

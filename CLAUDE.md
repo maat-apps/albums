@@ -54,24 +54,31 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   status filter chips with counts, sort key + direction, grid/list, all
   remembered in `app-settings.ts`'s `collection` prefs; settings drawer),
   `/new` and `/:id/edit` (`views/album/album-form-view.tsx`, validated by
-  `lib/album-form.ts`), `/:id` (`album-view.tsx`: cover, one-tap status).
+  `lib/album-form.ts`), `/:id` (`album-view.tsx`: cover, one-tap status,
+  "Open in Deezer" — the album's `deezerUrl` or Deezer's search).
   Covers render through `components/album-cover.tsx` (placeholder on a missing or broken URL) via `hooks/use-cover-src.ts`:
   once in view, `lib/cover-store.ts` serves the IndexedDB copy or fetches
   (CORS) and stores it — per album id, encrypted with the lock's key,
   tracked in an index key since the store can't list keys; on failure the
   `<img>` uses the URL directly. Covers are a cache: not in backups,
   cleared by the lock's rewrite/erase and a backup restore, deleted with
-  their album. Finding covers: `lib/musicbrainz.ts` (search + Cover Art
-  Archive URLs), `lib/cover-lookup.ts` (pure matching: `pickMatch`,
-  `applyMatch`, the album's `lookup` verdict — review/none/skipped),
-  `lib/itunes.ts` (iTunes Search, the fallback source; `itunesLookup`
-  verdict), `lib/cover-lookup-runner.ts` (bulk run, tries `sources` in
-  order per album — ~1 req/s on MusicBrainz, ~20/min on iTunes — saves each
-  album as it goes; `lib/cover-lookup-job.ts` runs it app-wide, so leaving
-  `/covers` doesn't stop it) and `views/covers/` (`/covers`,
-  `/covers/:id`). E2E
-  mocks MusicBrainz, the archive and iTunes with `page.route` (service
-  workers blocked). Back uses `useSmartBack`.
+  their album. Finding covers and Deezer links: `lib/deezer.ts` (Deezer's
+  public search, first source: cover + `deezerUrl`, no year; quota error
+  code 4 → `RateLimitedError`; `deezerLookup` verdict),
+  `lib/musicbrainz.ts` (search + Cover Art Archive URLs; also fills
+  missing years), `lib/cover-lookup.ts` (pure matching: `pickMatch`,
+  `applyMatch`, what each source can still add — `isMissing` — and the
+  album's `lookup` verdict — review/none/skipped), `lib/itunes.ts` (iTunes
+  Search, the last fallback; `itunesLookup` verdict),
+  `lib/cover-lookup-runner.ts` (bulk run, asks `sources` in order for what
+  each album still misses — ~4 req/s on Deezer, ~1/s on MusicBrainz,
+  ~20/min on iTunes — leaves out a source that fails for the rest of the
+  run, saves each album as it goes; `lib/cover-lookup-job.ts` runs it
+  app-wide, so leaving `/covers` doesn't stop it) and `views/covers/`
+  (`/covers`, `/covers/:id`; review lists follow Deezer's verdict). Deezer
+  links are user data (in backups), unlike covers. E2E mocks Deezer,
+  MusicBrainz, the archive and iTunes with `page.route` (service workers
+  blocked). Back uses `useSmartBack`.
 - **i18n.** `src/i18n/en.json` and `pl.json` (core's `createTranslation`;
   device language on first launch, Settings → Language after). `t()`
   only accepts keys present in both — keep them in sync.

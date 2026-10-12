@@ -17,6 +17,7 @@ const album: Album = {
   title: "Title",
   status: "comingBack",
   coverUrl: "https://example.com/cover.jpg",
+  deezerUrl: "https://www.deezer.com/album/302127",
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",
 };
@@ -29,11 +30,17 @@ describe("albumToForm", () => {
       title: "Title",
       status: "comingBack",
       coverUrl: "https://example.com/cover.jpg",
+      deezerUrl: "https://www.deezer.com/album/302127",
     });
   });
 
-  it("leaves a missing cover empty", () => {
-    expect(albumToForm({ ...album, coverUrl: undefined }).coverUrl).toBe("");
+  it("leaves a missing cover and Deezer link empty", () => {
+    const form = albumToForm({
+      ...album,
+      coverUrl: undefined,
+      deezerUrl: undefined,
+    });
+    expect(form).toMatchObject({ coverUrl: "", deezerUrl: "" });
   });
 
   it("leaves an unknown year empty", () => {
@@ -76,6 +83,17 @@ describe("validateAlbumForm", () => {
       }),
     ).toEqual({ coverUrl: "url" });
   });
+
+  it("rejects a Deezer URL that isn't https", () => {
+    expect(
+      validateAlbumForm({
+        ...EMPTY_ALBUM_FORM,
+        artist: "A",
+        title: "T",
+        deezerUrl: "deezer.com/album/1",
+      }),
+    ).toEqual({ deezerUrl: "url" });
+  });
 });
 
 describe("formToAlbum", () => {
@@ -99,21 +117,29 @@ describe("formToAlbum", () => {
       updatedAt: NOW.toISOString(),
     });
     expect(created).not.toHaveProperty("coverUrl");
+    expect(created).not.toHaveProperty("deezerUrl");
   });
 
-  it("trims the cover URL", () => {
+  it("trims the cover and Deezer URLs", () => {
     expect(
       formToAlbum(
-        { ...EMPTY_ALBUM_FORM, coverUrl: " https://example.com/c.jpg " },
+        {
+          ...EMPTY_ALBUM_FORM,
+          coverUrl: " https://example.com/c.jpg ",
+          deezerUrl: " https://www.deezer.com/album/1 ",
+        },
         null,
         NOW,
-      ).coverUrl,
-    ).toBe("https://example.com/c.jpg");
+      ),
+    ).toMatchObject({
+      coverUrl: "https://example.com/c.jpg",
+      deezerUrl: "https://www.deezer.com/album/1",
+    });
   });
 
   it("keeps an edited album's id and createdAt, and clears emptied fields", () => {
     const edited = formToAlbum(
-      { ...albumToForm(album), year: "", coverUrl: "" },
+      { ...albumToForm(album), year: "", coverUrl: "", deezerUrl: "" },
       album,
       NOW,
     );
@@ -124,6 +150,7 @@ describe("formToAlbum", () => {
       year: null,
     });
     expect(edited).not.toHaveProperty("coverUrl");
+    expect(edited).not.toHaveProperty("deezerUrl");
   });
 
   it("keeps a cover URL that's still set", () => {

@@ -18,7 +18,7 @@ import {
 import type { Album } from "../../lib/schemas";
 
 /** Tried in order for each album; the first one's verdicts are reviewed here. */
-const SOURCES: LookupSource[] = ["musicbrainz", "itunes"];
+const SOURCES: LookupSource[] = ["deezer", "musicbrainz", "itunes"];
 
 function AlbumLinks({
   label,
@@ -58,8 +58,9 @@ function AlbumLinks({
 }
 
 /**
- * "/covers": looks covers and years up — on MusicBrainz, then on iTunes —
- * for every album without a cover, then lists what needs a decision.
+ * "/covers": looks covers, Deezer links and years up — on Deezer, then
+ * MusicBrainz, then iTunes — for every album missing them, then lists what
+ * needs a decision.
  */
 export function CoversView() {
   const { t } = useTranslation();

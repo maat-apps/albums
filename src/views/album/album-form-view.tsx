@@ -151,6 +151,12 @@ function AlbumForm({ album }: { album: Album | null }) {
         inputMode="url"
         {...fieldProps}
       />
+      <TextField
+        field="deezerUrl"
+        label={t("deezerUrl")}
+        inputMode="url"
+        {...fieldProps}
+      />
       <Button type="submit" size="lg" className="mt-2">
         {t("save")}
       </Button>

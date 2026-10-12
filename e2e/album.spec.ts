@@ -21,6 +21,13 @@ test("adding, viewing, changing status, editing and deleting an album", async ({
     page.getByRole("heading", { name: "Test Album" }).first(),
   ).toBeVisible();
   await expect(page.getByText("Test Artist · 1999")).toBeVisible();
+  // No Deezer link of its own: Deezer's search instead.
+  await expect(
+    page.getByRole("link", { name: "Search on Deezer" }),
+  ).toHaveAttribute(
+    "href",
+    "https://www.deezer.com/search/Test%20Artist%20Test%20Album",
+  );
 
   await page.getByRole("button", { name: "Coming back", exact: true }).click();
   await expect(
@@ -29,10 +36,17 @@ test("adding, viewing, changing status, editing and deleting an album", async ({
 
   await page.getByRole("button", { name: "Edit album" }).click();
   await page.getByLabel("Title").fill("Renamed");
+  await page.getByLabel("Deezer URL").fill("deezer.com/album/1");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("Use a full https:// link.")).toBeVisible();
+  await page.getByLabel("Deezer URL").fill("https://www.deezer.com/album/1");
   await page.getByRole("button", { name: "Save" }).click();
   await expect(
     page.getByRole("heading", { name: "Renamed" }).first(),
   ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Open in Deezer" }),
+  ).toHaveAttribute("href", "https://www.deezer.com/album/1");
 
   await page.getByRole("button", { name: "Edit album" }).click();
   await page.getByRole("button", { name: "Delete album" }).click();

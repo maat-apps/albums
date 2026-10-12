@@ -121,6 +121,7 @@ describe("searchReleaseGroups", () => {
         year: 1999,
         type: "album",
         coverUrl: "https://coverartarchive.org/release-group/rg1/front-250",
+        deezerUrl: null,
       },
     ]);
   });

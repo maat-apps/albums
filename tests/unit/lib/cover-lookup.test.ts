@@ -13,6 +13,7 @@ import {
 import type { Album } from "@/lib/schemas";
 
 const COVER = "https://example.com/c.jpg";
+const DEEZER = "https://www.deezer.com/album/302127";
 
 const album = (overrides: Partial<Album> = {}): Album => ({
   id: "a1",
@@ -32,6 +33,7 @@ const match = (overrides: Partial<AlbumMatch> = {}): AlbumMatch => ({
   year: 1999,
   type: "album",
   coverUrl: COVER,
+  deezerUrl: null,
   ...overrides,
 });
 
@@ -150,6 +152,32 @@ describe("applyMatch", () => {
     const applied = applyMatch(album(), match({ coverUrl: null }));
     expect(applied.coverUrl).toBeUndefined();
   });
+
+  it("fills a missing Deezer link and clears Deezer's verdict", () => {
+    const applied = applyMatch(
+      album({ deezerLookup: "review" }),
+      match({ deezerUrl: DEEZER }),
+    );
+    expect(applied).toMatchObject({
+      deezerUrl: DEEZER,
+      deezerLookup: undefined,
+    });
+  });
+
+  it("keeps the album's own Deezer link", () => {
+    const own = "https://www.deezer.com/album/1";
+    const applied = applyMatch(
+      album({ deezerUrl: own }),
+      match({ deezerUrl: DEEZER }),
+    );
+    expect(applied.deezerUrl).toBe(own);
+  });
+
+  it("keeps Deezer's verdict while the album still has no link", () => {
+    const applied = applyMatch(album({ deezerLookup: "none" }), match());
+    expect(applied).toMatchObject({ coverUrl: COVER, deezerLookup: "none" });
+    expect(applied.deezerUrl).toBeUndefined();
+  });
 });
 
 describe("lookup predicates", () => {
@@ -164,8 +192,15 @@ describe("lookup predicates", () => {
     expect(notFound(album(), "musicbrainz")).toBe(false);
   });
 
+  it("look a year up on MusicBrainz for an album that has a cover", () => {
+    const covered = album({ coverUrl: COVER, year: null });
+    expect(needsLookup(covered, "musicbrainz")).toBe(true);
+    expect(needsLookup(covered, "itunes")).toBe(false);
+  });
+
   it("record a verdict for its source", () => {
     expect(withVerdict(album(), "musicbrainz", "none").lookup).toBe("none");
+    expect(withVerdict(album(), "deezer", "none").deezerLookup).toBe("none");
     expect(withVerdict(album(), "itunes", "none").itunesLookup).toBe("none");
   });
 });
@@ -175,5 +210,25 @@ describe("iTunes lookup predicates", () => {
     expect(needsLookup(album({ lookup: "none" }), "itunes")).toBe(true);
     expect(needsLookup(album({ itunesLookup: "none" }), "itunes")).toBe(false);
     expect(needsLookup(album({ coverUrl: COVER }), "itunes")).toBe(false);
+  });
+});
+
+describe("Deezer lookup predicates", () => {
+  it("need a cover or a Deezer link", () => {
+    expect(needsLookup(album(), "deezer")).toBe(true);
+    expect(needsLookup(album({ coverUrl: COVER }), "deezer")).toBe(true);
+    expect(
+      needsLookup(album({ coverUrl: COVER, deezerUrl: DEEZER }), "deezer"),
+    ).toBe(false);
+    expect(needsLookup(album({ deezerLookup: "none" }), "deezer")).toBe(false);
+  });
+
+  it("keep an album with a cover but no link in review", () => {
+    const covered = album({ coverUrl: COVER, deezerLookup: "review" });
+    expect(awaitsReview(covered, "deezer")).toBe(true);
+    expect(awaitsReview(covered, "musicbrainz")).toBe(false);
+    expect(
+      notFound(album({ coverUrl: COVER, deezerLookup: "none" }), "deezer"),
+    ).toBe(true);
   });
 });

@@ -6,15 +6,18 @@ import {
   type AlbumMatch,
   type LookupSource,
 } from "./cover-lookup";
+import { searchDeezer } from "./deezer";
 import { searchItunes } from "./itunes";
 import { RateLimitedError, searchMusicBrainz } from "./musicbrainz";
 import type { Album } from "./schemas";
 import { getAlbumsSnapshot, saveAlbum } from "./storage";
 
-// Looks every album missing a cover up on MusicBrainz (cover, year; one
-// request a second, so a 1000-album CSV takes about 20 minutes) and then,
-// for what that didn't match, on iTunes. Stopping keeps everything found so
-// far: each album is saved as it's done, and the next run skips it.
+// Looks every album missing something up on each source in turn, for what
+// the ones before left missing: Deezer (cover, link; four requests a
+// second), MusicBrainz (cover, year; one a second), then iTunes (cover).
+// A source that can't be reached is left out for the rest of the run.
+// Stopping keeps everything found so far: each album is saved as it's done,
+// and the next run skips it.
 
 export type LookupProgress = {
   total: number;
@@ -30,12 +33,14 @@ type Search = (
 ) => Promise<AlbumMatch[]>;
 
 export const SEARCHES: Record<LookupSource, Search> = {
+  deezer: searchDeezer,
   musicbrainz: searchMusicBrainz,
   itunes: searchItunes,
 };
 
 /** Milliseconds between requests, within each service's limits. */
 const PAUSES: Record<LookupSource, number> = {
+  deezer: 250,
   musicbrainz: 1100,
   itunes: 3100,
 };
@@ -91,57 +96,79 @@ async function searchWithRetry(
   }
 }
 
-type Tried = { album: Album; matched: boolean; review: boolean };
+type Tried = {
+  album: Album;
+  /** Whether any source was asked — not when all it needed were out. */
+  searched: boolean;
+  matched: boolean;
+  review: boolean;
+};
 
-/** Tries each source in turn until one matches; null when aborted. */
+type RunState = {
+  /** Whether a request was already sent, so the next one must wait. */
+  requested: boolean;
+  /** Sources that failed this run, and the last failure. */
+  unavailable: Set<LookupSource>;
+  error?: unknown;
+};
+
+/**
+ * Asks each source in turn for what the album still misses; null when
+ * aborted. A failing source joins `run.unavailable`.
+ */
 async function lookUpAlbum(
   album: Album,
   options: Required<Pick<LookupOptions, "sources" | "signal" | "backoff">> & {
     search?: Search;
     pause?: number;
   },
-  /** Whether a request was already sent, so the next one must wait. */
-  requested: { value: boolean },
+  run: RunState,
 ): Promise<Tried | null> {
   const { sources, signal, backoff } = options;
-  let current = album;
-  let review = false;
+  const tried: Tried = {
+    album,
+    searched: false,
+    matched: false,
+    review: false,
+  };
   for (const source of sources) {
-    if (!needsLookup(current, source)) continue;
-    if (requested.value) {
+    if (run.unavailable.has(source)) continue;
+    if (!needsLookup(tried.album, source)) continue;
+    if (run.requested) {
       await sleep(options.pause ?? PAUSES[source], signal);
     }
     if (signal.aborted) return null;
-    requested.value = true;
+    run.requested = true;
     let matches: AlbumMatch[];
     try {
-      matches = await searchWithRetry(current, {
+      matches = await searchWithRetry(tried.album, {
         signal,
         search: options.search ?? SEARCHES[source],
         backoff,
       });
     } catch (error) {
       if (signal.aborted) return null;
-      throw error;
+      run.unavailable.add(source);
+      run.error = error;
+      continue;
     }
-    const outcome = pickMatch(current, matches);
+    tried.searched = true;
+    const outcome = pickMatch(tried.album, matches);
     if (outcome.kind === "match") {
-      return {
-        album: applyMatch(current, outcome.match),
-        matched: true,
-        review,
-      };
+      tried.album = applyMatch(tried.album, outcome.match);
+      tried.matched = true;
+    } else {
+      tried.review ||= outcome.kind === "review";
+      tried.album = withVerdict(tried.album, source, outcome.kind);
     }
-    review ||= outcome.kind === "review";
-    current = withVerdict(current, source, outcome.kind);
   }
-  return { album: current, matched: false, review };
+  return tried;
 }
 
 /**
- * Runs until every album without a cover was tried, or `signal` aborts
- * (resolves either way). Rejects when a service can't be reached; what
- * was found before stays saved.
+ * Runs until every album missing something was tried, or `signal` aborts
+ * (resolves either way). Rejects once no source can be reached; what was
+ * found before stays saved.
  */
 export async function lookUpCovers({
   sources,
@@ -165,7 +192,7 @@ export async function lookUpCovers({
   };
   onProgress({ ...progress });
 
-  const requested = { value: false };
+  const run: RunState = { requested: false, unavailable: new Set() };
   for (const id of ids) {
     if (signal.aborted) break;
     // Re-read: the album may have changed (or gone) since the run started.
@@ -177,14 +204,19 @@ export async function lookUpCovers({
     const tried = await lookUpAlbum(
       album,
       { sources, signal, backoff, search, pause },
-      requested,
+      run,
     );
     if (!tried) break;
-    saveAlbum(tried.album);
-    if (tried.matched) progress.matched++;
-    else if (tried.review) progress.review++;
-    else progress.notFound++;
+    if (sources.every((source) => run.unavailable.has(source))) {
+      throw run.error;
+    }
     progress.done++;
+    if (tried.searched) {
+      saveAlbum(tried.album);
+      if (tried.matched) progress.matched++;
+      else if (tried.review) progress.review++;
+      else progress.notFound++;
+    }
     onProgress({ ...progress });
   }
   return progress;

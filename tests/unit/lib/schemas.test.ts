@@ -35,6 +35,19 @@ describe("parseAlbums", () => {
     expect(album?.coverUrl).toBeUndefined();
   });
 
+  it("keeps a Deezer link and verdict, and drops a non-https link", () => {
+    const deezer = {
+      ...valid,
+      deezerUrl: "https://www.deezer.com/album/302127",
+      deezerLookup: "review",
+    };
+    expect(parseAlbums([deezer])).toEqual([deezer]);
+    const [album] = parseAlbums([
+      { ...valid, deezerUrl: "http://www.deezer.com/album/1" },
+    ]);
+    expect(album?.deezerUrl).toBeUndefined();
+  });
+
   it("is empty for anything that isn't an array", () => {
     expect(parseAlbums({})).toEqual([]);
   });

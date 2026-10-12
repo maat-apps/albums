@@ -52,6 +52,7 @@ export function parseItunesAlbums(value: unknown): AlbumMatch[] {
       year: Number.isNaN(year) ? null : year,
       type: suffix?.toLowerCase() ?? "album",
       coverUrl: item.artworkUrl100 ? largerArtwork(item.artworkUrl100) : null,
+      deezerUrl: null,
     };
   });
 }
