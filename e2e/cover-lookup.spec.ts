@@ -136,3 +136,21 @@ test("an album without a cover offers to find one", async ({ page }) => {
     page.getByRole("button", { name: "Find a cover" }),
   ).toBeVisible();
 });
+
+test("names each service that couldn't be reached", async ({ page }) => {
+  await page.route("https://api.deezer.com/**", (route) => route.abort());
+  await page.route("https://musicbrainz.org/**", (route) =>
+    route.fulfill({ status: 503, headers: CORS }),
+  );
+  await page.route("https://itunes.apple.com/**", (route) => route.abort());
+  await goHome(page);
+  await importCsv(page);
+
+  await page.getByRole("button", { name: /Title, With Comma/ }).click();
+  await page.getByRole("button", { name: "Find a cover" }).click();
+
+  const alert = page.getByRole("alert");
+  await expect(alert).toContainText("Deezer: couldn't connect.");
+  await expect(alert).toContainText("MusicBrainz: too many requests");
+  await expect(alert).toContainText("iTunes: couldn't connect.");
+});

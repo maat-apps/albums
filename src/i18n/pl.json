@@ -105,6 +105,8 @@
   "lookupProgress": "Szukam… {done} z {total}",
   "lookupSummary": "Znalezione: {matched} · Do sprawdzenia: {review} · Nie znaleziono: {notFound}",
   "lookupFailed": "Nie udało się połączyć z serwisem okładek. Sprawdź połączenie i spróbuj ponownie — znalezione okładki zostają.",
+  "sourceRateLimited": "{source}: za dużo zapytań — spróbuj za minutę.",
+  "sourceUnreachable": "{source}: brak połączenia.",
   "toReview": "Do sprawdzenia ({count})",
   "notFoundCovers": "Nie znaleziono ({count})",
   "pickCover": "Wybierz okładkę",

@@ -105,6 +105,8 @@
   "lookupProgress": "Searching… {done} of {total}",
   "lookupSummary": "Found: {matched} · To review: {review} · Not found: {notFound}",
   "lookupFailed": "Couldn't reach the cover service. Check your connection and try again — what was found is kept.",
+  "sourceRateLimited": "{source}: too many requests — try again in a minute.",
+  "sourceUnreachable": "{source}: couldn't connect.",
   "toReview": "To review ({count})",
   "notFoundCovers": "Not found ({count})",
   "pickCover": "Pick a cover",
