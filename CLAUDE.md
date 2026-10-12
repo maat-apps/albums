@@ -55,7 +55,10 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   remembered in `app-settings.ts`'s `collection` prefs; settings drawer),
   `/new` and `/:id/edit` (`views/album/album-form-view.tsx`, validated by
   `lib/album-form.ts`), `/:id` (`album-view.tsx`: cover, one-tap status,
-  "Open in Deezer" — only with a `deezerUrl`; opening
+  "Open in …" for the streaming service chosen in Settings
+  (`app-settings.ts`'s `streamingService`; `lib/streaming.ts`: Deezer,
+  Spotify, Apple Music — `deezerUrl`/`spotifyUrl`/`appleMusicUrl`, read
+  and normalised by `readLinks`), shown only with a link; opening
   it looks a missing cover/link/year up by itself via
   `hooks/use-album-lookup.ts` → the runner's `lookUpAlbumNow`, once per
   source verdict).
@@ -68,23 +71,26 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   their album. Cover sizes: `lib/cover-url.ts` (1200px — Cover Art
   Archive and iTunes URLs name the size; stored smaller URLs are read as
   1200px by `schemas.ts`, and the old cached copy stands in until the new
-  one loads). Finding covers and Deezer links: `lib/musicbrainz.ts`
-  (search + Cover Art Archive URLs; fills missing years; `findDeezerUrl`
-  reads a matched release group's releases' URL relationships for its
-  Deezer link — `deezerLookup: "none"` when there's none. Deezer's own API
-  and Odesli send no CORS headers, so the browser can't read them), `lib/cover-lookup.ts` (pure matching: `pickMatch`,
-  `applyMatch`, what each source can still add — `isMissing` — and the
-  album's `lookup` verdict — review/none/skipped), `lib/itunes.ts` (iTunes
-  Search, the last fallback; `itunesLookup` verdict),
-  `lib/cover-lookup-runner.ts` (bulk run, asks `sources` in order for what
-  each album still misses — ~1 req/s on MusicBrainz, plus one for the
-  link after a match, ~20/min on iTunes — leaves out a source that fails for the rest of the
-  run, saves each album as it goes; `lib/cover-lookup-job.ts` runs it
-  app-wide, so leaving `/covers` doesn't stop it) and `views/covers/`
-  (`/covers`, `/covers/:id`; review lists hold albums without a cover).
-  Deezer links are user data (in backups), unlike covers. E2E mocks
-  MusicBrainz (search and releases), the archive and iTunes with `page.route` (service workers
-  blocked). Back uses `useSmartBack`.
+  one loads). Finding covers and links: `lib/musicbrainz.ts` (search
+  - Cover Art Archive URLs; fills missing years; `findLinks` reads a
+    matched release group's releases' URL relationships for its streaming
+    links, then `linksLookup: "done"`. Deezer's own API and Odesli send no
+    CORS headers and Spotify's needs a sign-in, so the browser can't use
+    them), `lib/cover-lookup.ts` (pure matching: `pickMatch`,
+    `applyMatch`, what each source can still add — `isMissing` — and the
+    album's `lookup` verdict — review/none/skipped), `lib/itunes.ts` (iTunes
+    Search, the last fallback; its results carry Apple Music links, so it's
+    also asked for one when that's the chosen service; `itunesLookup`
+    verdict),
+    `lib/cover-lookup-runner.ts` (bulk run, asks `sources` in order for what
+    each album still misses — ~1 req/s on MusicBrainz, plus one for the
+    link after a match, ~20/min on iTunes — leaves out a source that fails for the rest of the
+    run, saves each album as it goes; `lib/cover-lookup-job.ts` runs it
+    app-wide, so leaving `/covers` doesn't stop it) and `views/covers/`
+    (`/covers`, `/covers/:id`; review lists hold albums without a cover).
+    Streaming links are user data (in backups), unlike covers. E2E mocks
+    MusicBrainz (search and releases), the archive and iTunes with `page.route` (service workers
+    blocked). Back uses `useSmartBack`.
 - **i18n.** `src/i18n/en.json` and `pl.json` (core's `createTranslation`;
   device language on first launch, Settings → Language after). `t()`
   only accepts keys present in both — keep them in sync.

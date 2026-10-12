@@ -15,6 +15,7 @@ const ITEM = {
   artworkUrl100:
     "https://is1-ssl.mzstatic.com/image/thumb/Music/x/100x100bb.jpg",
   releaseDate: "1999-05-01T07:00:00Z",
+  collectionViewUrl: "https://music.apple.com/us/album/made-up-title/123?uo=4",
 };
 
 afterEach(() => {
@@ -55,7 +56,7 @@ describe("parseItunesAlbums", () => {
         type: "album",
         coverUrl:
           "https://is1-ssl.mzstatic.com/image/thumb/Music/x/1200x1200bb.jpg",
-        deezerUrl: null,
+        links: { appleMusic: "https://music.apple.com/us/album/123" },
       },
     ]);
   });

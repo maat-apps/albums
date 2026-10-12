@@ -7,6 +7,7 @@ import {
   stopLookup,
   subscribeToLookup,
 } from "../lib/cover-lookup-job";
+import { useAppSettings } from "./use-app-settings";
 
 export type { LookupPhase } from "../lib/cover-lookup-job";
 
@@ -15,6 +16,7 @@ export type { LookupPhase } from "../lib/cover-lookup-job";
  * doesn't stop it, and opening the screen again shows the run in progress.
  */
 export function useCoverLookup(sources: LookupSource[]) {
+  const { streamingService } = useAppSettings();
   const { phase, progress } = useSyncExternalStore(
     subscribeToLookup,
     getLookupState,
@@ -22,7 +24,7 @@ export function useCoverLookup(sources: LookupSource[]) {
   return {
     phase,
     progress,
-    start: () => startLookup(sources),
+    start: () => startLookup(sources, streamingService),
     stop: stopLookup,
   };
 }

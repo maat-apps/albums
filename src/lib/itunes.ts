@@ -5,6 +5,7 @@ import type { AlbumMatch } from "./cover-lookup";
 import { COVER_SIZE } from "./cover-url";
 import { RateLimitedError } from "./musicbrainz";
 import type { Album } from "./schemas";
+import { readLinks } from "./streaming";
 
 // Apple's iTunes Search API: free, no account or key, readable from the
 // browser. Only an album's artist and title leave the device. It allows
@@ -18,6 +19,7 @@ const ItunesAlbumSchema = v.object({
   artistName: v.string(),
   artworkUrl100: v.optional(v.string()),
   releaseDate: v.optional(v.string()),
+  collectionViewUrl: v.optional(v.string()),
 });
 
 const SearchResultSchema = v.object({ results: v.array(v.unknown()) });
@@ -56,7 +58,7 @@ export function parseItunesAlbums(value: unknown): AlbumMatch[] {
       year: Number.isNaN(year) ? null : year,
       type: suffix?.toLowerCase() ?? "album",
       coverUrl: item.artworkUrl100 ? largerArtwork(item.artworkUrl100) : null,
-      deezerUrl: null,
+      links: readLinks(item.collectionViewUrl ? [item.collectionViewUrl] : []),
     };
   });
 }

@@ -4,10 +4,12 @@ import * as v from "valibot";
 import type { AlbumMatch } from "./cover-lookup";
 import { COVER_SIZE } from "./cover-url";
 import type { Album } from "./schemas";
+import { readLinks, type StreamingLinks } from "./streaming";
 
-// MusicBrainz's release-group search, its releases' links (for an album's
-// Deezer link — Deezer's own API can't be read from the browser, it sends
-// no CORS headers) and the Cover Art Archive: all free, no account,
+// MusicBrainz's release-group search, its releases' links (an album's
+// Deezer, Spotify and Apple Music links — those services' own APIs can't be
+// read from the browser: no CORS headers, or a sign-in) and the Cover Art
+// Archive: all free, no account,
 // readable from the browser. Only an album's artist and title leave the
 // device (PRODUCT.md). MusicBrainz allows about one request per second —
 // cover-lookup-runner.ts paces bulk lookups.
@@ -109,7 +111,7 @@ export function toMatch(group: ReleaseGroup): AlbumMatch {
     year: group.year,
     type: group.primaryType?.toLowerCase() ?? null,
     coverUrl: coverArtUrl(group.id),
-    deezerUrl: null,
+    links: {},
   };
 }
 
@@ -129,10 +131,6 @@ const ReleasesSchema = v.object({
   ),
 });
 
-// "https://www.deezer.com/album/1", also with a language ("/en/") or http.
-const DEEZER_ALBUM =
-  /^https?:\/\/(?:www\.)?deezer\.com\/(?:[a-z]{2}\/)?album\/(\d+)/;
-
 /** The release group's releases, with their links. */
 export function releasesUrl(releaseGroupId: string): string {
   const params = new URLSearchParams({
@@ -144,23 +142,23 @@ export function releasesUrl(releaseGroupId: string): string {
   return `${RELEASES_URL}?${params}`;
 }
 
-/** The first Deezer album link among the releases' links, or null. */
-export function parseDeezerUrl(value: unknown): string | null {
-  if (!v.is(ReleasesSchema, value)) return null;
-  for (const release of value.releases) {
-    for (const relation of release.relations ?? []) {
-      const id = DEEZER_ALBUM.exec(relation.url?.resource ?? "")?.[1];
-      if (id) return `https://www.deezer.com/album/${id}`;
-    }
-  }
-  return null;
+/** The streaming links among the releases' links, the first per service. */
+export function parseLinks(value: unknown): StreamingLinks {
+  if (!v.is(ReleasesSchema, value)) return {};
+  return readLinks(
+    value.releases.flatMap((release) =>
+      (release.relations ?? []).flatMap((relation) =>
+        relation.url ? [relation.url.resource] : [],
+      ),
+    ),
+  );
 }
 
-/** The release group's Deezer album link, if MusicBrainz knows it. */
-export async function findDeezerUrl(
+/** The release group's streaming links that MusicBrainz knows. */
+export async function findLinks(
   releaseGroupId: string,
   signal?: AbortSignal,
-): Promise<string | null> {
+): Promise<StreamingLinks> {
   const response = await fetch(releasesUrl(releaseGroupId), {
     signal,
     credentials: "omit",
@@ -170,7 +168,7 @@ export async function findDeezerUrl(
     throw new RateLimitedError();
   }
   if (!response.ok) throw new Error(`MusicBrainz: HTTP ${response.status}`);
-  return parseDeezerUrl(await response.json());
+  return parseLinks(await response.json());
 }
 
 /** MusicBrainz's matches for the album. */

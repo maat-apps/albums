@@ -2,23 +2,25 @@ import {
   applyMatch,
   needsLookup,
   pickMatch,
-  wantsDeezerUrl,
+  wantsLinks,
   withVerdict,
   type AlbumMatch,
   type LookupSource,
 } from "./cover-lookup";
 import { searchItunes } from "./itunes";
-import {
-  findDeezerUrl,
-  RateLimitedError,
-  searchMusicBrainz,
-} from "./musicbrainz";
+import { findLinks, RateLimitedError, searchMusicBrainz } from "./musicbrainz";
 import type { Album } from "./schemas";
 import { getAlbumsSnapshot, saveAlbum } from "./storage";
+import {
+  withLinks,
+  type StreamingLinks,
+  type StreamingService,
+} from "./streaming";
 
 // Looks every album missing something up on each source in turn, for what
-// the ones before left missing: MusicBrainz (cover, year, and its Deezer
-// link with a second request; one request a second), then iTunes (cover).
+// the ones before left missing: MusicBrainz (cover, year, and streaming
+// links with a second request; one request a second), then iTunes (cover,
+// Apple Music link). What's "missing" depends on the user's service.
 // A source that can't be reached is left out for the rest of the run.
 // Stopping keeps everything found so far: each album is saved as it's done,
 // and the next run skips it.
@@ -53,10 +55,12 @@ const PAUSES: Record<LookupSource, number> = {
 export type LookupOptions = {
   /** Tried in order for each album, until one has a sure match. */
   sources: LookupSource[];
+  /** The user's streaming service, whose link counts as missing. */
+  service: StreamingService;
   signal: AbortSignal;
   onProgress: (progress: LookupProgress) => void;
   search?: Search;
-  /** A MusicBrainz release group's Deezer link (findDeezerUrl by default). */
+  /** A MusicBrainz release group's streaming links (findLinks by default). */
   findLink?: FindLink;
   /** Milliseconds between requests (each source's own pace by default). */
   pause?: number;
@@ -67,7 +71,7 @@ export type LookupOptions = {
 type FindLink = (
   releaseGroupId: string,
   signal: AbortSignal,
-) => Promise<string | null>;
+) => Promise<StreamingLinks>;
 
 const MAX_RETRIES = 3;
 
@@ -110,16 +114,16 @@ async function withRetry<T>(
 }
 
 type LookupAlbumOptions = Required<
-  Pick<LookupOptions, "sources" | "signal" | "backoff">
+  Pick<LookupOptions, "sources" | "service" | "signal" | "backoff">
 > &
   Pick<LookupOptions, "search" | "findLink" | "pause">;
 
 /**
- * The album with the matched release group's Deezer link, or marked as
- * having none; unchanged when MusicBrainz can't be reached or the run
- * stops (it's asked again next time).
+ * The album with the matched release group's streaming links filled in and
+ * marked as read; unchanged when MusicBrainz can't be reached or the run
+ * stops (they're asked for again next time).
  */
-async function withDeezerUrl(
+async function withReleaseLinks(
   album: Album,
   releaseGroupId: string,
   options: LookupAlbumOptions,
@@ -127,15 +131,13 @@ async function withDeezerUrl(
   const { signal, backoff } = options;
   await sleep(options.pause ?? PAUSES.musicbrainz, signal);
   if (signal.aborted) return album;
-  const findLink = options.findLink ?? findDeezerUrl;
+  const findLink = options.findLink ?? findLinks;
   try {
-    const deezerUrl = await withRetry(() => findLink(releaseGroupId, signal), {
+    const links = await withRetry(() => findLink(releaseGroupId, signal), {
       signal,
       backoff,
     });
-    return deezerUrl
-      ? { ...album, deezerUrl }
-      : { ...album, deezerLookup: "none" };
+    return { ...withLinks(album, links), linksLookup: "done" };
   } catch {
     return album;
   }
@@ -176,7 +178,7 @@ async function lookUpAlbum(
   };
   for (const source of sources) {
     if (run.unavailable.has(source)) continue;
-    if (!needsLookup(tried.album, source)) continue;
+    if (!needsLookup(tried.album, source, options.service)) continue;
     if (run.requested) {
       await sleep(options.pause ?? PAUSES[source], signal);
     }
@@ -201,8 +203,11 @@ async function lookUpAlbum(
     if (outcome.kind === "match") {
       tried.album = applyMatch(tried.album, outcome.match);
       tried.matched = true;
-      if (source === "musicbrainz" && wantsDeezerUrl(tried.album)) {
-        tried.album = await withDeezerUrl(
+      if (
+        source === "musicbrainz" &&
+        wantsLinks(tried.album, options.service)
+      ) {
+        tried.album = await withReleaseLinks(
           tried.album,
           outcome.match.id,
           options,
@@ -223,6 +228,7 @@ async function lookUpAlbum(
  */
 export async function lookUpCovers({
   sources,
+  service,
   signal,
   onProgress,
   search,
@@ -231,7 +237,7 @@ export async function lookUpCovers({
   backoff = 5000,
 }: LookupOptions): Promise<LookupProgress> {
   const wanted = (album: Album) =>
-    sources.some((source) => needsLookup(album, source));
+    sources.some((source) => needsLookup(album, source, service));
   const ids = getAlbumsSnapshot()
     .filter(wanted)
     .map((album) => album.id);
@@ -255,7 +261,7 @@ export async function lookUpCovers({
     }
     const tried = await lookUpAlbum(
       album,
-      { sources, signal, backoff, search, findLink, pause },
+      { sources, service, signal, backoff, search, findLink, pause },
       run,
     );
     if (!tried) break;
@@ -281,15 +287,17 @@ export async function lookUpCovers({
  */
 export async function lookUpAlbumNow(
   id: string,
+  service: StreamingService,
   signal: AbortSignal,
 ): Promise<void> {
   const find = () => getAlbumsSnapshot().find((item) => item.id === id);
   const album = find();
   if (!album) return;
-  if (!LOOKUP_SOURCES.some((source) => needsLookup(album, source))) return;
+  const sources = LOOKUP_SOURCES;
+  if (!sources.some((source) => needsLookup(album, source, service))) return;
   const tried = await lookUpAlbum(
     album,
-    { sources: LOOKUP_SOURCES, signal, backoff: 5000 },
+    { sources, service, signal, backoff: 5000 },
     { requested: false, unavailable: new Set() },
   );
   if (!tried?.searched || find()?.updatedAt !== album.updatedAt) return;

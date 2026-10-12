@@ -1,9 +1,15 @@
 import type { Album } from "./schemas";
+import {
+  linkTo,
+  withLinks,
+  type StreamingLinks,
+  type StreamingService,
+} from "./streaming";
 
 // Matching an album to search results — from MusicBrainz or iTunes. Pure,
-// so
-// the bulk runner (cover-lookup-runner.ts) and the pick view share one
-// definition of "a sure match".
+// so the bulk runner (cover-lookup-runner.ts) and the pick view share one
+// definition of "a sure match", and of what an album still misses for the
+// user's streaming service.
 
 export type LookupSource = "musicbrainz" | "itunes";
 
@@ -16,7 +22,8 @@ export type AlbumMatch = {
   /** "album", "single", "ep"… (lower case). */
   type: string | null;
   coverUrl: string | null;
-  deezerUrl: string | null;
+  /** Streaming links the result itself carries (iTunes: Apple Music). */
+  links: StreamingLinks;
 };
 
 // Words that only mark a reissue ("Deluxe Edition", "2009 Remaster"): left
@@ -119,40 +126,42 @@ export function pickMatch(album: Album, matches: AlbumMatch[]): LookupOutcome {
 }
 
 /**
- * The album with what the match adds — a cover, a Deezer link, a year —
- * where it had none. The lookup verdicts are cleared, except the Deezer
- * link's while the album still has none.
+ * The album with what the match adds — a cover, a year, streaming links —
+ * where it had none; the search verdicts are cleared.
  */
 export function applyMatch(album: Album, match: AlbumMatch): Album {
-  const deezerUrl = album.deezerUrl ?? match.deezerUrl ?? undefined;
   return {
-    ...album,
+    ...withLinks(album, match.links),
     coverUrl: album.coverUrl ?? match.coverUrl ?? undefined,
-    deezerUrl,
     year: album.year ?? match.year,
     lookup: undefined,
-    deezerLookup: deezerUrl ? undefined : album.deezerLookup,
     itunesLookup: undefined,
   };
 }
 
 /**
- * Whether the album still has no Deezer link and none was looked for since
- * (cover-lookup-runner.ts asks MusicBrainz for it after a match).
+ * Whether the album has no link to `service` and MusicBrainz's links for it
+ * weren't read yet (cover-lookup-runner.ts reads them after a match).
  */
-export function wantsDeezerUrl(album: Album): boolean {
-  return !album.deezerUrl && album.deezerLookup === undefined;
+export function wantsLinks(album: Album, service: StreamingService): boolean {
+  return !linkTo(album, service) && album.linksLookup === undefined;
 }
 
 /**
  * What a lookup from `source` can still add to the album: a cover from
- * either, a year or a Deezer link from MusicBrainz.
+ * either; a year or the `service` link from MusicBrainz; an Apple Music
+ * link from iTunes.
  */
-function isMissing(album: Album, source: LookupSource): boolean {
+function isMissing(
+  album: Album,
+  source: LookupSource,
+  service: StreamingService,
+): boolean {
   if (!album.coverUrl) return true;
-  return (
-    source === "musicbrainz" && (album.year === null || wantsDeezerUrl(album))
-  );
+  if (source === "musicbrainz") {
+    return album.year === null || wantsLinks(album, service);
+  }
+  return service === "appleMusic" && !album.appleMusicUrl;
 }
 
 const VERDICT_FIELDS = {
@@ -173,9 +182,15 @@ export function withVerdict(
   return { ...album, [VERDICT_FIELDS[source]]: result };
 }
 
-/** Albums a bulk lookup from `source` still has to try. */
-export function needsLookup(album: Album, source: LookupSource): boolean {
-  return isMissing(album, source) && verdict(album, source) === undefined;
+/** Albums a lookup from `source` still has to try, for `service`'s link. */
+export function needsLookup(
+  album: Album,
+  source: LookupSource,
+  service: StreamingService,
+): boolean {
+  return (
+    isMissing(album, source, service) && verdict(album, source) === undefined
+  );
 }
 
 /** Albums without a cover whose lookup found candidates to pick from. */

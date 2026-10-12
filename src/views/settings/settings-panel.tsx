@@ -4,6 +4,7 @@ import { AppSection } from "./settings-app-section";
 import { DataSection } from "./settings-data-section";
 import { LanguageSection } from "./settings-language-section";
 import { SecuritySection } from "./settings-security-section";
+import { StreamingSection } from "./settings-streaming-section";
 
 export function SettingsPanel() {
   const [status, setStatus] = useState<string | null>(null);
@@ -11,6 +12,7 @@ export function SettingsPanel() {
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-2.5">
       <LanguageSection />
+      <StreamingSection />
       <SecuritySection />
       <DataSection onStatus={setStatus} />
       <AppSection onStatus={setStatus} />

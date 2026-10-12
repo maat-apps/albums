@@ -35,13 +35,15 @@ describe("parseAlbums", () => {
     expect(album?.coverUrl).toBeUndefined();
   });
 
-  it("keeps a Deezer link and verdict, and drops a non-https link", () => {
-    const deezer = {
+  it("keeps streaming links and their verdict, and drops a non-https link", () => {
+    const linked = {
       ...valid,
       deezerUrl: "https://www.deezer.com/album/302127",
-      deezerLookup: "review",
+      spotifyUrl: "https://open.spotify.com/album/abc",
+      appleMusicUrl: "https://music.apple.com/us/album/1",
+      linksLookup: "done",
     };
-    expect(parseAlbums([deezer])).toEqual([deezer]);
+    expect(parseAlbums([linked])).toEqual([linked]);
     const [album] = parseAlbums([
       { ...valid, deezerUrl: "http://www.deezer.com/album/1" },
     ]);

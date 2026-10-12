@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   coverArtUrl,
-  findDeezerUrl,
-  parseDeezerUrl,
+  findLinks,
+  parseLinks,
   parseReleaseGroups,
   RateLimitedError,
   releasesUrl,
@@ -124,7 +124,7 @@ describe("searchReleaseGroups", () => {
         year: 1999,
         type: "album",
         coverUrl: "https://coverartarchive.org/release-group/rg1/front-1200",
-        deezerUrl: null,
+        links: {},
       },
     ]);
   });
@@ -138,7 +138,7 @@ describe("searchReleaseGroups", () => {
   });
 });
 
-describe("Deezer links", () => {
+describe("streaming links", () => {
   const releases = (...resources: string[]) => ({
     releases: [
       { relations: [] },
@@ -155,27 +155,28 @@ describe("Deezer links", () => {
     expect(url.searchParams.get("inc")).toBe("url-rels");
   });
 
-  it("reads the first Deezer album link, in its plain form", () => {
+  it("reads each service's first album link, in its plain form", () => {
     expect(
-      parseDeezerUrl(
+      parseLinks(
         releases(
-          "https://open.spotify.com/album/x",
+          "https://www.discogs.com/release/1",
           "http://deezer.com/fr/album/126502",
           "https://www.deezer.com/album/2",
+          "https://open.spotify.com/album/abc123",
         ),
       ),
-    ).toBe("https://www.deezer.com/album/126502");
+    ).toEqual({
+      deezer: "https://www.deezer.com/album/126502",
+      spotify: "https://open.spotify.com/album/abc123",
+    });
   });
 
-  it("is null without a Deezer album link, or for an unexpected response", () => {
-    expect(
-      parseDeezerUrl(releases("https://www.deezer.com/artist/9")),
-    ).toBeNull();
-    expect(parseDeezerUrl({ releases: [{}] })).toBeNull();
-    expect(parseDeezerUrl("nope")).toBeNull();
+  it("is empty without links, or for an unexpected response", () => {
+    expect(parseLinks({ releases: [{}] })).toEqual({});
+    expect(parseLinks("nope")).toEqual({});
   });
 
-  it("fetches it, reading 503 as rate limiting", async () => {
+  it("fetches them, reading 503 as rate limiting", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
@@ -184,20 +185,20 @@ describe("Deezer links", () => {
         json: () => Promise.resolve(releases("https://www.deezer.com/album/7")),
       }),
     );
-    await expect(findDeezerUrl("rg1")).resolves.toBe(
-      "https://www.deezer.com/album/7",
-    );
+    await expect(findLinks("rg1")).resolves.toEqual({
+      deezer: "https://www.deezer.com/album/7",
+    });
 
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({ ok: false, status: 503 }),
     );
-    await expect(findDeezerUrl("rg1")).rejects.toBeInstanceOf(RateLimitedError);
+    await expect(findLinks("rg1")).rejects.toBeInstanceOf(RateLimitedError);
 
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({ ok: false, status: 500 }),
     );
-    await expect(findDeezerUrl("rg1")).rejects.toThrow("MusicBrainz: HTTP 500");
+    await expect(findLinks("rg1")).rejects.toThrow("MusicBrainz: HTTP 500");
   });
 });

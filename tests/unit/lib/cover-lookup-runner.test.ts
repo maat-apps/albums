@@ -22,7 +22,7 @@ const group = (title: string, year = 1999): AlbumMatch => ({
   year,
   type: "album",
   coverUrl: `https://example.com/rg-${title}.jpg`,
-  deezerUrl: null,
+  links: {},
 });
 
 async function fresh(albums: Album[]) {
@@ -77,6 +77,7 @@ describe("lookUpCovers", () => {
 
     const progress = await runner.lookUpCovers({
       sources: ["musicbrainz"],
+      service: "deezer",
       signal: new AbortController().signal,
       onProgress,
       search,
@@ -114,6 +115,7 @@ describe("lookUpCovers", () => {
 
     const progress = await runner.lookUpCovers({
       sources: ["musicbrainz", "itunes"],
+      service: "deezer",
       signal: new AbortController().signal,
       onProgress: () => {},
       search,
@@ -133,10 +135,13 @@ describe("lookUpCovers", () => {
 
   it("fetches the Deezer link of a MusicBrainz match", async () => {
     const { storage, runner } = await fresh([album("a")]);
-    const findLink = vi.fn(async () => "https://www.deezer.com/album/7");
+    const findLink = vi.fn(async () => ({
+      deezer: "https://www.deezer.com/album/7",
+    }));
 
     const progress = await runner.lookUpCovers({
       sources: ["musicbrainz", "itunes"],
+      service: "deezer",
       signal: new AbortController().signal,
       onProgress: () => {},
       search: async () => [group("a")],
@@ -152,7 +157,7 @@ describe("lookUpCovers", () => {
     });
   });
 
-  it("looks a link up for an album with a cover, and remembers there's none", async () => {
+  it("looks a link up for an album with a cover, and remembers they were read", async () => {
     const { storage, runner } = await fresh([
       album("a", { coverUrl: "https://example.com/own.jpg" }),
     ]);
@@ -160,17 +165,18 @@ describe("lookUpCovers", () => {
 
     await runner.lookUpCovers({
       sources: ["musicbrainz", "itunes"],
+      service: "deezer",
       signal: new AbortController().signal,
       onProgress: () => {},
       search,
-      findLink: async () => null,
+      findLink: async () => ({}),
       pause: 0,
     });
 
     expect(search).toHaveBeenCalledOnce();
     expect(byId(storage.getAlbumsSnapshot(), "a")).toMatchObject({
       coverUrl: "https://example.com/own.jpg",
-      deezerLookup: "none",
+      linksLookup: "done",
     });
   });
 
@@ -179,6 +185,7 @@ describe("lookUpCovers", () => {
 
     await runner.lookUpCovers({
       sources: ["musicbrainz"],
+      service: "deezer",
       signal: new AbortController().signal,
       onProgress: () => {},
       search: async () => [group("a")],
@@ -190,7 +197,7 @@ describe("lookUpCovers", () => {
 
     const saved = byId(storage.getAlbumsSnapshot(), "a");
     expect(saved?.coverUrl).toContain("rg-a");
-    expect(saved?.deezerLookup).toBeUndefined();
+    expect(saved?.linksLookup).toBeUndefined();
   });
 
   it("asks the next source for what a match left missing", async () => {
@@ -203,10 +210,11 @@ describe("lookUpCovers", () => {
 
     const progress = await runner.lookUpCovers({
       sources: ["musicbrainz", "itunes"],
+      service: "deezer",
       signal: new AbortController().signal,
       onProgress: () => {},
       search,
-      findLink: async () => "https://www.deezer.com/album/7",
+      findLink: async () => ({ deezer: "https://www.deezer.com/album/7" }),
       pause: 0,
     });
 
@@ -224,17 +232,18 @@ describe("lookUpCovers", () => {
 
     await runner.lookUpCovers({
       sources: ["musicbrainz", "itunes"],
+      service: "deezer",
       signal: controller.signal,
       onProgress: () => {},
       search: async () => [{ ...group("a"), coverUrl: null }],
       findLink: async () => {
         controller.abort();
-        return null;
+        return {};
       },
       pause: 0,
     });
 
-    expect(byId(storage.getAlbumsSnapshot(), "a")?.deezerLookup).toBe("none");
+    expect(byId(storage.getAlbumsSnapshot(), "a")?.linksLookup).toBe("done");
   });
 
   it("leaves out a source that fails, and goes on with the others", async () => {
@@ -251,6 +260,7 @@ describe("lookUpCovers", () => {
 
     const progress = await runner.lookUpCovers({
       sources: ["musicbrainz", "itunes"],
+      service: "deezer",
       signal: new AbortController().signal,
       onProgress: () => {},
       search,
@@ -269,7 +279,7 @@ describe("lookUpCovers", () => {
     });
     const albums = storage.getAlbumsSnapshot();
     expect(byId(albums, "b")?.coverUrl).toContain("rg-b");
-    expect(byId(albums, "linkless")?.deezerLookup).toBeUndefined();
+    expect(byId(albums, "linkless")?.linksLookup).toBeUndefined();
   });
 
   it("rejects once every source has failed", async () => {
@@ -279,6 +289,7 @@ describe("lookUpCovers", () => {
     await expect(
       runner.lookUpCovers({
         sources: ["musicbrainz", "itunes"],
+        service: "deezer",
         signal: new AbortController().signal,
         onProgress: () => {},
         search,
@@ -297,6 +308,7 @@ describe("lookUpCovers", () => {
 
     const progress = await runner.lookUpCovers({
       sources: ["musicbrainz"],
+      service: "deezer",
       signal: new AbortController().signal,
       onProgress: () => {},
       search,
@@ -317,6 +329,7 @@ describe("lookUpCovers", () => {
 
     const progress = await runner.lookUpCovers({
       sources: ["musicbrainz"],
+      service: "deezer",
       signal: controller.signal,
       onProgress: () => {},
       search,
@@ -337,6 +350,7 @@ describe("lookUpCovers", () => {
 
     const progress = await runner.lookUpCovers({
       sources: ["musicbrainz"],
+      service: "deezer",
       signal: controller.signal,
       onProgress: () => {},
       search,
@@ -357,6 +371,7 @@ describe("lookUpCovers", () => {
     await expect(
       runner.lookUpCovers({
         sources: ["musicbrainz"],
+        service: "deezer",
         signal: controller.signal,
         onProgress: () => {},
         search,
@@ -373,6 +388,7 @@ describe("lookUpCovers", () => {
 
     const progress = await runner.lookUpCovers({
       sources: ["musicbrainz"],
+      service: "deezer",
       signal: new AbortController().signal,
       onProgress: () => {},
       search,
@@ -390,6 +406,7 @@ describe("lookUpCovers", () => {
     await expect(
       runner.lookUpCovers({
         sources: ["musicbrainz"],
+        service: "deezer",
         signal: new AbortController().signal,
         onProgress: () => {},
         search: limited,
@@ -402,6 +419,7 @@ describe("lookUpCovers", () => {
     await expect(
       runner.lookUpCovers({
         sources: ["musicbrainz"],
+        service: "deezer",
         signal: new AbortController().signal,
         onProgress: () => {},
         search: offline,
@@ -420,6 +438,7 @@ describe("lookUpCovers", () => {
 
     const progress = await runner.lookUpCovers({
       sources: ["musicbrainz"],
+      service: "deezer",
       signal: new AbortController().signal,
       onProgress: () => {},
       pause: 0,
@@ -440,6 +459,7 @@ describe("lookUpCovers", () => {
 
     const progress = await runner.lookUpCovers({
       sources: ["musicbrainz"],
+      service: "deezer",
       signal: new AbortController().signal,
       onProgress: () => {},
       search,
@@ -483,7 +503,7 @@ describe("lookUpAlbumNow", () => {
     const fetchMock = vi.fn(async (url: string) => answer(url));
     vi.stubGlobal("fetch", fetchMock);
 
-    await runner.lookUpAlbumNow("a", new AbortController().signal);
+    await runner.lookUpAlbumNow("a", "deezer", new AbortController().signal);
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(byId(storage.getAlbumsSnapshot(), "a")).toMatchObject({
@@ -504,7 +524,7 @@ describe("lookUpAlbumNow", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     for (const id of ["done", "tried", "gone"]) {
-      await runner.lookUpAlbumNow(id, new AbortController().signal);
+      await runner.lookUpAlbumNow(id, "deezer", new AbortController().signal);
     }
 
     expect(fetchMock).not.toHaveBeenCalled();
@@ -520,7 +540,7 @@ describe("lookUpAlbumNow", () => {
       }),
     );
 
-    await runner.lookUpAlbumNow("a", new AbortController().signal);
+    await runner.lookUpAlbumNow("a", "deezer", new AbortController().signal);
 
     const saved = byId(storage.getAlbumsSnapshot(), "a");
     expect(saved?.title).toBe("Renamed");
@@ -533,7 +553,7 @@ describe("lookUpAlbumNow", () => {
     controller.abort();
     vi.stubGlobal("fetch", vi.fn());
 
-    await runner.lookUpAlbumNow("a", controller.signal);
+    await runner.lookUpAlbumNow("a", "deezer", controller.signal);
 
     expect(byId(storage.getAlbumsSnapshot(), "a")?.lookup).toBeUndefined();
   });

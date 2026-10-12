@@ -1,6 +1,6 @@
 import { expect, type Page, type Route, test } from "@playwright/test";
 
-import { goHome, importCsv, openSettings } from "./utils";
+import { closeSettings, goHome, importCsv, openSettings } from "./utils";
 
 // The worker would fetch these requests itself, out of page.route's reach.
 test.use({ serviceWorkers: "block" });
@@ -35,14 +35,18 @@ function musicBrainz(route: Route) {
   return route.fulfill({ json: { "release-groups": groups }, headers: CORS });
 }
 
-// The matched release group's releases: a Deezer link for "Alpha" only.
+// The matched release group's releases: Deezer and Spotify links for
+// "Alpha" only.
 function musicBrainzReleases(route: Route) {
   const group = new URL(route.request().url()).searchParams.get(
     "release-group",
   );
   const relations =
     group === "rg-alpha"
-      ? [{ url: { resource: "https://www.deezer.com/album/1" } }]
+      ? [
+          { url: { resource: "https://www.deezer.com/album/1" } },
+          { url: { resource: "https://open.spotify.com/album/alpha1" } },
+        ]
       : [];
   return route.fulfill({
     json: { releases: [{ relations }] },
@@ -154,6 +158,27 @@ test("opening an album finds its cover and Deezer link by itself", async ({
   ).toHaveAttribute("href", "https://www.deezer.com/album/1");
   await expect(page.locator("img")).toHaveAttribute("src", /^blob:/);
   await expect(page.getByRole("button", { name: "Find a cover" })).toHaveCount(
+    0,
+  );
+});
+
+test("the chosen streaming service decides which link the album opens", async ({
+  page,
+}) => {
+  await mockServices(page);
+  await goHome(page);
+  await importCsv(page);
+
+  await openSettings(page);
+  await page.getByRole("combobox", { name: "Streaming service" }).click();
+  await page.getByRole("option", { name: "Spotify" }).click();
+  await closeSettings(page);
+
+  await page.getByRole("button", { name: /Alpha/ }).click();
+  await expect(
+    page.getByRole("link", { name: "Open in Spotify" }),
+  ).toHaveAttribute("href", "https://open.spotify.com/album/alpha1");
+  await expect(page.getByRole("link", { name: "Open in Deezer" })).toHaveCount(
     0,
   );
 });

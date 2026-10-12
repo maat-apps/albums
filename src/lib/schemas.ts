@@ -29,14 +29,17 @@ const AlbumSchema = v.object({
     v.optional(v.pipe(HttpsUrlSchema, v.transform(largerCoverUrl))),
     undefined,
   ),
+  // Links to the album on streaming services (streaming.ts).
   deezerUrl: v.fallback(v.optional(HttpsUrlSchema), undefined),
+  spotifyUrl: v.fallback(v.optional(HttpsUrlSchema), undefined),
+  appleMusicUrl: v.fallback(v.optional(HttpsUrlSchema), undefined),
   // The last MusicBrainz lookup's verdict for an album still without a
   // cover (cover-lookup.ts): "review" — candidates to pick from, "none" — nothing
   // found, "skipped" — the user rejected them. Absent until looked up.
   lookup: v.fallback(v.optional(v.picklist(LOOKUP_RESULTS)), undefined),
-  // Whether looking for the album's Deezer link (on MusicBrainz, after a
-  // match) found none: "none". Absent until looked for, or once found.
-  deezerLookup: v.fallback(v.optional(v.picklist(LOOKUP_RESULTS)), undefined),
+  // "done" once MusicBrainz's links for the matched album were read (any
+  // streaming links found are filled in), so they aren't asked for again.
+  linksLookup: v.fallback(v.optional(v.literal("done")), undefined),
   // And from an iTunes lookup, the fallback for what the others missed.
   itunesLookup: v.fallback(v.optional(v.picklist(LOOKUP_RESULTS)), undefined),
   createdAt: v.string(),

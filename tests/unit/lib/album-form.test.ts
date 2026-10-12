@@ -31,6 +31,8 @@ describe("albumToForm", () => {
       status: "comingBack",
       coverUrl: "https://example.com/cover.jpg",
       deezerUrl: "https://www.deezer.com/album/302127",
+      spotifyUrl: "",
+      appleMusicUrl: "",
     });
   });
 

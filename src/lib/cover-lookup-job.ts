@@ -1,5 +1,6 @@
 import type { LookupSource } from "./cover-lookup";
 import { lookUpCovers, type LookupProgress } from "./cover-lookup-runner";
+import type { StreamingService } from "./streaming";
 
 // The bulk cover lookup as one app-wide job: it keeps going when the covers
 // screen closes, until it finishes, the user stops it or the app itself
@@ -32,14 +33,21 @@ export function subscribeToLookup(listener: () => void): () => void {
   };
 }
 
-/** Starts a run over `sources`; does nothing while one is running. */
-export function startLookup(sources: LookupSource[]): void {
+/**
+ * Starts a run over `sources`, filling `service`'s links; does nothing while
+ * one is running.
+ */
+export function startLookup(
+  sources: LookupSource[],
+  service: StreamingService,
+): void {
   if (state.phase === "running") return;
   const current = new AbortController();
   controller = current;
   update({ phase: "running" });
   lookUpCovers({
     sources,
+    service,
     signal: current.signal,
     onProgress: (progress) => update({ progress }),
   }).then(

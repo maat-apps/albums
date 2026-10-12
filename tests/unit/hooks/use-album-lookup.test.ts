@@ -22,8 +22,13 @@ describe("useAlbumLookup", () => {
     const { unmount } = renderHook(() => useAlbumLookup("a1"));
 
     expect(lookUpAlbumNow).toHaveBeenCalledOnce();
-    const [id, signal] = lookUpAlbumNow.mock.calls[0] as [string, AbortSignal];
+    const [id, service, signal] = lookUpAlbumNow.mock.calls[0] as [
+      string,
+      string,
+      AbortSignal,
+    ];
     expect(id).toBe("a1");
+    expect(service).toBe("deezer");
     expect(signal.aborted).toBe(false);
     unmount();
     expect(signal.aborted).toBe(true);

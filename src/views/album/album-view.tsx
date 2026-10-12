@@ -13,14 +13,23 @@ import { AlbumCover } from "../../components/album-cover";
 import { MissingAlbum } from "../../components/missing-album";
 import { useAlbumLookup } from "../../hooks/use-album-lookup";
 import { useAlbum, useAlbumsReady } from "../../hooks/use-albums";
+import { useAppSettings } from "../../hooks/use-app-settings";
 import { useTranslation } from "../../i18n/use-translation";
 import { setStatus } from "../../lib/storage";
+import { linkTo, type StreamingService } from "../../lib/streaming";
 
 import { StatusPicker } from "./status-picker";
 
+const OPEN_LABELS = {
+  deezer: "openInDeezer",
+  spotify: "openInSpotify",
+  appleMusic: "openInAppleMusic",
+} as const satisfies Record<StreamingService, string>;
+
 /**
- * "/:id": one album — its cover, details, status and Deezer link. A missing
- * cover or link is looked up as soon as it opens.
+ * "/:id": one album — its cover, details, status and a link to the user's
+ * streaming service. A missing cover or link is looked up as soon as it
+ * opens.
  */
 export function AlbumView() {
   const { t } = useTranslation();
@@ -29,9 +38,11 @@ export function AlbumView() {
   const ready = useAlbumsReady();
   const album = useAlbum(id);
   const back = useSmartBack("/");
+  const { streamingService } = useAppSettings();
   useAlbumLookup(album?.id);
 
   if (!album) return ready ? <MissingAlbum /> : null;
+  const link = linkTo(album, streamingService);
 
   return (
     <div className="mx-auto grid min-h-dvh w-[min(100%,480px)] content-start gap-5 px-5 pt-27 pb-[calc(32px+env(safe-area-inset-bottom))]">
@@ -67,14 +78,15 @@ export function AlbumView() {
         value={album.status}
         onChange={(status) => setStatus(album.id, status)}
       />
-      {album.deezerUrl && (
+      {link && (
         <a
-          href={album.deezerUrl}
+          href={link}
           target="_blank"
           rel="noopener noreferrer"
           className={buttonVariants({ variant: "outline", size: "lg" })}
         >
-          <ArrowSquareOut aria-hidden="true" /> {t("openInDeezer")}
+          <ArrowSquareOut aria-hidden="true" />{" "}
+          {t(OPEN_LABELS[streamingService])}
         </a>
       )}
       {!album.coverUrl && (
