@@ -66,6 +66,9 @@ async function mockServices(page: Page) {
     musicBrainz,
   );
   await page.route(/musicbrainz\.org\/ws\/2\/release\?/, musicBrainzReleases);
+  await page.route("https://query.wikidata.org/**", (route) =>
+    route.fulfill({ json: { results: { bindings: [] } }, headers: CORS }),
+  );
   await page.route("https://coverartarchive.org/**", (route) =>
     route.fulfill({ body: PNG, contentType: "image/png", headers: CORS }),
   );
@@ -133,6 +136,7 @@ test("names each service that couldn't be reached", async ({ page }) => {
     route.fulfill({ status: 503, headers: CORS }),
   );
   await page.route("https://itunes.apple.com/**", (route) => route.abort());
+  await page.route("https://query.wikidata.org/**", (route) => route.abort());
   await goHome(page);
   await importCsv(page);
 

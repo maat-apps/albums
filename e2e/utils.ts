@@ -120,4 +120,7 @@ export async function answerLookupsEmpty(page: Page) {
   await page.route("https://itunes.apple.com/**", (route) =>
     route.fulfill({ json: { results: [] }, headers: cors }),
   );
+  await page.route("https://query.wikidata.org/**", (route) =>
+    route.fulfill({ json: { results: { bindings: [] } }, headers: cors }),
+  );
 }

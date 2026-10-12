@@ -18,6 +18,7 @@ import { useTranslation } from "../../i18n/use-translation";
 import { setStatus } from "../../lib/storage";
 import { linkTo, type StreamingService } from "../../lib/streaming";
 
+import { LookupDiagnostics } from "./lookup-diagnostics";
 import { StatusPicker } from "./status-picker";
 
 const OPEN_LABELS = {
@@ -102,6 +103,7 @@ export function AlbumView() {
           <ImageSquare aria-hidden="true" /> {t("findCover")}
         </Button>
       )}
+      <LookupDiagnostics artist={album.artist} title={album.title} />
     </div>
   );
 }
