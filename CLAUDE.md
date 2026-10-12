@@ -65,7 +65,10 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   tracked in an index key since the store can't list keys; on failure the
   `<img>` uses the URL directly. Covers are a cache: not in backups,
   cleared by the lock's rewrite/erase and a backup restore, deleted with
-  their album. Finding covers and Deezer links: `lib/deezer.ts` (Deezer's
+  their album. Cover sizes: `lib/cover-url.ts` (1200px — Cover Art
+  Archive and iTunes URLs name the size; stored smaller URLs are read as
+  1200px by `schemas.ts`, and the old cached copy stands in until the new
+  one loads). Finding covers and Deezer links: `lib/deezer.ts` (Deezer's
   public search, first source: cover + `deezerUrl`, no year; quota error
   code 4 → `RateLimitedError`; `deezerLookup` verdict),
   `lib/musicbrainz.ts` (search + Cover Art Archive URLs; also fills

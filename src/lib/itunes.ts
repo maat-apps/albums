@@ -2,6 +2,7 @@ import { parseEach } from "@maat-apps/core/validation";
 import * as v from "valibot";
 
 import type { AlbumMatch } from "./cover-lookup";
+import { COVER_SIZE } from "./cover-url";
 import { RateLimitedError } from "./musicbrainz";
 import type { Album } from "./schemas";
 
@@ -34,9 +35,12 @@ export function searchUrl(album: Pick<Album, "artist" | "title">): string {
   return `${SEARCH_URL}?${params}`;
 }
 
-/** The 100px artwork URL asked for at 600px instead. */
+/** The 100px artwork URL asked for at COVER_SIZE instead. */
 export function largerArtwork(url: string): string {
-  return url.replace(/\/\d+x\d+(bb)?\.(jpg|png)$/, "/600x600bb.$2");
+  return url.replace(
+    /\/\d+x\d+(bb)?\.(jpg|png)$/,
+    `/${COVER_SIZE}x${COVER_SIZE}bb.$2`,
+  );
 }
 
 /** The albums in a search response; malformed entries are dropped. */

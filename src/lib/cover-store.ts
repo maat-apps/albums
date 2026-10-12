@@ -96,8 +96,10 @@ async function fetchCover(url: string): Promise<Blob | null> {
 
 /**
  * The album's cover as a local Blob — from IndexedDB when it's been stored
- * for the current URL, otherwise fetched and stored. `null` means "show the
- * URL directly" (no CORS, too big, offline before it was ever stored).
+ * for the current URL, otherwise fetched and stored. When the URL changed
+ * (e.g. to a larger size) but can't be fetched, the copy stored for the old
+ * URL stands in. `null` means "show the URL directly" (no CORS, too big,
+ * offline before it was ever stored).
  */
 export async function loadCover(
   album: Pick<Album, "id" | "coverUrl">,
@@ -107,7 +109,7 @@ export async function loadCover(
   const stored = await readCover(album.id);
   if (stored?.url === url) return toBlob(stored);
   const blob = await fetchCover(url);
-  if (!blob) return null;
+  if (!blob) return stored ? toBlob(stored) : null;
   if (blob.size <= MAX_COVER_BYTES) {
     const data = toBase64Url(new Uint8Array(await blob.arrayBuffer()));
     try {

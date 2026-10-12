@@ -37,7 +37,7 @@ describe("searchUrl", () => {
 describe("coverArtUrl", () => {
   it("points at the release group's front cover", () => {
     expect(coverArtUrl("rg1")).toBe(
-      "https://coverartarchive.org/release-group/rg1/front-250",
+      "https://coverartarchive.org/release-group/rg1/front-1200",
     );
   });
 });
@@ -120,7 +120,7 @@ describe("searchReleaseGroups", () => {
         artist: "Zeta & Band",
         year: 1999,
         type: "album",
-        coverUrl: "https://coverartarchive.org/release-group/rg1/front-250",
+        coverUrl: "https://coverartarchive.org/release-group/rg1/front-1200",
         deezerUrl: null,
       },
     ]);

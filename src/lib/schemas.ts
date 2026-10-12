@@ -1,6 +1,8 @@
 import { parseEach } from "@maat-apps/core/validation";
 import * as v from "valibot";
 
+import { largerCoverUrl } from "./cover-url";
+
 // The single source of truth for runtime validation and the album type. Data
 // read back from IndexedDB or a backup is parsed album by album, so one
 // malformed album never takes the rest down with it.
@@ -21,8 +23,12 @@ const AlbumSchema = v.object({
   artist: v.string(),
   title: v.string(),
   status: v.fallback(v.picklist(ALBUM_STATUSES), "toListen"),
-  // A malformed URL is dropped rather than dropping the whole album.
-  coverUrl: v.fallback(v.optional(HttpsUrlSchema), undefined),
+  // A malformed URL is dropped rather than dropping the whole album; one
+  // saved at a smaller size is read as its sharper version (cover-url.ts).
+  coverUrl: v.fallback(
+    v.optional(v.pipe(HttpsUrlSchema, v.transform(largerCoverUrl))),
+    undefined,
+  ),
   deezerUrl: v.fallback(v.optional(HttpsUrlSchema), undefined),
   // The last MusicBrainz lookup's verdict for an album still without a
   // cover (cover-lookup.ts): "review" — candidates to pick from, "none" — nothing

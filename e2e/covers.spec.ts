@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { answerLookupsEmpty, goHome } from "./utils";
 
-const COVER_URL = "https://coverartarchive.org/release/e2e/front-250";
+const COVER_URL = "https://coverartarchive.org/release/e2e/front-1200";
 
 // A 1×1 PNG.
 const PNG = Buffer.from(

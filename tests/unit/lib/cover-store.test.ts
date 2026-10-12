@@ -89,6 +89,20 @@ describe("loadCover", () => {
     expect(await kvGet(keys.COVER_INDEX_KEY)).toEqual(["a1"]);
   });
 
+  it("keeps showing the old copy when the changed URL can't be fetched", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(imageResponse([1]))
+      .mockRejectedValueOnce(new TypeError("offline"));
+    vi.stubGlobal("fetch", fetchMock);
+    const { covers } = await fresh();
+
+    await covers.loadCover({ id: "a1", coverUrl: URL_A });
+    const fallback = await covers.loadCover({ id: "a1", coverUrl: URL_B });
+
+    expect(await bytes(fallback)).toEqual([1]);
+  });
+
   it.each([
     ["a failed request", () => Promise.resolve(response(new Blob(), false))],
     ["a network or CORS error", () => Promise.reject(new TypeError("cors"))],

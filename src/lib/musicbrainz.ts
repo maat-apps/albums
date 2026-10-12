@@ -2,6 +2,7 @@ import { parseEach } from "@maat-apps/core/validation";
 import * as v from "valibot";
 
 import type { AlbumMatch } from "./cover-lookup";
+import { COVER_SIZE } from "./cover-url";
 import type { Album } from "./schemas";
 
 // MusicBrainz's release-group search and the Cover Art Archive (both free,
@@ -60,7 +61,7 @@ export function searchUrl(album: Pick<Album, "artist" | "title">): string {
 
 /** The release group's front cover, 250px, from the Cover Art Archive. */
 export function coverArtUrl(releaseGroupId: string): string {
-  return `https://coverartarchive.org/release-group/${releaseGroupId}/front-250`;
+  return `https://coverartarchive.org/release-group/${releaseGroupId}/front-${COVER_SIZE}`;
 }
 
 /** The release groups in a search response; malformed entries are dropped. */

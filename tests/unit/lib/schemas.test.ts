@@ -8,7 +8,7 @@ const valid = {
   artist: "Artist",
   title: "Title",
   status: "comingBack",
-  coverUrl: "https://coverartarchive.org/release/x/front",
+  coverUrl: "https://example.com/cover.jpg",
   createdAt: "2026-10-01T00:00:00.000Z",
   updatedAt: "2026-10-01T00:00:00.000Z",
 };
@@ -46,6 +46,18 @@ describe("parseAlbums", () => {
       { ...valid, deezerUrl: "http://www.deezer.com/album/1" },
     ]);
     expect(album?.deezerUrl).toBeUndefined();
+  });
+
+  it("reads a cover saved at a smaller size as its 1200px version", () => {
+    const [album] = parseAlbums([
+      {
+        ...valid,
+        coverUrl: "https://coverartarchive.org/release-group/x/front-250",
+      },
+    ]);
+    expect(album?.coverUrl).toBe(
+      "https://coverartarchive.org/release-group/x/front-1200",
+    );
   });
 
   it("is empty for anything that isn't an array", () => {

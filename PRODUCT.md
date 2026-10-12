@@ -68,6 +68,9 @@ the image itself — the user decides by adding a URL.
   updates. Where a server doesn't allow that, the cover is shown straight
   from its URL instead. Stored covers are a cache: never in a backup, and
   dropped (to load again) when the lock changes or a backup is restored.
+- Covers found by the app are asked for at 1200px, sharp across a phone's
+  full width; covers saved earlier at a smaller size are upgraded the same
+  way (the old copy shows until the sharper one has loaded).
 - **Finding covers and links** (Settings → Data → Find covers): every
   album without a cover or a Deezer link is searched on Deezer (public
   API, no key; 50 requests per 5 seconds, the app sends about 4 a

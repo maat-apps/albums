@@ -31,9 +31,9 @@ describe("searchUrl", () => {
 });
 
 describe("largerArtwork", () => {
-  it("asks for 600px instead of 100px", () => {
+  it("asks for 1200px instead of 100px", () => {
     expect(largerArtwork(ITEM.artworkUrl100)).toBe(
-      "https://is1-ssl.mzstatic.com/image/thumb/Music/x/600x600bb.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/Music/x/1200x1200bb.jpg",
     );
   });
 
@@ -54,7 +54,7 @@ describe("parseItunesAlbums", () => {
         year: 1999,
         type: "album",
         coverUrl:
-          "https://is1-ssl.mzstatic.com/image/thumb/Music/x/600x600bb.jpg",
+          "https://is1-ssl.mzstatic.com/image/thumb/Music/x/1200x1200bb.jpg",
         deezerUrl: null,
       },
     ]);
