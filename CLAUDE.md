@@ -71,26 +71,25 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   their album. Cover sizes: `lib/cover-url.ts` (1200px — Cover Art
   Archive and iTunes URLs name the size; stored smaller URLs are read as
   1200px by `schemas.ts`, and the old cached copy stands in until the new
-  one loads). Finding covers and links: `lib/musicbrainz.ts` (search
-  - Cover Art Archive URLs; fills missing years; `findLinks` reads a
-    matched release group's releases' URL relationships for its streaming
-    links, then `linksLookup: "done"`. Deezer's own API and Odesli send no
-    CORS headers and Spotify's needs a sign-in, so the browser can't use
-    them), `lib/cover-lookup.ts` (pure matching: `pickMatch`,
-    `applyMatch`, what each source can still add — `isMissing` — and the
-    album's `lookup` verdict — review/none/skipped), `lib/itunes.ts` (iTunes
-    Search, the last fallback; its results carry Apple Music links, so it's
-    also asked for one when that's the chosen service; `itunesLookup`
-    verdict),
-    `lib/cover-lookup-runner.ts` (bulk run, asks `sources` in order for what
-    each album still misses — ~1 req/s on MusicBrainz, plus one for the
-    link after a match, ~20/min on iTunes — leaves out a source that fails for the rest of the
-    run, saves each album as it goes; `lib/cover-lookup-job.ts` runs it
-    app-wide, so leaving `/covers` doesn't stop it) and `views/covers/`
-    (`/covers`, `/covers/:id`; review lists hold albums without a cover).
-    Streaming links are user data (in backups), unlike covers. E2E mocks
-    MusicBrainz (search and releases), the archive and iTunes with `page.route` (service workers
-    blocked). Back uses `useSmartBack`.
+  one loads). Finding covers and links: `lib/musicbrainz.ts` (search and
+  Cover Art Archive URLs; fills missing years; `findLinks` reads a matched
+  release group's releases' URL relationships for its streaming links,
+  then `linksLookup: "done"`. Deezer's own API and Odesli send no CORS
+  headers and Spotify's needs a sign-in, so the browser can't use them),
+  `lib/cover-lookup.ts` (pure matching: `pickMatch`, `applyMatch`, what
+  each source can still add — `isMissing` — and the album's `lookup`
+  verdict — review/none/skipped), `lib/itunes.ts` (iTunes Search, the last
+  fallback; its results carry Apple Music links, so it's also asked for
+  one when that's the chosen service; `itunesLookup` verdict),
+  `lib/cover-lookup-runner.ts` (bulk run, asks `sources` in order for what
+  each album still misses — ~1 req/s on MusicBrainz, plus one for the
+  links after a match, ~20/min on iTunes — leaves out a source that fails
+  for the rest of the run, saves each album as it goes;
+  `lib/cover-lookup-job.ts` runs it app-wide, so leaving `/covers` doesn't
+  stop it) and `views/covers/` (`/covers`, `/covers/:id`; review lists
+  hold albums without a cover). Streaming links are user data (in
+  backups), unlike covers. E2E mocks MusicBrainz (search and releases),
+  the archive and iTunes with `page.route` (service workers blocked). Back uses `useSmartBack`.
 - **i18n.** `src/i18n/en.json` and `pl.json` (core's `createTranslation`;
   device language on first launch, Settings → Language after). `t()`
   only accepts keys present in both — keep them in sync.
