@@ -9,16 +9,12 @@ import { useSmartBack } from "@maat-apps/ui/smart-back";
 import { useAlbums } from "../../hooks/use-albums";
 import { useCoverLookup } from "../../hooks/use-cover-lookup";
 import { useTranslation } from "../../i18n/use-translation";
-import {
-  awaitsReview,
-  needsLookup,
-  notFound,
-  type LookupSource,
-} from "../../lib/cover-lookup";
+import { awaitsReview, needsLookup, notFound } from "../../lib/cover-lookup";
+import { LOOKUP_SOURCES } from "../../lib/cover-lookup-runner";
 import type { Album } from "../../lib/schemas";
 
 /** Tried in order for each album; the first one's verdicts are reviewed here. */
-const SOURCES: LookupSource[] = ["deezer", "musicbrainz", "itunes"];
+const SOURCES = LOOKUP_SOURCES;
 
 function AlbumLinks({
   label,

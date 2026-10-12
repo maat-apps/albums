@@ -84,3 +84,6 @@ the image itself — the user decides by adding a URL.
   reached is left out for the rest of the run. It keeps going after
   leaving the covers screen, and stopping keeps what was found. An album
   without a cover also offers "Find a cover" from its own view.
+- **Opening an album** looks it up by itself, the same way, when it's
+  missing a cover, a Deezer link or a year and hasn't been tried yet: the
+  cover and the "Open in Deezer" link appear without a tap.

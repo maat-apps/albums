@@ -1,10 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-import { goHome } from "./utils";
+import { answerLookupsEmpty, goHome } from "./utils";
 
 test("adding, viewing, changing status, editing and deleting an album", async ({
   page,
 }) => {
+  await answerLookupsEmpty(page);
   await goHome(page);
 
   await page.getByRole("button", { name: "Add album" }).click();

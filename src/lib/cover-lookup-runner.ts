@@ -32,6 +32,13 @@ type Search = (
   signal: AbortSignal,
 ) => Promise<AlbumMatch[]>;
 
+/** Every source, in the order each album is looked up on them. */
+export const LOOKUP_SOURCES: LookupSource[] = [
+  "deezer",
+  "musicbrainz",
+  "itunes",
+];
+
 export const SEARCHES: Record<LookupSource, Search> = {
   deezer: searchDeezer,
   musicbrainz: searchMusicBrainz,
@@ -220,4 +227,26 @@ export async function lookUpCovers({
     onProgress({ ...progress });
   }
   return progress;
+}
+
+/**
+ * Looks one album up right away — when it's opened — and saves what was
+ * found, unless the album changed meanwhile. Albums with nothing left to
+ * find, or already tried, aren't searched again.
+ */
+export async function lookUpAlbumNow(
+  id: string,
+  signal: AbortSignal,
+): Promise<void> {
+  const find = () => getAlbumsSnapshot().find((item) => item.id === id);
+  const album = find();
+  if (!album) return;
+  if (!LOOKUP_SOURCES.some((source) => needsLookup(album, source))) return;
+  const tried = await lookUpAlbum(
+    album,
+    { sources: LOOKUP_SOURCES, signal, backoff: 5000 },
+    { requested: false, unavailable: new Set() },
+  );
+  if (!tried?.searched || find()?.updatedAt !== album.updatedAt) return;
+  saveAlbum(tried.album);
 }

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AlbumMatch } from "@/lib/cover-lookup";
 import type { Album } from "@/lib/schemas";
@@ -370,5 +370,96 @@ describe("lookUpCovers", () => {
 
     expect(Date.now() - started).toBeGreaterThanOrEqual(55);
     expect(progress.matched).toBe(1);
+  });
+});
+
+describe("lookUpAlbumNow", () => {
+  const deezerAnswer = {
+    data: [
+      {
+        id: 7,
+        title: "a",
+        link: "https://www.deezer.com/album/7",
+        cover_xl: "https://cdn.example.com/a.jpg",
+        md5_image: "x",
+        record_type: "album",
+        artist: { name: "Zeta Band" },
+      },
+    ],
+  };
+  const json = (body: unknown) => ({
+    ok: true,
+    status: 200,
+    json: () => Promise.resolve(body),
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("fills the album's cover and Deezer link from its first source", async () => {
+    const { storage, runner } = await fresh([album("a")]);
+    const fetchMock = vi.fn().mockResolvedValue(json(deezerAnswer));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await runner.lookUpAlbumNow("a", new AbortController().signal);
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(byId(storage.getAlbumsSnapshot(), "a")).toMatchObject({
+      coverUrl: "https://cdn.example.com/a.jpg",
+      deezerUrl: "https://www.deezer.com/album/7",
+    });
+  });
+
+  it("doesn't search an album with nothing left to find, or a missing one", async () => {
+    const { runner } = await fresh([
+      album("done", {
+        coverUrl: "https://example.com/c.jpg",
+        deezerUrl: "https://www.deezer.com/album/1",
+      }),
+      album("tried", {
+        deezerLookup: "none",
+        lookup: "none",
+        itunesLookup: "none",
+      }),
+    ]);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    for (const id of ["done", "tried", "gone"]) {
+      await runner.lookUpAlbumNow(id, new AbortController().signal);
+    }
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps an edit made while it searched", async () => {
+    const { storage, runner } = await fresh([album("a")]);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        storage.saveAlbum({ ...album("a"), title: "Renamed" });
+        return json(deezerAnswer);
+      }),
+    );
+
+    await runner.lookUpAlbumNow("a", new AbortController().signal);
+
+    const saved = byId(storage.getAlbumsSnapshot(), "a");
+    expect(saved?.title).toBe("Renamed");
+    expect(saved?.coverUrl).toBeUndefined();
+  });
+
+  it("saves nothing when stopped before searching", async () => {
+    const { storage, runner } = await fresh([album("a")]);
+    const controller = new AbortController();
+    controller.abort();
+    vi.stubGlobal("fetch", vi.fn());
+
+    await runner.lookUpAlbumNow("a", controller.signal);
+
+    expect(
+      byId(storage.getAlbumsSnapshot(), "a")?.deezerLookup,
+    ).toBeUndefined();
   });
 });

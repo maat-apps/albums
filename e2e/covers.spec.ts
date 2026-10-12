@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { goHome } from "./utils";
+import { answerLookupsEmpty, goHome } from "./utils";
 
 const COVER_URL = "https://coverartarchive.org/release/e2e/front-250";
 
@@ -26,6 +26,7 @@ test("stores a cover once and shows it offline after a reload", async ({
       headers: { "access-control-allow-origin": "*" },
     });
   });
+  await answerLookupsEmpty(page);
 
   await goHome(page);
   await page.getByRole("button", { name: "Add album" }).click();

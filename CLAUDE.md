@@ -55,7 +55,10 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   remembered in `app-settings.ts`'s `collection` prefs; settings drawer),
   `/new` and `/:id/edit` (`views/album/album-form-view.tsx`, validated by
   `lib/album-form.ts`), `/:id` (`album-view.tsx`: cover, one-tap status,
-  "Open in Deezer" — the album's `deezerUrl` or Deezer's search).
+  "Open in Deezer" — the album's `deezerUrl` or Deezer's search; opening
+  it looks a missing cover/link/year up by itself via
+  `hooks/use-album-lookup.ts` → the runner's `lookUpAlbumNow`, once per
+  source verdict).
   Covers render through `components/album-cover.tsx` (placeholder on a missing or broken URL) via `hooks/use-cover-src.ts`:
   once in view, `lib/cover-store.ts` serves the IndexedDB copy or fetches
   (CORS) and stores it — per album id, encrypted with the lock's key,

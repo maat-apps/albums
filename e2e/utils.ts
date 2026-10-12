@@ -107,3 +107,20 @@ export async function waitForStoredLock(page: Page) {
     )
     .toBe(true);
 }
+
+/**
+ * Answers every cover/link lookup with nothing found, so a spec that opens
+ * an album — which looks it up by itself — never reaches the real services.
+ */
+export async function answerLookupsEmpty(page: Page) {
+  const cors = { "access-control-allow-origin": "*" };
+  await page.route("https://api.deezer.com/**", (route) =>
+    route.fulfill({ json: { data: [], total: 0 }, headers: cors }),
+  );
+  await page.route("https://musicbrainz.org/**", (route) =>
+    route.fulfill({ json: { "release-groups": [] }, headers: cors }),
+  );
+  await page.route("https://itunes.apple.com/**", (route) =>
+    route.fulfill({ json: { results: [] }, headers: cors }),
+  );
+}

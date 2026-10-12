@@ -14,12 +14,12 @@ import {
   type AlbumMatch,
   type LookupSource,
 } from "../../lib/cover-lookup";
-import { SEARCHES } from "../../lib/cover-lookup-runner";
+import { LOOKUP_SOURCES, SEARCHES } from "../../lib/cover-lookup-runner";
 import { RateLimitedError } from "../../lib/musicbrainz";
 import { saveAlbum } from "../../lib/storage";
 
 /** Searched in this order; the first one's verdict records a skip. */
-const SOURCES: LookupSource[] = ["deezer", "musicbrainz", "itunes"];
+const SOURCES = LOOKUP_SOURCES;
 
 const SOURCE_NAMES: Record<LookupSource, string> = {
   deezer: "Deezer",

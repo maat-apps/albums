@@ -154,3 +154,21 @@ test("names each service that couldn't be reached", async ({ page }) => {
   await expect(alert).toContainText("MusicBrainz: too many requests");
   await expect(alert).toContainText("iTunes: couldn't connect.");
 });
+
+test("opening an album finds its cover and Deezer link by itself", async ({
+  page,
+}) => {
+  await mockServices(page);
+  await goHome(page);
+  await importCsv(page);
+
+  await page.getByRole("button", { name: /Alpha/ }).click();
+
+  await expect(
+    page.getByRole("link", { name: "Open in Deezer" }),
+  ).toHaveAttribute("href", "https://www.deezer.com/album/1");
+  await expect(page.locator("img")).toHaveAttribute("src", /^blob:/);
+  await expect(page.getByRole("button", { name: "Find a cover" })).toHaveCount(
+    0,
+  );
+});

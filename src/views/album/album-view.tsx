@@ -12,6 +12,7 @@ import { Button, buttonVariants } from "@maat-apps/ui/button";
 import { useSmartBack } from "@maat-apps/ui/smart-back";
 import { AlbumCover } from "../../components/album-cover";
 import { MissingAlbum } from "../../components/missing-album";
+import { useAlbumLookup } from "../../hooks/use-album-lookup";
 import { useAlbum, useAlbumsReady } from "../../hooks/use-albums";
 import { useTranslation } from "../../i18n/use-translation";
 import { deezerSearchUrl } from "../../lib/deezer";
@@ -19,7 +20,10 @@ import { setStatus } from "../../lib/storage";
 
 import { StatusPicker } from "./status-picker";
 
-/** "/:id": one album — its cover, details, status and Deezer link. */
+/**
+ * "/:id": one album — its cover, details, status and Deezer link. A missing
+ * cover or link is looked up as soon as it opens.
+ */
 export function AlbumView() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -27,6 +31,7 @@ export function AlbumView() {
   const ready = useAlbumsReady();
   const album = useAlbum(id);
   const back = useSmartBack("/");
+  useAlbumLookup(album?.id);
 
   if (!album) return ready ? <MissingAlbum /> : null;
 
