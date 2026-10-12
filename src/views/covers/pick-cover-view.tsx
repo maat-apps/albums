@@ -22,7 +22,6 @@ import { saveAlbum } from "../../lib/storage";
 const SOURCES = LOOKUP_SOURCES;
 
 const SOURCE_NAMES: Record<LookupSource, string> = {
-  deezer: "Deezer",
   musicbrainz: "MusicBrainz",
   itunes: "iTunes",
 };
@@ -56,10 +55,9 @@ function CandidateCover({ url }: { url: string | null }) {
 }
 
 /**
- * "/covers/:id": the matches for one album (Deezer's, MusicBrainz's, then
- * iTunes'); picking one fills in what the album is missing, "None of these"
- * stops offering it. Picking one without a Deezer link counts as skipping
- * Deezer's.
+ * "/covers/:id": the matches for one album (MusicBrainz's, then iTunes');
+ * picking one fills in what the album is missing, "None of these" stops
+ * offering it.
  */
 export function PickCoverView() {
   const { t } = useTranslation();
@@ -115,10 +113,7 @@ export function PickCoverView() {
 
   function pick(match: AlbumMatch) {
     if (!album) return;
-    const picked = applyMatch(album, match);
-    saveAlbum(
-      picked.deezerUrl ? picked : withVerdict(picked, SOURCES[0], "skipped"),
-    );
+    saveAlbum(applyMatch(album, match));
     startTransition(back);
   }
 

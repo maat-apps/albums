@@ -54,9 +54,9 @@ function AlbumLinks({
 }
 
 /**
- * "/covers": looks covers, Deezer links and years up — on Deezer, then
- * MusicBrainz, then iTunes — for every album missing them, then lists what
- * needs a decision.
+ * "/covers": looks covers, years and Deezer links up — on MusicBrainz, then
+ * covers on iTunes — for every album missing them, then lists the albums
+ * without a cover that need a decision.
  */
 export function CoversView() {
   const { t } = useTranslation();

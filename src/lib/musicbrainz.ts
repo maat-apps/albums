@@ -5,10 +5,12 @@ import type { AlbumMatch } from "./cover-lookup";
 import { COVER_SIZE } from "./cover-url";
 import type { Album } from "./schemas";
 
-// MusicBrainz's release-group search and the Cover Art Archive (both free,
-// no account, readable from the browser). Only an album's artist and title
-// leave the device (PRODUCT.md). MusicBrainz allows about one request per
-// second — cover-lookup.ts paces bulk lookups.
+// MusicBrainz's release-group search, its releases' links (for an album's
+// Deezer link — Deezer's own API can't be read from the browser, it sends
+// no CORS headers) and the Cover Art Archive: all free, no account,
+// readable from the browser. Only an album's artist and title leave the
+// device (PRODUCT.md). MusicBrainz allows about one request per second —
+// cover-lookup-runner.ts paces bulk lookups.
 
 const SEARCH_URL = "https://musicbrainz.org/ws/2/release-group/";
 
@@ -59,7 +61,7 @@ export function searchUrl(album: Pick<Album, "artist" | "title">): string {
   return `${SEARCH_URL}?${params}`;
 }
 
-/** The release group's front cover, 250px, from the Cover Art Archive. */
+/** The release group's front cover, at COVER_SIZE, from the Cover Art Archive. */
 export function coverArtUrl(releaseGroupId: string): string {
   return `https://coverartarchive.org/release-group/${releaseGroupId}/front-${COVER_SIZE}`;
 }
@@ -109,6 +111,66 @@ export function toMatch(group: ReleaseGroup): AlbumMatch {
     coverUrl: coverArtUrl(group.id),
     deezerUrl: null,
   };
+}
+
+const RELEASES_URL = "https://musicbrainz.org/ws/2/release";
+
+const ReleasesSchema = v.object({
+  releases: v.array(
+    v.object({
+      relations: v.optional(
+        v.array(
+          v.object({
+            url: v.optional(v.object({ resource: v.string() })),
+          }),
+        ),
+      ),
+    }),
+  ),
+});
+
+// "https://www.deezer.com/album/1", also with a language ("/en/") or http.
+const DEEZER_ALBUM =
+  /^https?:\/\/(?:www\.)?deezer\.com\/(?:[a-z]{2}\/)?album\/(\d+)/;
+
+/** The release group's releases, with their links. */
+export function releasesUrl(releaseGroupId: string): string {
+  const params = new URLSearchParams({
+    "release-group": releaseGroupId,
+    inc: "url-rels",
+    fmt: "json",
+    limit: "100",
+  });
+  return `${RELEASES_URL}?${params}`;
+}
+
+/** The first Deezer album link among the releases' links, or null. */
+export function parseDeezerUrl(value: unknown): string | null {
+  if (!v.is(ReleasesSchema, value)) return null;
+  for (const release of value.releases) {
+    for (const relation of release.relations ?? []) {
+      const id = DEEZER_ALBUM.exec(relation.url?.resource ?? "")?.[1];
+      if (id) return `https://www.deezer.com/album/${id}`;
+    }
+  }
+  return null;
+}
+
+/** The release group's Deezer album link, if MusicBrainz knows it. */
+export async function findDeezerUrl(
+  releaseGroupId: string,
+  signal?: AbortSignal,
+): Promise<string | null> {
+  const response = await fetch(releasesUrl(releaseGroupId), {
+    signal,
+    credentials: "omit",
+    referrerPolicy: "no-referrer",
+  });
+  if (response.status === 503 || response.status === 429) {
+    throw new RateLimitedError();
+  }
+  if (!response.ok) throw new Error(`MusicBrainz: HTTP ${response.status}`);
+  return parseDeezerUrl(await response.json());
 }
 
 /** MusicBrainz's matches for the album. */

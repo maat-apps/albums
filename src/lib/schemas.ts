@@ -34,7 +34,8 @@ const AlbumSchema = v.object({
   // cover (cover-lookup.ts): "review" — candidates to pick from, "none" — nothing
   // found, "skipped" — the user rejected them. Absent until looked up.
   lookup: v.fallback(v.optional(v.picklist(LOOKUP_RESULTS)), undefined),
-  // The same verdict from a Deezer lookup, which also fills missing links.
+  // Whether looking for the album's Deezer link (on MusicBrainz, after a
+  // match) found none: "none". Absent until looked for, or once found.
   deezerLookup: v.fallback(v.optional(v.picklist(LOOKUP_RESULTS)), undefined),
   // And from an iTunes lookup, the fallback for what the others missed.
   itunesLookup: v.fallback(v.optional(v.picklist(LOOKUP_RESULTS)), undefined),

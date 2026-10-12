@@ -22,12 +22,9 @@ test("adding, viewing, changing status, editing and deleting an album", async ({
     page.getByRole("heading", { name: "Test Album" }).first(),
   ).toBeVisible();
   await expect(page.getByText("Test Artist · 1999")).toBeVisible();
-  // No Deezer link of its own: Deezer's search instead.
-  await expect(
-    page.getByRole("link", { name: "Search on Deezer" }),
-  ).toHaveAttribute(
-    "href",
-    "https://www.deezer.com/search/Test%20Artist%20Test%20Album",
+  // No Deezer link yet: no button.
+  await expect(page.getByRole("link", { name: "Open in Deezer" })).toHaveCount(
+    0,
   );
 
   await page.getByRole("button", { name: "Coming back", exact: true }).click();

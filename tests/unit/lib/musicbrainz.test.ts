@@ -2,8 +2,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   coverArtUrl,
+  findDeezerUrl,
+  parseDeezerUrl,
   parseReleaseGroups,
   RateLimitedError,
+  releasesUrl,
   searchMusicBrainz,
   searchReleaseGroups,
   searchUrl,
@@ -132,5 +135,69 @@ describe("searchReleaseGroups", () => {
     });
     const [match] = await searchMusicBrainz(album);
     expect(match.type).toBeNull();
+  });
+});
+
+describe("Deezer links", () => {
+  const releases = (...resources: string[]) => ({
+    releases: [
+      { relations: [] },
+      { relations: resources.map((resource) => ({ url: { resource } })) },
+    ],
+  });
+
+  it("asks for the release group's releases with their links", () => {
+    const url = new URL(releasesUrl("rg1"));
+    expect(url.origin + url.pathname).toBe(
+      "https://musicbrainz.org/ws/2/release",
+    );
+    expect(url.searchParams.get("release-group")).toBe("rg1");
+    expect(url.searchParams.get("inc")).toBe("url-rels");
+  });
+
+  it("reads the first Deezer album link, in its plain form", () => {
+    expect(
+      parseDeezerUrl(
+        releases(
+          "https://open.spotify.com/album/x",
+          "http://deezer.com/fr/album/126502",
+          "https://www.deezer.com/album/2",
+        ),
+      ),
+    ).toBe("https://www.deezer.com/album/126502");
+  });
+
+  it("is null without a Deezer album link, or for an unexpected response", () => {
+    expect(
+      parseDeezerUrl(releases("https://www.deezer.com/artist/9")),
+    ).toBeNull();
+    expect(parseDeezerUrl({ releases: [{}] })).toBeNull();
+    expect(parseDeezerUrl("nope")).toBeNull();
+  });
+
+  it("fetches it, reading 503 as rate limiting", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(releases("https://www.deezer.com/album/7")),
+      }),
+    );
+    await expect(findDeezerUrl("rg1")).resolves.toBe(
+      "https://www.deezer.com/album/7",
+    );
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, status: 503 }),
+    );
+    await expect(findDeezerUrl("rg1")).rejects.toBeInstanceOf(RateLimitedError);
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, status: 500 }),
+    );
+    await expect(findDeezerUrl("rg1")).rejects.toThrow("MusicBrainz: HTTP 500");
   });
 });

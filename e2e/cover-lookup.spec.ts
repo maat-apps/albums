@@ -23,42 +23,31 @@ function releaseGroup(id: string, title: string, artist: string, date: string) {
   };
 }
 
-const DEEZER_COVER =
-  "https://cdn-images.dzcdn.net/images/cover/alpha/1000x1000.jpg";
-
-function deezerAlbum(id: number, title: string, artist: string) {
-  return {
-    id,
-    title,
-    link: `https://www.deezer.com/album/${id}`,
-    cover_xl: DEEZER_COVER,
-    md5_image: "alpha",
-    record_type: "album",
-    artist: { name: artist },
-  };
-}
-
-// Made-up answers for SAMPLE_CSV's made-up albums, tried first: a sure match
-// (cover and link) for "Alpha", only another artist for "Middle", nothing
-// for the third.
-function deezer(route: Route) {
-  const query = new URL(route.request().url()).searchParams.get("q") ?? "";
-  const data = query.includes('album:"Alpha"')
-    ? [deezerAlbum(1, "Alpha", "Zeta Band")]
-    : query.includes('album:"Middle"')
-      ? [deezerAlbum(2, "Middle", "Someone Else")]
-      : [];
-  return route.fulfill({ json: { data, total: data.length }, headers: CORS });
-}
-
-// MusicBrainz, for what Deezer didn't match: again only another artist for
-// "Middle", nothing for the rest.
+// Made-up answers for SAMPLE_CSV's made-up albums: a sure match for
+// "Alpha", only another artist for "Middle", nothing for the third.
 function musicBrainz(route: Route) {
   const query = new URL(route.request().url()).searchParams.get("query") ?? "";
-  const groups = query.includes("Middle")
-    ? [releaseGroup("rg-middle", "Middle", "Someone Else", "1990-01-01")]
-    : [];
+  const groups = query.includes("Alpha")
+    ? [releaseGroup("rg-alpha", "Alpha", "Zeta Band", "1999-01-01")]
+    : query.includes("Middle")
+      ? [releaseGroup("rg-middle", "Middle", "Someone Else", "1990-01-01")]
+      : [];
   return route.fulfill({ json: { "release-groups": groups }, headers: CORS });
+}
+
+// The matched release group's releases: a Deezer link for "Alpha" only.
+function musicBrainzReleases(route: Route) {
+  const group = new URL(route.request().url()).searchParams.get(
+    "release-group",
+  );
+  const relations =
+    group === "rg-alpha"
+      ? [{ url: { resource: "https://www.deezer.com/album/1" } }]
+      : [];
+  return route.fulfill({
+    json: { releases: [{ relations }] },
+    headers: CORS,
+  });
 }
 
 // Nothing on iTunes, the fallback after MusicBrainz.
@@ -67,16 +56,15 @@ function iTunes(route: Route) {
 }
 
 async function mockServices(page: Page) {
-  await page.route("https://api.deezer.com/search/album**", deezer);
   await page.route("https://itunes.apple.com/search**", iTunes);
   await page.route(
     "https://musicbrainz.org/ws/2/release-group/**",
     musicBrainz,
   );
-  const png = (route: Route) =>
-    route.fulfill({ body: PNG, contentType: "image/png", headers: CORS });
-  await page.route("https://coverartarchive.org/**", png);
-  await page.route("https://cdn-images.dzcdn.net/**", png);
+  await page.route(/musicbrainz\.org\/ws\/2\/release\?/, musicBrainzReleases);
+  await page.route("https://coverartarchive.org/**", (route) =>
+    route.fulfill({ body: PNG, contentType: "image/png", headers: CORS }),
+  );
 }
 
 test("finds covers and Deezer links for imported albums and lets the user pick the unsure ones", async ({
@@ -96,12 +84,10 @@ test("finds covers and Deezer links for imported albums and lets the user pick t
 
   const toReview = page.getByRole("list", { name: "To review (1)" });
   await toReview.getByRole("button", { name: /Middle/ }).click();
-  // Deezer's candidate first, then MusicBrainz's.
-  const matches = page
+  await page
     .getByRole("list", { name: "Matches" })
-    .getByRole("button", { name: /Middle/ });
-  await expect(matches).toHaveCount(2);
-  await matches.first().click();
+    .getByRole("button", { name: /Middle/ })
+    .click();
   await expect(page.getByRole("list", { name: /^To review/ })).toHaveCount(0);
 
   await page.goto("");
@@ -110,9 +96,10 @@ test("finds covers and Deezer links for imported albums and lets the user pick t
     page.getByRole("heading", { name: "Middle", level: 2 }),
   ).toBeVisible();
   await expect(page.locator("img")).toHaveAttribute("src", /^blob:/);
-  await expect(
-    page.getByRole("link", { name: "Open in Deezer" }),
-  ).toHaveAttribute("href", "https://www.deezer.com/album/2");
+  // MusicBrainz knows no Deezer link for it: no button.
+  await expect(page.getByRole("link", { name: "Open in Deezer" })).toHaveCount(
+    0,
+  );
 
   await page.goto("");
   await page.getByRole("button", { name: /Alpha/ }).click();
@@ -138,7 +125,6 @@ test("an album without a cover offers to find one", async ({ page }) => {
 });
 
 test("names each service that couldn't be reached", async ({ page }) => {
-  await page.route("https://api.deezer.com/**", (route) => route.abort());
   await page.route("https://musicbrainz.org/**", (route) =>
     route.fulfill({ status: 503, headers: CORS }),
   );
@@ -150,7 +136,6 @@ test("names each service that couldn't be reached", async ({ page }) => {
   await page.getByRole("button", { name: "Find a cover" }).click();
 
   const alert = page.getByRole("alert");
-  await expect(alert).toContainText("Deezer: couldn't connect.");
   await expect(alert).toContainText("MusicBrainz: too many requests");
   await expect(alert).toContainText("iTunes: couldn't connect.");
 });

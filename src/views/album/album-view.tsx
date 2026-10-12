@@ -1,7 +1,6 @@
 import {
   ArrowSquareOut,
   ImageSquare,
-  MagnifyingGlass,
   PencilSimple,
 } from "@phosphor-icons/react";
 import { startTransition } from "react";
@@ -15,10 +14,8 @@ import { MissingAlbum } from "../../components/missing-album";
 import { useAlbumLookup } from "../../hooks/use-album-lookup";
 import { useAlbum, useAlbumsReady } from "../../hooks/use-albums";
 import { useTranslation } from "../../i18n/use-translation";
-import { deezerSearchUrl } from "../../lib/deezer";
 import { setStatus } from "../../lib/storage";
 
-import { LookupDiagnostics } from "./lookup-diagnostics";
 import { StatusPicker } from "./status-picker";
 
 /**
@@ -70,19 +67,16 @@ export function AlbumView() {
         value={album.status}
         onChange={(status) => setStatus(album.id, status)}
       />
-      <a
-        href={album.deezerUrl ?? deezerSearchUrl(album)}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={buttonVariants({ variant: "outline", size: "lg" })}
-      >
-        {album.deezerUrl ? (
-          <ArrowSquareOut aria-hidden="true" />
-        ) : (
-          <MagnifyingGlass aria-hidden="true" />
-        )}{" "}
-        {t(album.deezerUrl ? "openInDeezer" : "searchOnDeezer")}
-      </a>
+      {album.deezerUrl && (
+        <a
+          href={album.deezerUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={buttonVariants({ variant: "outline", size: "lg" })}
+        >
+          <ArrowSquareOut aria-hidden="true" /> {t("openInDeezer")}
+        </a>
+      )}
       {!album.coverUrl && (
         <Button
           variant="outline"
@@ -96,7 +90,6 @@ export function AlbumView() {
           <ImageSquare aria-hidden="true" /> {t("findCover")}
         </Button>
       )}
-      <LookupDiagnostics artist={album.artist} title={album.title} />
     </div>
   );
 }

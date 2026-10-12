@@ -114,9 +114,6 @@ export async function waitForStoredLock(page: Page) {
  */
 export async function answerLookupsEmpty(page: Page) {
   const cors = { "access-control-allow-origin": "*" };
-  await page.route("https://api.deezer.com/**", (route) =>
-    route.fulfill({ json: { data: [], total: 0 }, headers: cors }),
-  );
   await page.route("https://musicbrainz.org/**", (route) =>
     route.fulfill({ json: { "release-groups": [] }, headers: cors }),
   );
