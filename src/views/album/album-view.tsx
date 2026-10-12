@@ -18,6 +18,7 @@ import { useTranslation } from "../../i18n/use-translation";
 import { deezerSearchUrl } from "../../lib/deezer";
 import { setStatus } from "../../lib/storage";
 
+import { LookupDiagnostics } from "./lookup-diagnostics";
 import { StatusPicker } from "./status-picker";
 
 /**
@@ -95,6 +96,7 @@ export function AlbumView() {
           <ImageSquare aria-hidden="true" /> {t("findCover")}
         </Button>
       )}
+      <LookupDiagnostics artist={album.artist} title={album.title} />
     </div>
   );
 }
