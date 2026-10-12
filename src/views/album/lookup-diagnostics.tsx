@@ -148,6 +148,7 @@ function musicBrainzLinksProbe(album: Query): Probe {
 
 export function LookupDiagnostics({ artist, title }: Query) {
   const [lines, setLines] = useState<Record<string, string>>({});
+  const [copied, setCopied] = useState<"yes" | "failed" | null>(null);
   const album = { artist, title };
   const probes = [
     ...LOOKUP_SOURCES.map((source) => sourceProbe(source, album)),
@@ -172,9 +173,32 @@ export function LookupDiagnostics({ artist, title }: Query) {
     };
   }, [artist, title]);
 
+  const report = [
+    `${artist} — ${title}`,
+    ...probes.map(({ name, url }) => `${name}: ${lines[name] ?? "…"}\n${url}`),
+  ].join("\n");
+
+  function copy() {
+    navigator.clipboard.writeText(report).then(
+      () => setCopied("yes"),
+      () => setCopied("failed"),
+    );
+  }
+
   return (
     <details className="text-muted-foreground text-xs break-words">
       <summary>Diagnostics</summary>
+      <button
+        type="button"
+        className="border-border mt-2 rounded-md border px-3 py-1.5"
+        onClick={copy}
+      >
+        {copied === "yes"
+          ? "Copied"
+          : copied === "failed"
+            ? "Couldn't copy"
+            : "Copy diagnostics"}
+      </button>
       <ul className="m-0 grid list-none gap-1 p-0 pt-2">
         {probes.map(({ name, url }) => (
           <li key={name}>
