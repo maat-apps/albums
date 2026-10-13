@@ -9,6 +9,7 @@ import { Input } from "@maat-apps/ui/input";
 import { useSmartBack } from "@maat-apps/ui/smart-back";
 import { MissingAlbum } from "../../components/missing-album";
 import { useAlbum, useAlbumsReady } from "../../hooks/use-albums";
+import { useAppSettings } from "../../hooks/use-app-settings";
 import { useTranslation } from "../../i18n/use-translation";
 import {
   albumToForm,
@@ -22,6 +23,7 @@ import {
 } from "../../lib/album-form";
 import type { Album } from "../../lib/schemas";
 import { deleteAlbum, saveAlbum } from "../../lib/storage";
+import { LINK_FIELDS, type StreamingService } from "../../lib/streaming";
 
 import { StatusPicker } from "./status-picker";
 
@@ -70,8 +72,16 @@ function TextField({
   );
 }
 
+// Only the user's service gets a field; the album's other links are kept.
+const LINK_LABELS = {
+  deezer: "deezerUrl",
+  spotify: "spotifyUrl",
+  appleMusic: "appleMusicUrl",
+} as const satisfies Record<StreamingService, string>;
+
 function AlbumForm({ album }: { album: Album | null }) {
   const { t } = useTranslation();
+  const { streamingService } = useAppSettings();
   const navigate = useNavigate();
   const back = useSmartBack(album ? `/${encodeURIComponent(album.id)}` : "/");
   const [values, setValues] = useState<AlbumFormValues>(
@@ -148,6 +158,12 @@ function AlbumForm({ album }: { album: Album | null }) {
       <TextField
         field="coverUrl"
         label={t("coverUrl")}
+        inputMode="url"
+        {...fieldProps}
+      />
+      <TextField
+        field={LINK_FIELDS[streamingService]}
+        label={t(LINK_LABELS[streamingService])}
         inputMode="url"
         {...fieldProps}
       />

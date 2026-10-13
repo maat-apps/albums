@@ -2,12 +2,17 @@ import { parseEach } from "@maat-apps/core/validation";
 import * as v from "valibot";
 
 import type { AlbumMatch } from "./cover-lookup";
+import { COVER_SIZE } from "./cover-url";
 import type { Album } from "./schemas";
+import { readLinks, type StreamingLinks } from "./streaming";
 
-// MusicBrainz's release-group search and the Cover Art Archive (both free,
-// no account, readable from the browser). Only an album's artist and title
-// leave the device (PRODUCT.md). MusicBrainz allows about one request per
-// second — cover-lookup.ts paces bulk lookups.
+// MusicBrainz's release-group search, its releases' links (an album's
+// Deezer, Spotify and Apple Music links — those services' own APIs can't be
+// read from the browser: no CORS headers, or a sign-in) and the Cover Art
+// Archive: all free, no account,
+// readable from the browser. Only an album's artist and title leave the
+// device (PRODUCT.md). MusicBrainz allows about one request per second —
+// cover-lookup-runner.ts paces bulk lookups.
 
 const SEARCH_URL = "https://musicbrainz.org/ws/2/release-group/";
 
@@ -53,14 +58,17 @@ function escapeLucene(value: string): string {
 }
 
 export function searchUrl(album: Pick<Album, "artist" | "title">): string {
-  const query = `releasegroup:(${escapeLucene(album.title)}) AND artist:(${escapeLucene(album.artist)})`;
-  const params = new URLSearchParams({ query, fmt: "json", limit: "8" });
+  const artist = escapeLucene(album.artist);
+  // The artist as a phrase ranks their own albums first ("LL Cool J" rather
+  // than anyone named "J"); its words alone still find a misspelt name.
+  const query = `releasegroup:(${escapeLucene(album.title)}) AND (artist:"${artist}"^3 OR artist:(${artist}))`;
+  const params = new URLSearchParams({ query, fmt: "json", limit: "25" });
   return `${SEARCH_URL}?${params}`;
 }
 
-/** The release group's front cover, 250px, from the Cover Art Archive. */
+/** The release group's front cover, at COVER_SIZE, from the Cover Art Archive. */
 export function coverArtUrl(releaseGroupId: string): string {
-  return `https://coverartarchive.org/release-group/${releaseGroupId}/front-250`;
+  return `https://coverartarchive.org/release-group/${releaseGroupId}/front-${COVER_SIZE}`;
 }
 
 /** The release groups in a search response; malformed entries are dropped. */
@@ -106,7 +114,64 @@ export function toMatch(group: ReleaseGroup): AlbumMatch {
     year: group.year,
     type: group.primaryType?.toLowerCase() ?? null,
     coverUrl: coverArtUrl(group.id),
+    links: {},
   };
+}
+
+const RELEASES_URL = "https://musicbrainz.org/ws/2/release";
+
+const ReleasesSchema = v.object({
+  releases: v.array(
+    v.object({
+      relations: v.optional(
+        v.array(
+          v.object({
+            url: v.optional(v.object({ resource: v.string() })),
+          }),
+        ),
+      ),
+    }),
+  ),
+});
+
+/** The release group's releases, with their links. */
+export function releasesUrl(releaseGroupId: string): string {
+  const params = new URLSearchParams({
+    "release-group": releaseGroupId,
+    inc: "url-rels",
+    fmt: "json",
+    limit: "100",
+  });
+  return `${RELEASES_URL}?${params}`;
+}
+
+/** The streaming links among the releases' links, the first per service. */
+export function parseLinks(value: unknown): StreamingLinks {
+  if (!v.is(ReleasesSchema, value)) return {};
+  return readLinks(
+    value.releases.flatMap((release) =>
+      (release.relations ?? []).flatMap((relation) =>
+        relation.url ? [relation.url.resource] : [],
+      ),
+    ),
+  );
+}
+
+/** The release group's streaming links that MusicBrainz knows. */
+export async function findLinks(
+  releaseGroupId: string,
+  signal?: AbortSignal,
+): Promise<StreamingLinks> {
+  const response = await fetch(releasesUrl(releaseGroupId), {
+    signal,
+    credentials: "omit",
+    referrerPolicy: "no-referrer",
+  });
+  if (response.status === 503 || response.status === 429) {
+    throw new RateLimitedError();
+  }
+  if (!response.ok) throw new Error(`MusicBrainz: HTTP ${response.status}`);
+  return parseLinks(await response.json());
 }
 
 /** MusicBrainz's matches for the album. */

@@ -7,18 +7,15 @@ import { Button } from "@maat-apps/ui/button";
 import { SectionTitle } from "@maat-apps/ui/page-header";
 import { useSmartBack } from "@maat-apps/ui/smart-back";
 import { useAlbums } from "../../hooks/use-albums";
+import { useAppSettings } from "../../hooks/use-app-settings";
 import { useCoverLookup } from "../../hooks/use-cover-lookup";
 import { useTranslation } from "../../i18n/use-translation";
-import {
-  awaitsReview,
-  needsLookup,
-  notFound,
-  type LookupSource,
-} from "../../lib/cover-lookup";
+import { awaitsReview, needsLookup, notFound } from "../../lib/cover-lookup";
+import { LOOKUP_SOURCES } from "../../lib/cover-lookup-runner";
 import type { Album } from "../../lib/schemas";
 
 /** Tried in order for each album; the first one's verdicts are reviewed here. */
-const SOURCES: LookupSource[] = ["musicbrainz", "itunes"];
+const SOURCES = LOOKUP_SOURCES;
 
 function AlbumLinks({
   label,
@@ -58,17 +55,19 @@ function AlbumLinks({
 }
 
 /**
- * "/covers": looks covers and years up — on MusicBrainz, then on iTunes —
- * for every album without a cover, then lists what needs a decision.
+ * "/covers": looks covers, years and links to the user's streaming service
+ * up — on MusicBrainz, then iTunes — for every album missing them, then
+ * lists the albums without a cover that need a decision.
  */
 export function CoversView() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const back = useSmartBack("/");
   const albums = useAlbums();
+  const { streamingService } = useAppSettings();
   const { phase, progress, start, stop } = useCoverLookup(SOURCES);
   const remaining = albums.filter((album) =>
-    SOURCES.some((item) => needsLookup(album, item)),
+    SOURCES.some((item) => needsLookup(album, item, streamingService)),
   ).length;
   const toReview = albums.filter((album) => awaitsReview(album, SOURCES[0]));
   const missing = albums.filter((album) => notFound(album, SOURCES[0]));

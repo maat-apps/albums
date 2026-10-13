@@ -2,8 +2,10 @@ import { parseEach } from "@maat-apps/core/validation";
 import * as v from "valibot";
 
 import type { AlbumMatch } from "./cover-lookup";
+import { COVER_SIZE } from "./cover-url";
 import { RateLimitedError } from "./musicbrainz";
 import type { Album } from "./schemas";
+import { readLinks } from "./streaming";
 
 // Apple's iTunes Search API: free, no account or key, readable from the
 // browser. Only an album's artist and title leave the device. It allows
@@ -17,6 +19,7 @@ const ItunesAlbumSchema = v.object({
   artistName: v.string(),
   artworkUrl100: v.optional(v.string()),
   releaseDate: v.optional(v.string()),
+  collectionViewUrl: v.optional(v.string()),
 });
 
 const SearchResultSchema = v.object({ results: v.array(v.unknown()) });
@@ -34,9 +37,12 @@ export function searchUrl(album: Pick<Album, "artist" | "title">): string {
   return `${SEARCH_URL}?${params}`;
 }
 
-/** The 100px artwork URL asked for at 600px instead. */
+/** The 100px artwork URL asked for at COVER_SIZE instead. */
 export function largerArtwork(url: string): string {
-  return url.replace(/\/\d+x\d+(bb)?\.(jpg|png)$/, "/600x600bb.$2");
+  return url.replace(
+    /\/\d+x\d+(bb)?\.(jpg|png)$/,
+    `/${COVER_SIZE}x${COVER_SIZE}bb.$2`,
+  );
 }
 
 /** The albums in a search response; malformed entries are dropped. */
@@ -52,6 +58,7 @@ export function parseItunesAlbums(value: unknown): AlbumMatch[] {
       year: Number.isNaN(year) ? null : year,
       type: suffix?.toLowerCase() ?? "album",
       coverUrl: item.artworkUrl100 ? largerArtwork(item.artworkUrl100) : null,
+      links: readLinks(item.collectionViewUrl ? [item.collectionViewUrl] : []),
     };
   });
 }

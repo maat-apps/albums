@@ -20,6 +20,7 @@ web - PWA, mobile-only (like routines, trainer and notes).
 | Title  | Album title.                                                         |
 | Status | `to listen`, `listened — coming back`, `listened — not coming back`. |
 | Cover  | Optional URL of the cover image from a public source.                |
+| Links  | Optional links to the album on Deezer, Spotify and Apple Music.      |
 
 ## Behavior
 
@@ -30,8 +31,13 @@ web - PWA, mobile-only (like routines, trainer and notes).
   in both view modes.
 - **Add / edit / delete** an album; changing its status is one tap from
   the album view.
+- **Open in Deezer / Spotify / Apple Music** from the album view,
+  straight to the album on the streaming service chosen in Settings —
+  shown only when the album has a link there (found by the app, or pasted
+  in the album's form, which shows that service's field). Links are the
+  user's data: they're part of backups.
 - **Settings** (a drawer): language (English/Polish), app lock, backup
-  export/import, install and update.
+  export/import, install and update, and the streaming service.
 
 ## Importing an existing list (CSV)
 
@@ -64,16 +70,32 @@ the image itself — the user decides by adding a URL.
   updates. Where a server doesn't allow that, the cover is shown straight
   from its URL instead. Stored covers are a cache: never in a backup, and
   dropped (to load again) when the lock changes or a backup is restored.
-- **Finding covers** (Settings → Data → Find covers): every album without
-  a cover is searched on MusicBrainz — then on iTunes (Apple's free search,
-  no key; about 20 requests a minute) for what MusicBrainz didn't match —
-  by artist and title; nothing else leaves the device, and no account is
-  needed. The first result with the album's artist and title (editions like
-  "Deluxe" or "Remastered" ignored) is taken without asking — preferring
-  the album's year, then a plain release, then an album over a single —
-  and gets its cover and, if the album had none, its year. Only albums
-  with no result of that artist and title are listed to review, where the
-  user picks a match or "None of these". About one album
-  a second (MusicBrainz's limit); it keeps going after leaving the covers
-  screen, and stopping keeps what was found. An album
+- Covers found by the app are asked for at 1200px, sharp across a phone's
+  full width; covers saved earlier at a smaller size are upgraded the same
+  way (the old copy shows until the sharper one has loaded).
+- **Finding covers and links** (Settings → Data → Covers and links): every
+  album without a cover, a year or a link to the chosen service is
+  searched on MusicBrainz, and a cover still missing after that — or, for
+  Apple Music, the link — on iTunes (Apple's free search, no key; about 20
+  requests a minute). Only the artist and
+  title leave the device, and no account is needed. The first result with
+  the album's artist and title (editions like "Deluxe" or "Remastered"
+  ignored, and the artist allowing a typo or two in a longer name) is
+  taken without asking — preferring the exact artist, then the album's
+  year, then a plain release, then an album over a single — and fills what
+  the album
+  lacks: cover, year, and the streaming links MusicBrainz has for it, if
+  any (well covered for international releases, less for Polish ones; iTunes
+  covers Apple Music best). Deezer's own API can't be used — it doesn't
+  allow reading from a web page, nor does Odesli (song.link) — and
+  Spotify's needs a sign-in. Only albums without a cover
+  and with no result of that artist and title are listed to review, where
+  the user picks a match or "None of these". A service that can't be
+  reached is left out for the rest of the run. It keeps going after
+  leaving the covers screen, and stopping keeps what was found. An album
   without a cover also offers "Find a cover" from its own view.
+- **Opening an album** looks it up by itself, the same way, when it's
+  missing a cover, a year or a link to the chosen service and hasn't been
+  tried yet: the cover and the "Open in …" link appear without a tap,
+  with pulsing placeholders where they'll show while it searches; "Find a
+  cover" is offered only once the search found none.

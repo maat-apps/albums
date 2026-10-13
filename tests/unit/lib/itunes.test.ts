@@ -15,6 +15,7 @@ const ITEM = {
   artworkUrl100:
     "https://is1-ssl.mzstatic.com/image/thumb/Music/x/100x100bb.jpg",
   releaseDate: "1999-05-01T07:00:00Z",
+  collectionViewUrl: "https://music.apple.com/us/album/made-up-title/123?uo=4",
 };
 
 afterEach(() => {
@@ -31,9 +32,9 @@ describe("searchUrl", () => {
 });
 
 describe("largerArtwork", () => {
-  it("asks for 600px instead of 100px", () => {
+  it("asks for 1200px instead of 100px", () => {
     expect(largerArtwork(ITEM.artworkUrl100)).toBe(
-      "https://is1-ssl.mzstatic.com/image/thumb/Music/x/600x600bb.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/Music/x/1200x1200bb.jpg",
     );
   });
 
@@ -54,7 +55,8 @@ describe("parseItunesAlbums", () => {
         year: 1999,
         type: "album",
         coverUrl:
-          "https://is1-ssl.mzstatic.com/image/thumb/Music/x/600x600bb.jpg",
+          "https://is1-ssl.mzstatic.com/image/thumb/Music/x/1200x1200bb.jpg",
+        links: { appleMusic: "https://music.apple.com/us/album/123" },
       },
     ]);
   });

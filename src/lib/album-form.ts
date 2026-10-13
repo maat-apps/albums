@@ -9,6 +9,9 @@ export type AlbumFormValues = {
   title: string;
   status: AlbumStatus;
   coverUrl: string;
+  deezerUrl: string;
+  spotifyUrl: string;
+  appleMusicUrl: string;
 };
 
 export type AlbumFormField = keyof AlbumFormValues;
@@ -21,6 +24,9 @@ export const EMPTY_ALBUM_FORM: AlbumFormValues = {
   title: "",
   status: "toListen",
   coverUrl: "",
+  deezerUrl: "",
+  spotifyUrl: "",
+  appleMusicUrl: "",
 };
 
 export function albumToForm(album: Album): AlbumFormValues {
@@ -30,10 +36,20 @@ export function albumToForm(album: Album): AlbumFormValues {
     title: album.title,
     status: album.status,
     coverUrl: album.coverUrl ?? "",
+    deezerUrl: album.deezerUrl ?? "",
+    spotifyUrl: album.spotifyUrl ?? "",
+    appleMusicUrl: album.appleMusicUrl ?? "",
   };
 }
 
 const YEAR_PATTERN = /^\d{4}$/;
+
+const URL_FIELDS = [
+  "coverUrl",
+  "deezerUrl",
+  "spotifyUrl",
+  "appleMusicUrl",
+] as const;
 
 export function validateAlbumForm(values: AlbumFormValues): AlbumFormErrors {
   const errors: AlbumFormErrors = {};
@@ -42,8 +58,10 @@ export function validateAlbumForm(values: AlbumFormValues): AlbumFormErrors {
   if (values.year.trim() && !YEAR_PATTERN.test(values.year.trim())) {
     errors.year = "year";
   }
-  const coverUrl = values.coverUrl.trim();
-  if (coverUrl && !isHttpsUrl(coverUrl)) errors.coverUrl = "url";
+  for (const field of URL_FIELDS) {
+    const url = values[field].trim();
+    if (url && !isHttpsUrl(url)) errors[field] = "url";
+  }
   return errors;
 }
 
@@ -57,7 +75,12 @@ export function formToAlbum(
   now = new Date(),
 ): Album {
   const year = values.year.trim();
-  const coverUrl = values.coverUrl.trim();
+  const urls = Object.fromEntries(
+    URL_FIELDS.flatMap((field) => {
+      const url = values[field].trim();
+      return url ? [[field, url]] : [];
+    }),
+  );
   return {
     id: base?.id ?? crypto.randomUUID(),
     createdAt: base?.createdAt ?? now.toISOString(),
@@ -66,6 +89,6 @@ export function formToAlbum(
     artist: values.artist.trim(),
     title: values.title.trim(),
     status: values.status,
-    ...(coverUrl && { coverUrl }),
+    ...urls,
   };
 }

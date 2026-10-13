@@ -5,6 +5,7 @@ import type { SortDirection, SortKey, StatusFilter } from "./album-utils";
 import { keyValueStore } from "./idb-store";
 import { ALBUM_STATUSES } from "./schemas";
 import { SETTINGS_KEY } from "./storage-keys";
+import { STREAMING_SERVICES, type StreamingService } from "./streaming";
 
 // Settings that aren't part of the app's data (or a backup): the app lock's
 // enrolment and browser/install state. @maat-apps/core/persisted keeps them
@@ -24,6 +25,8 @@ export type AppSettings = {
   lock: LockEnrolment | null;
   installed: boolean;
   collection: CollectionPrefs;
+  /** Where "Open in …" leads, and whose links lookups fill in. */
+  streamingService: StreamingService;
 };
 
 const DEFAULT_COLLECTION: CollectionPrefs = {
@@ -54,13 +57,23 @@ function parseCollection(value: unknown): CollectionPrefs {
 const settingsStore = createPersistedStore<AppSettings>({
   storage: keyValueStore,
   key: SETTINGS_KEY,
-  defaults: { lock: null, installed: false, collection: DEFAULT_COLLECTION },
+  defaults: {
+    lock: null,
+    installed: false,
+    collection: DEFAULT_COLLECTION,
+    streamingService: "deezer",
+  },
   parse: (stored) => {
     const value = stored as Record<string, unknown>;
     return {
       lock: parseLockEnrolment(value.lock),
       installed: value.installed === true,
       collection: parseCollection(value.collection),
+      streamingService: pick(
+        value.streamingService,
+        STREAMING_SERVICES,
+        "deezer",
+      ),
     };
   },
 });
@@ -94,4 +107,8 @@ export function setCollectionPrefs(changes: Partial<CollectionPrefs>): void {
   settingsStore.set({
     collection: { ...getSettingsSnapshot().collection, ...changes },
   });
+}
+
+export function setStreamingService(streamingService: StreamingService): void {
+  settingsStore.set({ streamingService });
 }

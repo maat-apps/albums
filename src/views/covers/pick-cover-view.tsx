@@ -14,15 +14,24 @@ import {
   type AlbumMatch,
   type LookupSource,
 } from "../../lib/cover-lookup";
-import { SEARCHES } from "../../lib/cover-lookup-runner";
+import { LOOKUP_SOURCES, SEARCHES } from "../../lib/cover-lookup-runner";
+import { RateLimitedError } from "../../lib/musicbrainz";
 import { saveAlbum } from "../../lib/storage";
 
 /** Searched in this order; the first one's verdict records a skip. */
-const SOURCES: LookupSource[] = ["musicbrainz", "itunes"];
+const SOURCES = LOOKUP_SOURCES;
+
+const SOURCE_NAMES: Record<LookupSource, string> = {
+  musicbrainz: "MusicBrainz",
+  itunes: "iTunes",
+};
+
+/** A source whose search failed, and whether it only asked to slow down. */
+type Failure = { source: LookupSource; rateLimited: boolean };
 
 type Search =
   | { state: "loading" }
-  | { state: "failed" }
+  | { state: "failed"; failures: Failure[] }
   | { state: "done"; matches: AlbumMatch[] };
 
 /** A candidate's cover, straight from its source. */
@@ -65,7 +74,7 @@ export function PickCoverView() {
     if (artist === undefined || title === undefined) return;
     const controller = new AbortController();
     const query = `${artist}|${title}`;
-    // MusicBrainz's matches first, then iTunes'; one failing is fine.
+    // Each source's matches in order; some failing is fine.
     Promise.allSettled(
       SOURCES.map((item) =>
         SEARCHES[item]({ artist, title }, controller.signal),
@@ -75,10 +84,22 @@ export function PickCoverView() {
       const matches = results.flatMap((result) =>
         result.status === "fulfilled" ? result.value : [],
       );
-      const failed = results.every((result) => result.status === "rejected");
+      const failures = results.flatMap((result, index) =>
+        result.status === "rejected"
+          ? [
+              {
+                source: SOURCES[index],
+                rateLimited: result.reason instanceof RateLimitedError,
+              },
+            ]
+          : [],
+      );
       setAnswer({
         query,
-        search: failed ? { state: "failed" } : { state: "done", matches },
+        search:
+          failures.length === SOURCES.length
+            ? { state: "failed", failures }
+            : { state: "done", matches },
       });
     });
     return () => controller.abort();
@@ -122,9 +143,18 @@ export function PickCoverView() {
         <p className="text-muted-foreground m-0">{t("searching")}</p>
       )}
       {search.state === "failed" && (
-        <p className="text-destructive m-0" role="alert">
-          {t("lookupFailed")}
-        </p>
+        <div className="text-destructive grid gap-1" role="alert">
+          <p className="m-0">{t("lookupFailed")}</p>
+          <ul className="m-0 list-none p-0 text-sm">
+            {search.failures.map(({ source, rateLimited }) => (
+              <li key={source}>
+                {t(rateLimited ? "sourceRateLimited" : "sourceUnreachable", {
+                  source: SOURCE_NAMES[source],
+                })}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
       {search.state === "done" && search.matches.length === 0 && (
         <p className="text-muted-foreground m-0">{t("noCandidates")}</p>

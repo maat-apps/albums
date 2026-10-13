@@ -1,10 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-import { goHome } from "./utils";
+import { answerLookupsEmpty, goHome } from "./utils";
 
 test("adding, viewing, changing status, editing and deleting an album", async ({
   page,
 }) => {
+  await answerLookupsEmpty(page);
   await goHome(page);
 
   await page.getByRole("button", { name: "Add album" }).click();
@@ -21,6 +22,10 @@ test("adding, viewing, changing status, editing and deleting an album", async ({
     page.getByRole("heading", { name: "Test Album" }).first(),
   ).toBeVisible();
   await expect(page.getByText("Test Artist · 1999")).toBeVisible();
+  // No Deezer link yet: no button.
+  await expect(page.getByRole("link", { name: "Open in Deezer" })).toHaveCount(
+    0,
+  );
 
   await page.getByRole("button", { name: "Coming back", exact: true }).click();
   await expect(
@@ -29,10 +34,17 @@ test("adding, viewing, changing status, editing and deleting an album", async ({
 
   await page.getByRole("button", { name: "Edit album" }).click();
   await page.getByLabel("Title").fill("Renamed");
+  await page.getByLabel("Deezer URL").fill("deezer.com/album/1");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("Use a full https:// link.")).toBeVisible();
+  await page.getByLabel("Deezer URL").fill("https://www.deezer.com/album/1");
   await page.getByRole("button", { name: "Save" }).click();
   await expect(
     page.getByRole("heading", { name: "Renamed" }).first(),
   ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Open in Deezer" }),
+  ).toHaveAttribute("href", "https://www.deezer.com/album/1");
 
   await page.getByRole("button", { name: "Edit album" }).click();
   await page.getByRole("button", { name: "Delete album" }).click();
