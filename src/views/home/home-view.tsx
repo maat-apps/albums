@@ -35,10 +35,22 @@ export function HomeView() {
     startTransition(() => navigate(`/${encodeURIComponent(id)}`));
   }
 
+  const settingsButton = (
+    <Button
+      variant="ghost"
+      size="icon-lg"
+      className="size-14 shrink-0"
+      aria-label={t("settings")}
+      onClick={() => setSettingsOpen(true)}
+    >
+      <Gear className="size-6" />
+    </Button>
+  );
+
   // Everything to tap sits in the bottom bar, within the thumb's reach, at
-  // least 44×44px; the top is only the title.
+  // least 56×56px; the top is only the title.
   return (
-    <div className="mx-auto flex min-h-dvh w-[min(100%,480px)] flex-col gap-5 px-5 pt-27 pb-[calc(160px+env(safe-area-inset-bottom))]">
+    <div className="mx-auto flex min-h-dvh w-[min(100%,480px)] flex-col gap-5 px-5 pt-27 pb-[calc(184px+env(safe-area-inset-bottom))]">
       <PageHeader>
         <PageTitle>{t("appName")}</PageTitle>
       </PageHeader>
@@ -66,37 +78,33 @@ export function HomeView() {
         />
       )}
       <div className="bg-background/95 fixed inset-x-0 bottom-0 z-20 border-t backdrop-blur">
-        <div className="mx-auto grid w-[min(100%,480px)] gap-2 px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))]">
+        <div className="mx-auto grid w-[min(100%,480px)] grid-cols-[minmax(0,1fr)] gap-2 px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))]">
           {albums.length > 0 && (
-            <StatusFilterChips
-              prefs={prefs}
-              counts={countByStatus(albums)}
-              onChange={setCollectionPrefs}
-            />
+            <div className="flex items-center gap-1">
+              <StatusFilterChips
+                prefs={prefs}
+                counts={countByStatus(albums)}
+                onChange={setCollectionPrefs}
+              />
+              {settingsButton}
+            </div>
           )}
           <div className="flex items-center gap-1">
-            {albums.length > 0 && (
+            {albums.length > 0 ? (
               <SortAndViewControls
                 prefs={prefs}
                 onChange={setCollectionPrefs}
               />
+            ) : (
+              <span className="flex flex-1 justify-end">{settingsButton}</span>
             )}
             <Button
-              variant="ghost"
               size="icon-lg"
-              className="ml-auto size-11 shrink-0"
-              aria-label={t("settings")}
-              onClick={() => setSettingsOpen(true)}
-            >
-              <Gear className="size-5" />
-            </Button>
-            <Button
-              size="icon-lg"
-              className="size-11 shrink-0 rounded-2xl"
+              className="size-14 shrink-0 rounded-2xl"
               aria-label={t("addAlbum")}
               onClick={() => startTransition(() => navigate("/new"))}
             >
-              <Plus className="size-6" />
+              <Plus className="size-7" />
             </Button>
           </div>
         </div>

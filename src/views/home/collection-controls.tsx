@@ -48,13 +48,13 @@ export function StatusFilterChips({
     <div
       role="group"
       aria-label={t("filterByStatus")}
-      className="-mx-4 flex [scrollbar-width:none] gap-2 overflow-x-auto px-4"
+      className="-ml-4 flex min-w-0 flex-1 [scrollbar-width:none] gap-2 overflow-x-auto [mask-image:linear-gradient(to_right,black_calc(100%-24px),transparent)] pr-6 pl-4"
     >
       {FILTERS.map((filter) => (
         <Button
           key={filter}
           variant={prefs.statusFilter === filter ? "default" : "outline"}
-          className="h-11 shrink-0 rounded-xl"
+          className="h-14 shrink-0 rounded-2xl px-4 text-base"
           aria-pressed={prefs.statusFilter === filter}
           onClick={() => onChange({ statusFilter: filter })}
         >
@@ -84,7 +84,7 @@ export function SortAndViewControls({ prefs, onChange }: ToolbarProps) {
         onValueChange={(value) => onChange({ sortKey: value as SortKey })}
       >
         <SelectTrigger
-          className="h-11 min-w-0 flex-1 text-base"
+          className="h-14 min-w-0 flex-1 rounded-2xl text-base"
           aria-label={t("sortBy")}
         >
           <SelectValue>{(value) => sortLabel[value as SortKey]}</SelectValue>
@@ -100,7 +100,7 @@ export function SortAndViewControls({ prefs, onChange }: ToolbarProps) {
       <Button
         variant="ghost"
         size="icon-lg"
-        className="size-11 shrink-0"
+        className="size-14 shrink-0 [&_svg]:size-6"
         aria-label={ascending ? t("sortAscending") : t("sortDescending")}
         onClick={() => onChange({ sortDirection: ascending ? "desc" : "asc" })}
       >
@@ -109,7 +109,7 @@ export function SortAndViewControls({ prefs, onChange }: ToolbarProps) {
       <Button
         variant="ghost"
         size="icon-lg"
-        className="size-11 shrink-0"
+        className="size-14 shrink-0 [&_svg]:size-6"
         aria-label={grid ? t("viewGrid") : t("viewList")}
         onClick={() => onChange({ viewMode: grid ? "list" : "grid" })}
       >
