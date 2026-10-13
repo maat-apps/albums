@@ -24,6 +24,9 @@ web - PWA, mobile-only (like routines, trainer and notes).
 
 ## Behavior
 
+- **Thumb-first:** on the collection, everything to tap — filters, sort,
+  view mode, settings and add — sits in a bar at the bottom of the screen;
+  the top is only the title.
 - **Two view modes**, switchable and remembered: a two-column grid of
   covers, or a list with a cover thumbnail, artist, title and year.
 - **Filter** by status: all, to listen, coming back, not coming back.
