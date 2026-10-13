@@ -54,7 +54,7 @@ export function StatusFilterChips({
         <Button
           key={filter}
           variant={prefs.statusFilter === filter ? "default" : "outline"}
-          className="shrink-0 rounded-lg"
+          className="h-11 shrink-0 rounded-xl"
           aria-pressed={prefs.statusFilter === filter}
           onClick={() => onChange({ statusFilter: filter })}
         >
@@ -75,6 +75,7 @@ export function SortAndViewControls({ prefs, onChange }: ToolbarProps) {
     year: t("sortYear"),
   };
   const ascending = prefs.sortDirection === "asc";
+  const grid = prefs.viewMode === "grid";
 
   return (
     <div className="flex min-w-0 items-center gap-1">
@@ -83,7 +84,7 @@ export function SortAndViewControls({ prefs, onChange }: ToolbarProps) {
         onValueChange={(value) => onChange({ sortKey: value as SortKey })}
       >
         <SelectTrigger
-          className="w-28 min-w-0 shrink text-sm"
+          className="h-11 w-32 min-w-0 shrink text-sm"
           aria-label={t("sortBy")}
         >
           <SelectValue>{(value) => sortLabel[value as SortKey]}</SelectValue>
@@ -99,33 +100,21 @@ export function SortAndViewControls({ prefs, onChange }: ToolbarProps) {
       <Button
         variant="ghost"
         size="icon-lg"
+        className="size-11"
         aria-label={ascending ? t("sortAscending") : t("sortDescending")}
         onClick={() => onChange({ sortDirection: ascending ? "desc" : "asc" })}
       >
         {ascending ? <SortAscending /> : <SortDescending />}
       </Button>
-      <div className="flex" role="group" aria-label={t("viewMode")}>
-        <Button
-          variant="ghost"
-          size="icon-lg"
-          aria-label={t("viewGrid")}
-          aria-pressed={prefs.viewMode === "grid"}
-          className={prefs.viewMode === "grid" ? "" : "text-muted-foreground"}
-          onClick={() => onChange({ viewMode: "grid" })}
-        >
-          <SquaresFour />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon-lg"
-          aria-label={t("viewList")}
-          aria-pressed={prefs.viewMode === "list"}
-          className={prefs.viewMode === "list" ? "" : "text-muted-foreground"}
-          onClick={() => onChange({ viewMode: "list" })}
-        >
-          <ListBullets />
-        </Button>
-      </div>
+      <Button
+        variant="ghost"
+        size="icon-lg"
+        className="size-11"
+        aria-label={grid ? t("viewGrid") : t("viewList")}
+        onClick={() => onChange({ viewMode: grid ? "list" : "grid" })}
+      >
+        {grid ? <SquaresFour /> : <ListBullets />}
+      </Button>
     </div>
   );
 }

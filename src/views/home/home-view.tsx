@@ -35,10 +35,10 @@ export function HomeView() {
     startTransition(() => navigate(`/${encodeURIComponent(id)}`));
   }
 
-  // Everything to tap sits in the bottom bar, within the thumb's reach; the
-  // top is only the title.
+  // Everything to tap sits in the bottom bar, within the thumb's reach, at
+  // least 44×44px; the top is only the title.
   return (
-    <div className="mx-auto flex min-h-dvh w-[min(100%,480px)] flex-col gap-5 px-5 pt-27 pb-[calc(144px+env(safe-area-inset-bottom))]">
+    <div className="mx-auto flex min-h-dvh w-[min(100%,480px)] flex-col gap-5 px-5 pt-27 pb-[calc(160px+env(safe-area-inset-bottom))]">
       <PageHeader>
         <PageTitle>{t("appName")}</PageTitle>
       </PageHeader>
@@ -84,7 +84,7 @@ export function HomeView() {
             <Button
               variant="ghost"
               size="icon-lg"
-              className="ml-auto"
+              className="ml-auto size-11"
               aria-label={t("settings")}
               onClick={() => setSettingsOpen(true)}
             >
