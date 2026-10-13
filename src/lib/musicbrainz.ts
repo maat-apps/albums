@@ -66,9 +66,26 @@ export function searchUrl(album: Pick<Album, "artist" | "title">): string {
   return `${SEARCH_URL}?${params}`;
 }
 
+/**
+ * A search for whatever the user typed — artist, title or both, in any
+ * order: each word may be in either, and results with the most of them rank
+ * first ("radiohead ok computer").
+ */
+export function textSearchUrl(text: string): string {
+  const words = escapeLucene(text.trim());
+  const query = `releasegroup:(${words}) OR artist:(${words})`;
+  const params = new URLSearchParams({ query, fmt: "json", limit: "25" });
+  return `${SEARCH_URL}?${params}`;
+}
+
 /** The release group's front cover, at COVER_SIZE, from the Cover Art Archive. */
 export function coverArtUrl(releaseGroupId: string): string {
   return `https://coverartarchive.org/release-group/${releaseGroupId}/front-${COVER_SIZE}`;
+}
+
+/** A small version of the front cover, for a list of search results. */
+export function coverThumbnailUrl(releaseGroupId: string): string {
+  return `https://coverartarchive.org/release-group/${releaseGroupId}/front-250`;
 }
 
 /** The release groups in a search response; malformed entries are dropped. */
@@ -88,12 +105,11 @@ export function parseReleaseGroups(value: unknown): ReleaseGroup[] {
   });
 }
 
-/** Release groups matching the album's artist and title, best first. */
-export async function searchReleaseGroups(
-  album: Pick<Album, "artist" | "title">,
+async function fetchReleaseGroups(
+  url: string,
   signal?: AbortSignal,
 ): Promise<ReleaseGroup[]> {
-  const response = await fetch(searchUrl(album), {
+  const response = await fetch(url, {
     signal,
     credentials: "omit",
     referrerPolicy: "no-referrer",
@@ -103,6 +119,22 @@ export async function searchReleaseGroups(
   }
   if (!response.ok) throw new Error(`MusicBrainz: HTTP ${response.status}`);
   return parseReleaseGroups(await response.json());
+}
+
+/** Release groups matching the album's artist and title, best first. */
+export function searchReleaseGroups(
+  album: Pick<Album, "artist" | "title">,
+  signal?: AbortSignal,
+): Promise<ReleaseGroup[]> {
+  return fetchReleaseGroups(searchUrl(album), signal);
+}
+
+/** Release groups matching what the user typed, best first. */
+export function searchReleaseGroupsByText(
+  text: string,
+  signal?: AbortSignal,
+): Promise<ReleaseGroup[]> {
+  return fetchReleaseGroups(textSearchUrl(text), signal);
 }
 
 /** A release group as a lookup match, its cover from the archive. */

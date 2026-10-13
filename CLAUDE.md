@@ -53,8 +53,12 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
 - **Screens.** `src/app/router.tsx`: `/` (`views/home`: the collection —
   status filter chips with counts, sort key + direction, grid/list, all
   remembered in `app-settings.ts`'s `collection` prefs; settings drawer),
-  `/new` and `/:id/edit` (`views/album/album-form-view.tsx`, validated by
-  `lib/album-form.ts`), `/:id` (`album-view.tsx`: cover, one-tap status,
+  `/new` (`views/album/add-album-view.tsx`: a MusicBrainz text search —
+  `musicbrainz.ts`'s `searchReleaseGroupsByText`, debounced for its rate
+  limit; tapping a result saves `album-form.ts`'s `releaseGroupToAlbum`, or
+  opens the album already matching it per `sameAlbum`), `/new/manual` (the
+  by-hand fallback) and `/:id/edit` (`views/album/album-form-view.tsx`,
+  validated by `lib/album-form.ts`), `/:id` (`album-view.tsx`: cover, one-tap status,
   "Open in …" for the streaming service chosen in Settings
   (`app-settings.ts`'s `streamingService`; `lib/streaming.ts`: Deezer,
   Spotify, Apple Music — `deezerUrl`/`spotifyUrl`/`appleMusicUrl`, read

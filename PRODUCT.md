@@ -29,8 +29,14 @@ web - PWA, mobile-only (like routines, trainer and notes).
 - **Filter** by status: all, to listen, coming back, not coming back.
 - **Sort** by year, title or artist, ascending or descending — available
   in both view modes.
-- **Add / edit / delete** an album; changing its status is one tap from
-  the album view.
+- **Add** an album by searching MusicBrainz: one field, artist, title or
+  both; tapping a result adds it — to listen — with its year and cover, and
+  its streaming link is found when it opens. Results already in the
+  collection are marked and open that album. An album MusicBrainz doesn't
+  have can still be added by hand ("Not there? Add it by hand"). Only the
+  typed text leaves the device.
+- **Edit / delete** an album; changing its status is one tap from the
+  album view.
 - **Open in Deezer / Spotify / Apple Music** from the album view,
   straight to the album on the streaming service chosen in Settings —
   shown only when the album has a link there (found by the app, or pasted

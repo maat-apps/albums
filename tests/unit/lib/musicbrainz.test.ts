@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   coverArtUrl,
+  coverThumbnailUrl,
   findLinks,
   parseLinks,
   parseReleaseGroups,
@@ -9,7 +10,9 @@ import {
   releasesUrl,
   searchMusicBrainz,
   searchReleaseGroups,
+  searchReleaseGroupsByText,
   searchUrl,
+  textSearchUrl,
 } from "@/lib/musicbrainz";
 
 const GROUP = {
@@ -38,10 +41,29 @@ describe("searchUrl", () => {
   });
 });
 
+describe("textSearchUrl", () => {
+  it("looks for the typed words in the title or the artist, escaped", () => {
+    const url = new URL(textSearchUrl("  AC/DC Back in Black! "));
+    expect(url.origin + url.pathname).toBe(
+      "https://musicbrainz.org/ws/2/release-group/",
+    );
+    expect(url.searchParams.get("query")).toBe(
+      "releasegroup:(AC\\/DC Back in Black\\!) OR artist:(AC\\/DC Back in Black\\!)",
+    );
+    expect(url.searchParams.get("limit")).toBe("25");
+  });
+});
+
 describe("coverArtUrl", () => {
   it("points at the release group's front cover", () => {
     expect(coverArtUrl("rg1")).toBe(
       "https://coverartarchive.org/release-group/rg1/front-1200",
+    );
+  });
+
+  it("has a small version for search results", () => {
+    expect(coverThumbnailUrl("rg1")).toBe(
+      "https://coverartarchive.org/release-group/rg1/front-250",
     );
   });
 });
@@ -100,6 +122,18 @@ describe("searchReleaseGroups", () => {
       credentials: "omit",
       referrerPolicy: "no-referrer",
     });
+  });
+
+  it("searches by typed text the same way", async () => {
+    const fetchMock = respond(200, { "release-groups": [GROUP] });
+
+    const groups = await searchReleaseGroupsByText("zeta made-up");
+
+    expect(groups.map((group) => group.id)).toEqual(["rg1"]);
+    expect(fetchMock).toHaveBeenCalledWith(
+      textSearchUrl("zeta made-up"),
+      expect.objectContaining({ credentials: "omit" }),
+    );
   });
 
   it.each([503, 429])("reports HTTP %i as a rate limit", async (status) => {

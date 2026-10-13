@@ -185,7 +185,7 @@ function AlbumForm({ album }: { album: Album | null }) {
   );
 }
 
-/** "/new": add an album. */
+/** "/new/manual": add an album MusicBrainz doesn't have, by hand. */
 export function NewAlbumView() {
   return <AlbumForm album={null} />;
 }

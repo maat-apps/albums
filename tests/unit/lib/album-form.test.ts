@@ -4,6 +4,7 @@ import {
   albumToForm,
   EMPTY_ALBUM_FORM,
   formToAlbum,
+  releaseGroupToAlbum,
   validateAlbumForm,
 } from "@/lib/album-form";
 import type { Album } from "@/lib/schemas";
@@ -159,5 +160,30 @@ describe("formToAlbum", () => {
     expect(formToAlbum(albumToForm(album), album, NOW).coverUrl).toBe(
       album.coverUrl,
     );
+  });
+});
+
+describe("releaseGroupToAlbum", () => {
+  it("adds a found album to listen to, with the archive's cover", () => {
+    const created = releaseGroupToAlbum(
+      {
+        id: "rg1",
+        title: "Made-up Title",
+        artist: "Zeta Band",
+        year: null,
+        primaryType: "Album",
+      },
+      NOW,
+    );
+    expect(created).toEqual({
+      id: expect.any(String),
+      createdAt: NOW.toISOString(),
+      updatedAt: NOW.toISOString(),
+      year: null,
+      artist: "Zeta Band",
+      title: "Made-up Title",
+      status: "toListen",
+      coverUrl: "https://coverartarchive.org/release-group/rg1/front-1200",
+    });
   });
 });
