@@ -30,6 +30,7 @@ test("stores a cover once and shows it offline after a reload", async ({
 
   await goHome(page);
   await page.getByRole("button", { name: "Add album" }).click();
+  await page.getByRole("button", { name: "Not there? Add it by hand" }).click();
   await page.getByLabel("Artist", { exact: true }).fill("Made-up Artist");
   await page.getByLabel("Title", { exact: true }).fill("Made-up Title");
   await page.getByLabel("Cover image URL").fill(COVER_URL);

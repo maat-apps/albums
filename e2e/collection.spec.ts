@@ -51,14 +51,12 @@ test("switches between grid and list, remembering the choice", async ({
   await goHome(page);
   await importCsv(page);
 
-  await page.getByRole("button", { name: "List", exact: true }).click();
+  await page.getByRole("button", { name: /^Grid/ }).click();
   await expect(
     page.getByRole("button", { name: /Middle.*1985/ }),
   ).toBeVisible();
 
   await waitForStoredPrefs(page, { viewMode: "list" });
   await page.reload();
-  await expect(
-    page.getByRole("button", { name: "List", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: /^List/ })).toBeVisible();
 });

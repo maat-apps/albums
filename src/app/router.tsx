@@ -9,6 +9,11 @@ const HomeView = lazy(() =>
 const AlbumView = lazy(() =>
   import("../views/album/album-view").then((m) => ({ default: m.AlbumView })),
 );
+const AddAlbumView = lazy(() =>
+  import("../views/album/add-album-view").then((m) => ({
+    default: m.AddAlbumView,
+  })),
+);
 const NewAlbumView = lazy(() =>
   import("../views/album/album-form-view").then((m) => ({
     default: m.NewAlbumView,
@@ -37,7 +42,8 @@ export function AppRouter() {
       <BrowserRouter basename={import.meta.env.BASE_URL}>
         <Routes>
           <Route path="/" element={<HomeView />} />
-          <Route path="/new" element={<NewAlbumView />} />
+          <Route path="/new" element={<AddAlbumView />} />
+          <Route path="/new/manual" element={<NewAlbumView />} />
           <Route path="/covers" element={<CoversView />} />
           <Route path="/covers/:id" element={<PickCoverView />} />
           <Route path="/:id" element={<AlbumView />} />

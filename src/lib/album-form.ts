@@ -1,6 +1,7 @@
+import { coverArtUrl, type ReleaseGroup } from "./musicbrainz";
 import { isHttpsUrl, type Album, type AlbumStatus } from "./schemas";
 
-// The add/edit form's values as typed (strings), and the pure conversion
+// Adding an album found on MusicBrainz, and the edit form's values as typed (strings), and the pure conversion
 // to and from an Album — kept out of the view so it's unit-tested.
 
 export type AlbumFormValues = {
@@ -90,5 +91,25 @@ export function formToAlbum(
     title: values.title.trim(),
     status: values.status,
     ...urls,
+  };
+}
+
+/**
+ * A new album, to listen to, from a MusicBrainz search result, its cover
+ * from the archive. Its streaming links come from the album's own lookup.
+ */
+export function releaseGroupToAlbum(
+  group: ReleaseGroup,
+  now = new Date(),
+): Album {
+  return {
+    id: crypto.randomUUID(),
+    createdAt: now.toISOString(),
+    updatedAt: now.toISOString(),
+    year: group.year,
+    artist: group.artist,
+    title: group.title,
+    status: "toListen",
+    coverUrl: coverArtUrl(group.id),
   };
 }
