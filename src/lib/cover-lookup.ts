@@ -92,18 +92,50 @@ export function normalize(text: string): string {
 export type LookupOutcome =
   { kind: "match"; match: AlbumMatch } | { kind: "review" } | { kind: "none" };
 
+/** The number of single-letter edits between `a` and `b`. */
+export function editDistance(a: string, b: string): number {
+  let previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+  for (let i = 1; i <= a.length; i++) {
+    const current = [i];
+    for (let j = 1; j <= b.length; j++) {
+      current[j] = Math.min(
+        previous[j] + 1,
+        current[j - 1] + 1,
+        previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+    }
+    previous = current;
+  }
+  return previous[b.length];
+}
+
+/**
+ * Whether two (normalized) artist names are the same but for a typo: one
+ * edit in a name of 5+ letters, two in one of 12+ ("Manouvres" for
+ * "Manoeuvres"). Shorter names must match exactly.
+ */
+function sameArtist(a: string, b: string): boolean {
+  if (a === b) return true;
+  const length = Math.min(a.length, b.length);
+  const allowed = length >= 12 ? 2 : length >= 5 ? 1 : 0;
+  return editDistance(a, b) <= allowed;
+}
+
 function sameAlbum(album: Album, match: AlbumMatch): boolean {
   return (
     normalize(match.title) === normalize(album.title) &&
-    normalize(match.artist) === normalize(album.artist)
+    sameArtist(normalize(match.artist), normalize(album.artist))
   );
 }
 
-// Between releases of the same album: the album's own year, then the plain
-// release over a deluxe or remaster, then an album over a single or EP.
+// Between releases of the same album: the artist's exact name over a typo,
+// then the album's own year, then the plain release over a deluxe or
+// remaster, then an album over a single or EP.
 function rank(album: Album, match: AlbumMatch): number {
   const sameYear = album.year === null || match.year === album.year;
+  const exactArtist = normalize(match.artist) === normalize(album.artist);
   return (
+    (exactArtist ? 8 : 0) +
     (sameYear ? 4 : 0) +
     (EDITION_PATTERN.test(match.title) ? 0 : 2) +
     (match.type === "album" ? 1 : 0)

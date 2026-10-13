@@ -66,6 +66,8 @@ export type LookupOptions = {
   pause?: number;
   /** Milliseconds to wait after a service says to slow down. */
   backoff?: number;
+  /** How often a rate-limited request is tried again (MAX_RETRIES). */
+  retries?: number;
 };
 
 type FindLink = (
@@ -93,16 +95,20 @@ function sleep(ms: number, signal: AbortSignal): Promise<void> {
   });
 }
 
-/** `request`, retried after a rate limit (up to MAX_RETRIES times). */
+/** `request`, retried after a rate limit (up to `retries` times). */
 async function withRetry<T>(
   request: () => Promise<T>,
-  { signal, backoff }: { signal: AbortSignal; backoff: number },
+  {
+    signal,
+    backoff,
+    retries = MAX_RETRIES,
+  }: { signal: AbortSignal; backoff: number; retries?: number },
 ): Promise<T> {
   for (let attempt = 0; ; attempt++) {
     try {
       return await request();
     } catch (error) {
-      if (!(error instanceof RateLimitedError) || attempt >= MAX_RETRIES) {
+      if (!(error instanceof RateLimitedError) || attempt >= retries) {
         throw error;
       }
       await sleep(
@@ -116,7 +122,7 @@ async function withRetry<T>(
 type LookupAlbumOptions = Required<
   Pick<LookupOptions, "sources" | "service" | "signal" | "backoff">
 > &
-  Pick<LookupOptions, "search" | "findLink" | "pause">;
+  Pick<LookupOptions, "search" | "findLink" | "pause" | "retries">;
 
 /**
  * The album with the matched release group's streaming links filled in and
@@ -128,15 +134,15 @@ async function withReleaseLinks(
   releaseGroupId: string,
   options: LookupAlbumOptions,
 ): Promise<Album> {
-  const { signal, backoff } = options;
+  const { signal } = options;
   await sleep(options.pause ?? PAUSES.musicbrainz, signal);
   if (signal.aborted) return album;
   const findLink = options.findLink ?? findLinks;
   try {
-    const links = await withRetry(() => findLink(releaseGroupId, signal), {
-      signal,
-      backoff,
-    });
+    const links = await withRetry(
+      () => findLink(releaseGroupId, signal),
+      options,
+    );
     return { ...withLinks(album, links), linksLookup: "done" };
   } catch {
     return album;
@@ -169,7 +175,7 @@ async function lookUpAlbum(
   options: LookupAlbumOptions,
   run: RunState,
 ): Promise<Tried | null> {
-  const { sources, signal, backoff } = options;
+  const { sources, signal } = options;
   const tried: Tried = {
     album,
     searched: false,
@@ -188,10 +194,7 @@ async function lookUpAlbum(
     const search = options.search ?? SEARCHES[source];
     let matches: AlbumMatch[];
     try {
-      matches = await withRetry(() => search(tried.album, signal), {
-        signal,
-        backoff,
-      });
+      matches = await withRetry(() => search(tried.album, signal), options);
     } catch (error) {
       if (signal.aborted) return tried.searched ? tried : null;
       run.unavailable.add(source);
@@ -285,6 +288,14 @@ export async function lookUpCovers({
  * found, unless the album changed meanwhile. Albums with nothing left to
  * find, or already tried, aren't searched again.
  */
+/** Whether opening the album would look something up for it. */
+export function albumNeedsLookup(
+  album: Album,
+  service: StreamingService,
+): boolean {
+  return LOOKUP_SOURCES.some((source) => needsLookup(album, source, service));
+}
+
 export async function lookUpAlbumNow(
   id: string,
   service: StreamingService,
@@ -293,11 +304,12 @@ export async function lookUpAlbumNow(
   const find = () => getAlbumsSnapshot().find((item) => item.id === id);
   const album = find();
   if (!album) return;
-  const sources = LOOKUP_SOURCES;
-  if (!sources.some((source) => needsLookup(album, source, service))) return;
+  if (!albumNeedsLookup(album, service)) return;
   const tried = await lookUpAlbum(
     album,
-    { sources, service, signal, backoff: 5000 },
+    // Opening an album doesn't wait out a rate limit: the next opening
+    // tries again.
+    { sources: LOOKUP_SOURCES, service, signal, backoff: 0, retries: 0 },
     { requested: false, unavailable: new Set() },
   );
   if (!tried?.searched || find()?.updatedAt !== album.updatedAt) return;

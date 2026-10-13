@@ -66,9 +66,6 @@ async function mockServices(page: Page) {
     musicBrainz,
   );
   await page.route(/musicbrainz\.org\/ws\/2\/release\?/, musicBrainzReleases);
-  await page.route("https://query.wikidata.org/**", (route) =>
-    route.fulfill({ json: { results: { bindings: [] } }, headers: CORS }),
-  );
   await page.route("https://coverartarchive.org/**", (route) =>
     route.fulfill({ body: PNG, contentType: "image/png", headers: CORS }),
   );
@@ -136,7 +133,6 @@ test("names each service that couldn't be reached", async ({ page }) => {
     route.fulfill({ status: 503, headers: CORS }),
   );
   await page.route("https://itunes.apple.com/**", (route) => route.abort());
-  await page.route("https://query.wikidata.org/**", (route) => route.abort());
   await goHome(page);
   await importCsv(page);
 
@@ -185,4 +181,41 @@ test("the chosen streaming service decides which link the album opens", async ({
   await expect(page.getByRole("link", { name: "Open in Deezer" })).toHaveCount(
     0,
   );
+});
+
+test("an album shows skeletons while its cover and link are looked up", async ({
+  page,
+}) => {
+  await mockServices(page);
+  await goHome(page);
+  await importCsv(page);
+  // Hold MusicBrainz's answer for the third album until the checks below.
+  let answer: () => void = () => {};
+  const answered = new Promise<void>((resolve) => {
+    answer = resolve;
+  });
+  await page.route(
+    "https://musicbrainz.org/ws/2/release-group/**",
+    async (route) => {
+      await answered;
+      await route.fulfill({ json: { "release-groups": [] }, headers: CORS });
+    },
+  );
+
+  await page.getByRole("button", { name: /Title, With Comma/ }).click();
+
+  const cover = page.locator("[aria-busy]").first();
+  await expect(cover).toHaveAttribute("aria-busy", "true");
+  await expect(page.getByTestId("link-skeleton")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Find a cover" })).toHaveCount(
+    0,
+  );
+
+  answer();
+
+  await expect(
+    page.getByRole("button", { name: "Find a cover" }),
+  ).toBeVisible();
+  await expect(page.getByTestId("link-skeleton")).toHaveCount(0);
+  await expect(cover).toHaveAttribute("aria-busy", "false");
 });

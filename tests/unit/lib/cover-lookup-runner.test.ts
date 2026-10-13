@@ -547,6 +547,18 @@ describe("lookUpAlbumNow", () => {
     expect(saved?.coverUrl).toBeUndefined();
   });
 
+  it("doesn't wait out a rate limit, leaving the album for next time", async () => {
+    const { storage, runner } = await fresh([album("a")]);
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 503 });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await runner.lookUpAlbumNow("a", "deezer", new AbortController().signal);
+
+    // MusicBrainz once, then iTunes once; neither tried again.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(byId(storage.getAlbumsSnapshot(), "a")?.lookup).toBeUndefined();
+  });
+
   it("saves nothing when stopped before searching", async () => {
     const { storage, runner } = await fresh([album("a")]);
     const controller = new AbortController();

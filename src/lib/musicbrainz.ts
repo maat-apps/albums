@@ -58,8 +58,11 @@ function escapeLucene(value: string): string {
 }
 
 export function searchUrl(album: Pick<Album, "artist" | "title">): string {
-  const query = `releasegroup:(${escapeLucene(album.title)}) AND artist:(${escapeLucene(album.artist)})`;
-  const params = new URLSearchParams({ query, fmt: "json", limit: "8" });
+  const artist = escapeLucene(album.artist);
+  // The artist as a phrase ranks their own albums first ("LL Cool J" rather
+  // than anyone named "J"); its words alone still find a misspelt name.
+  const query = `releasegroup:(${escapeLucene(album.title)}) AND (artist:"${artist}"^3 OR artist:(${artist}))`;
+  const params = new URLSearchParams({ query, fmt: "json", limit: "25" });
   return `${SEARCH_URL}?${params}`;
 }
 

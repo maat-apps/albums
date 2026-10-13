@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   applyMatch,
   awaitsReview,
+  editDistance,
   needsLookup,
   normalize,
   notFound,
@@ -126,6 +127,48 @@ describe("pickMatch", () => {
     expect(
       pickMatch(album({ year: null }), [match({ year: 2005 })]),
     ).toMatchObject({ kind: "match" });
+  });
+});
+
+describe("editDistance", () => {
+  it("counts single-letter edits", () => {
+    expect(editDistance("manoeuvres", "manouvres")).toBe(1);
+    expect(editDistance("kitten", "sitting")).toBe(3);
+    expect(editDistance("", "abc")).toBe(3);
+    expect(editDistance("same", "same")).toBe(0);
+  });
+});
+
+describe("pickMatch with a misspelt artist", () => {
+  const omd = "Orchestral Manoeuvres in the Dark";
+
+  it("matches an artist one or two typos away", () => {
+    expect(
+      pickMatch(album({ artist: "Orchestral Manouvres In The Dark" }), [
+        match({ artist: omd }),
+      ]),
+    ).toMatchObject({ kind: "match" });
+  });
+
+  it("keeps short names exact, and prefers the exact artist", () => {
+    expect(
+      pickMatch(album({ artist: "Blur" }), [match({ artist: "Blue" })]),
+    ).toEqual({ kind: "review" });
+    expect(
+      pickMatch(album({ artist: "Queen" }), [match({ artist: "Queer" })]),
+    ).toMatchObject({ kind: "match" });
+    const exact = match({ id: "exact", artist: "Zeta Band" });
+    expect(
+      pickMatch(album(), [match({ id: "typo", artist: "Zeta Bend" }), exact]),
+    ).toEqual({ kind: "match", match: exact });
+  });
+
+  it("sends a farther artist to review", () => {
+    expect(
+      pickMatch(album({ artist: "Zeta Band" }), [
+        match({ artist: "Beta Bond" }),
+      ]),
+    ).toEqual({ kind: "review" });
   });
 });
 

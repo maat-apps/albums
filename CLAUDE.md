@@ -61,7 +61,9 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   and normalised by `readLinks`), shown only with a link; opening
   it looks a missing cover/link/year up by itself via
   `hooks/use-album-lookup.ts` → the runner's `lookUpAlbumNow`, once per
-  source verdict).
+  source verdict and without waiting out rate limits; the hook reports
+  the search for the cover/link skeletons, and "Find a cover" shows only
+  after it).
   Covers render through `components/album-cover.tsx` (placeholder on a missing or broken URL) via `hooks/use-cover-src.ts`:
   once in view, `lib/cover-store.ts` serves the IndexedDB copy or fetches
   (CORS) and stores it — per album id, encrypted with the lock's key,
@@ -76,7 +78,8 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   release group's releases' URL relationships for its streaming links,
   then `linksLookup: "done"`. Deezer's own API and Odesli send no CORS
   headers and Spotify's needs a sign-in, so the browser can't use them),
-  `lib/cover-lookup.ts` (pure matching: `pickMatch`, `applyMatch`, what
+  `lib/cover-lookup.ts` (pure matching: `pickMatch` — the artist may be
+  a typo or two off, `editDistance` — `applyMatch`, what
   each source can still add — `isMissing` — and the album's `lookup`
   verdict — review/none/skipped), `lib/itunes.ts` (iTunes Search, the last
   fallback; its results carry Apple Music links, so it's also asked for

@@ -31,9 +31,10 @@ describe("searchUrl", () => {
       "https://musicbrainz.org/ws/2/release-group/",
     );
     expect(url.searchParams.get("query")).toBe(
-      "releasegroup:(Help\\! \\(Live\\)) AND artist:(AC\\/DC)",
+      'releasegroup:(Help\\! \\(Live\\)) AND (artist:"AC\\/DC"^3 OR artist:(AC\\/DC))',
     );
     expect(url.searchParams.get("fmt")).toBe("json");
+    expect(url.searchParams.get("limit")).toBe("25");
   });
 });
 

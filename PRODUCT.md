@@ -80,8 +80,10 @@ the image itself — the user decides by adding a URL.
   requests a minute). Only the artist and
   title leave the device, and no account is needed. The first result with
   the album's artist and title (editions like "Deluxe" or "Remastered"
-  ignored) is taken without asking — preferring the album's year, then a
-  plain release, then an album over a single — and fills what the album
+  ignored, and the artist allowing a typo or two in a longer name) is
+  taken without asking — preferring the exact artist, then the album's
+  year, then a plain release, then an album over a single — and fills what
+  the album
   lacks: cover, year, and the streaming links MusicBrainz has for it, if
   any (well covered for international releases, less for Polish ones; iTunes
   covers Apple Music best). Deezer's own API can't be used — it doesn't
@@ -94,4 +96,6 @@ the image itself — the user decides by adding a URL.
   without a cover also offers "Find a cover" from its own view.
 - **Opening an album** looks it up by itself, the same way, when it's
   missing a cover, a year or a link to the chosen service and hasn't been
-  tried yet: the cover and the "Open in …" link appear without a tap.
+  tried yet: the cover and the "Open in …" link appear without a tap,
+  with pulsing placeholders where they'll show while it searches; "Find a
+  cover" is offered only once the search found none.

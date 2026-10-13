@@ -18,7 +18,6 @@ import { useTranslation } from "../../i18n/use-translation";
 import { setStatus } from "../../lib/storage";
 import { linkTo, type StreamingService } from "../../lib/streaming";
 
-import { LookupDiagnostics } from "./lookup-diagnostics";
 import { StatusPicker } from "./status-picker";
 
 const OPEN_LABELS = {
@@ -40,7 +39,7 @@ export function AlbumView() {
   const album = useAlbum(id);
   const back = useSmartBack("/");
   const { streamingService } = useAppSettings();
-  useAlbumLookup(album?.id);
+  const searching = useAlbumLookup(album);
 
   if (!album) return ready ? <MissingAlbum /> : null;
   const link = linkTo(album, streamingService);
@@ -65,7 +64,11 @@ export function AlbumView() {
           </Button>
         }
       />
-      <AlbumCover album={album} className="w-full" />
+      <AlbumCover
+        album={album}
+        searching={searching && !album.coverUrl}
+        className="w-full"
+      />
       <div className="grid gap-1">
         <h2 className="font-heading m-0 text-2xl font-semibold break-words">
           {album.title}
@@ -79,7 +82,7 @@ export function AlbumView() {
         value={album.status}
         onChange={(status) => setStatus(album.id, status)}
       />
-      {link && (
+      {link ? (
         <a
           href={link}
           target="_blank"
@@ -89,8 +92,19 @@ export function AlbumView() {
           <ArrowSquareOut aria-hidden="true" />{" "}
           {t(OPEN_LABELS[streamingService])}
         </a>
+      ) : (
+        searching && (
+          // Where the link's button will be, while it's looked for.
+          <span
+            data-testid="link-skeleton"
+            aria-hidden="true"
+            className={`${buttonVariants({ variant: "outline", size: "lg" })} bg-muted animate-pulse border-transparent text-transparent`}
+          >
+            {t(OPEN_LABELS[streamingService])}
+          </span>
+        )
       )}
-      {!album.coverUrl && (
+      {!album.coverUrl && !searching && (
         <Button
           variant="outline"
           size="lg"
@@ -103,7 +117,6 @@ export function AlbumView() {
           <ImageSquare aria-hidden="true" /> {t("findCover")}
         </Button>
       )}
-      <LookupDiagnostics artist={album.artist} title={album.title} />
     </div>
   );
 }
