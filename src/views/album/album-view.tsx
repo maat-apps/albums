@@ -1,7 +1,10 @@
 import {
-  ArrowSquareOut,
+  AppleLogo,
+  Equalizer,
   ImageSquare,
   PencilSimple,
+  SpotifyLogo,
+  type Icon,
 } from "@phosphor-icons/react";
 import { startTransition } from "react";
 import { useNavigate, useParams } from "react-router";
@@ -19,6 +22,14 @@ import { setStatus } from "../../lib/storage";
 import { linkTo, type StreamingService } from "../../lib/streaming";
 
 import { StatusPicker } from "./status-picker";
+
+// Each service's mark: Phosphor has Spotify's and Apple's; Deezer's
+// equalizer bars stand in for its logo.
+const SERVICE_ICONS: Record<StreamingService, Icon> = {
+  deezer: Equalizer,
+  spotify: SpotifyLogo,
+  appleMusic: AppleLogo,
+};
 
 const OPEN_LABELS = {
   deezer: "openInDeezer",
@@ -43,6 +54,7 @@ export function AlbumView() {
 
   if (!album) return ready ? <MissingAlbum /> : null;
   const link = linkTo(album, streamingService);
+  const ServiceIcon = SERVICE_ICONS[streamingService];
 
   return (
     <div className="mx-auto grid min-h-dvh w-[min(100%,480px)] content-start gap-5 px-5 pt-27 pb-[calc(32px+env(safe-area-inset-bottom))]">
@@ -89,8 +101,7 @@ export function AlbumView() {
           rel="noopener noreferrer"
           className={buttonVariants({ variant: "outline", size: "lg" })}
         >
-          <ArrowSquareOut aria-hidden="true" />{" "}
-          {t(OPEN_LABELS[streamingService])}
+          <ServiceIcon aria-hidden="true" /> {t(OPEN_LABELS[streamingService])}
         </a>
       ) : (
         searching && (
