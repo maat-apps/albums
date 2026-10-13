@@ -78,13 +78,13 @@ export function SortAndViewControls({ prefs, onChange }: ToolbarProps) {
   const grid = prefs.viewMode === "grid";
 
   return (
-    <div className="flex min-w-0 items-center gap-1">
+    <div className="flex min-w-0 flex-1 items-center gap-1">
       <Select
         value={prefs.sortKey}
         onValueChange={(value) => onChange({ sortKey: value as SortKey })}
       >
         <SelectTrigger
-          className="h-11 w-32 min-w-0 shrink text-sm"
+          className="h-11 min-w-0 flex-1 text-base"
           aria-label={t("sortBy")}
         >
           <SelectValue>{(value) => sortLabel[value as SortKey]}</SelectValue>
@@ -100,7 +100,7 @@ export function SortAndViewControls({ prefs, onChange }: ToolbarProps) {
       <Button
         variant="ghost"
         size="icon-lg"
-        className="size-11"
+        className="size-11 shrink-0"
         aria-label={ascending ? t("sortAscending") : t("sortDescending")}
         onClick={() => onChange({ sortDirection: ascending ? "desc" : "asc" })}
       >
@@ -109,7 +109,7 @@ export function SortAndViewControls({ prefs, onChange }: ToolbarProps) {
       <Button
         variant="ghost"
         size="icon-lg"
-        className="size-11"
+        className="size-11 shrink-0"
         aria-label={grid ? t("viewGrid") : t("viewList")}
         onClick={() => onChange({ viewMode: grid ? "list" : "grid" })}
       >

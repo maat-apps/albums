@@ -84,7 +84,7 @@ export function HomeView() {
             <Button
               variant="ghost"
               size="icon-lg"
-              className="ml-auto size-11"
+              className="ml-auto size-11 shrink-0"
               aria-label={t("settings")}
               onClick={() => setSettingsOpen(true)}
             >
@@ -92,7 +92,7 @@ export function HomeView() {
             </Button>
             <Button
               size="icon-lg"
-              className="size-11 rounded-2xl"
+              className="size-11 shrink-0 rounded-2xl"
               aria-label={t("addAlbum")}
               onClick={() => startTransition(() => navigate("/new"))}
             >
