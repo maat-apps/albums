@@ -1,6 +1,6 @@
 import { createAppLock } from "@maat-apps/core/lock";
 
-import { setLockEnrolment } from "./app-settings";
+import { relockAfterMs, setLockEnrolment } from "./app-settings";
 import { discardUpdateSnapshot } from "./app-update";
 import { clearCovers } from "./cover-store";
 import { encryptionKey } from "./encryption-key";
@@ -17,6 +17,7 @@ export const appLock = createAppLock({
   name: "Albums",
   keyInfo: HKDF_INFO,
   keyHolder: encryptionKey,
+  relockAfterMs,
   saveEnrolment: setLockEnrolment,
   data: {
     rewrite: () => {

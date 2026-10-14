@@ -25,8 +25,8 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
-    "@maat-apps/core": "^0.4.1",
-    "@maat-apps/ui": "^0.10.0",
+    "@maat-apps/core": "^0.5.0",
+    "@maat-apps/ui": "^0.11.0",
     "@phosphor-icons/react": "^2.1.10",
     "react": "^19",
     "react-dom": "^19",

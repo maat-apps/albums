@@ -114,7 +114,9 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   `@maat-apps/ui/app-lock-gate`, wrapped around the router in
   `src/app/router.tsx`). `src/lib/app-lock.ts` rewrites the albums with
   the current key and erases them plus the update snapshot; `storage.ts`
-  and `app-update.ts` encrypt with `src/lib/encryption-key.ts`. **Never
+  and `app-update.ts` encrypt with `src/lib/encryption-key.ts`. The lock comes back after
+  time in the background per `app-settings.ts`'s `relockAfter` (Settings →
+  Security; `relockAfterMs` feeds `createAppLock`). **Never
   change `HKDF_INFO` (`"albums-data-v1"`)** — existing encrypted data
   would become unreadable.
 - Full pattern log: none yet — run `/learn-patterns` after a non-trivial

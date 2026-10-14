@@ -17,8 +17,6 @@ export function AppLockGate({ children }: { children: ReactNode }) {
       enrolment={lock}
       ready={ready}
       labels={{
-        lockedTitle: t("lockedTitle"),
-        lockedDescription: t("lockedDescription"),
         unlock: t("unlock"),
         unlockFailed: t("unlockFailed"),
         turnOffLock: t("turnOffLock"),

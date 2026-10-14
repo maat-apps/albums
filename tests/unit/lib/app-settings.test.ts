@@ -187,3 +187,38 @@ describe("streaming service", () => {
     }
   });
 });
+
+describe("relockAfterMs", () => {
+  it("defaults to 30 seconds", async () => {
+    const appSettings = await freshAppSettings();
+    expect(appSettings.relockAfterMs()).toBe(30_000);
+  });
+
+  it("follows the chosen setting", async () => {
+    const appSettings = await freshAppSettings();
+    appSettings.setRelockAfter("now");
+    expect(appSettings.relockAfterMs()).toBe(0);
+    appSettings.setRelockAfter("close");
+    expect(appSettings.relockAfterMs()).toBeNull();
+  });
+
+  it("falls back to 30 seconds for an unknown stored choice", async () => {
+    vi.resetModules();
+    const { kvSet } = await import("@/lib/idb-store");
+    const { SETTINGS_KEY } = await import("@/lib/storage-keys");
+    await kvSet(SETTINGS_KEY, { relockAfter: "never" });
+    const appSettings = await freshAppSettings();
+    await appSettings.whenLoaded();
+    expect(appSettings.getSettingsSnapshot().relockAfter).toBe("30s");
+  });
+
+  it("loads a stored choice", async () => {
+    vi.resetModules();
+    const { kvSet } = await import("@/lib/idb-store");
+    const { SETTINGS_KEY } = await import("@/lib/storage-keys");
+    await kvSet(SETTINGS_KEY, { relockAfter: "now" });
+    const appSettings = await freshAppSettings();
+    await appSettings.whenLoaded();
+    expect(appSettings.relockAfterMs()).toBe(0);
+  });
+});
