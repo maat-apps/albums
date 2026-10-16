@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@maat-apps/ui/select";
+import {
   SettingsRow,
   SettingsSection,
 } from "@maat-apps/ui/settings-primitives";
@@ -8,10 +15,21 @@ import { Switch } from "@maat-apps/ui/switch";
 import { useAppSettings } from "../../hooks/use-app-settings";
 import { useTranslation } from "../../i18n/use-translation";
 import { appLock } from "../../lib/app-lock";
+import {
+  RELOCK_CHOICES,
+  type RelockAfter,
+  setRelockAfter,
+} from "../../lib/app-settings";
+
+const RELOCK_LABELS = {
+  now: "relockNow",
+  "30s": "relock30s",
+  close: "relockClose",
+} as const satisfies Record<RelockAfter, string>;
 
 export function SecuritySection() {
   const { t } = useTranslation();
-  const { lock } = useAppSettings();
+  const { lock, relockAfter } = useAppSettings();
   const [lockSupported, setLockSupported] = useState(false);
   const [lockError, setLockError] = useState(false);
 
@@ -55,6 +73,39 @@ export function SecuritySection() {
           />
         }
       />
+      {lock !== null && (
+        <SettingsRow
+          title={t("relockAfter")}
+          description={t("relockAfterDescription")}
+          action={
+            <Select
+              value={relockAfter}
+              onValueChange={(value) => {
+                const choice = RELOCK_CHOICES.find(
+                  (option) => option === value,
+                );
+                if (choice) setRelockAfter(choice);
+              }}
+            >
+              <SelectTrigger
+                className="w-auto min-w-26 text-sm"
+                aria-label={t("relockAfter")}
+              >
+                <SelectValue>
+                  {(value: RelockAfter) => t(RELOCK_LABELS[value])}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {RELOCK_CHOICES.map((choice) => (
+                  <SelectItem key={choice} value={choice}>
+                    {t(RELOCK_LABELS[choice])}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          }
+        />
+      )}
       {lockError && (
         <p role="alert" className="text-destructive px-1 text-xs">
           {t("appLockFailed")}
