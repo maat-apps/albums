@@ -5,6 +5,8 @@ export const LOCALE_KEY = "albums-locale";
 export const DATA_KEY = "albums-data";
 export const SNAPSHOT_KEY = "albums-update-snapshot";
 export const COVER_INDEX_KEY = "albums-cover-index";
+/** The GitHub connection, token included — always encrypted (github-sync.ts). */
+export const GITHUB_KEY = "albums-github";
 /** The removed Spotify connection's token — only ever deleted (storage.ts). */
 export const LEGACY_SPOTIFY_KEY = "albums-spotify";
 
