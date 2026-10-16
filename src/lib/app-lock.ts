@@ -4,6 +4,7 @@ import { setLockEnrolment } from "./app-settings";
 import { discardUpdateSnapshot } from "./app-update";
 import { clearCovers } from "./cover-store";
 import { encryptionKey } from "./encryption-key";
+import { disconnectGitHub, rewriteGitHubConnection } from "./github-sync";
 import { getAlbumsSnapshot, replaceAllAlbums } from "./storage";
 
 // NEVER change this once the app has users: it's part of how their data is
@@ -24,10 +25,17 @@ export const appLock = createAppLock({
       // Stored covers are a cache: rather than re-encrypting each one, drop
       // them and let them load again under the new key.
       void clearCovers();
+      // The GitHub token is only kept encrypted: deleted when the lock stops
+      // encrypting, re-encrypted under a new key.
+      void rewriteGitHubConnection().catch(() => {});
     },
     erase: async () => {
       replaceAllAlbums([]);
-      await Promise.all([discardUpdateSnapshot(), clearCovers()]);
+      await Promise.all([
+        discardUpdateSnapshot(),
+        clearCovers(),
+        disconnectGitHub(),
+      ]);
     },
   },
 });

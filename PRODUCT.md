@@ -48,6 +48,33 @@ web - PWA, mobile-only (like routines, trainer and notes).
 - **Settings** (a drawer): language (English/Polish), app lock, backup
   export/import, install and update, and the streaming service.
 
+## Syncing with GitHub
+
+Optional: the collection can be kept in a JSON file in the user's own
+(private) GitHub repository, so it can be edited there, versioned, and
+filled in by the repository's own workflows. Nothing is sent anywhere
+until the user connects.
+
+- **Only with the encrypting app lock.** Connecting needs a fine-grained
+  access token that can write to that repository, and the token is only
+  ever stored encrypted with the lock's key. Without a lock that encrypts
+  (WebAuthn PRF) Settings explains this and offers no form; turning the
+  lock off deletes the connection.
+- **Settings → Sync with GitHub:** repository (`owner/name`), branch,
+  file (default `albums.json`) and the token. Connecting checks the token
+  can read the repository; the file may not exist yet.
+- **Sync** (a button, never automatic) merges both sides and writes the
+  result to both: albums new on either side are kept, one deleted on
+  either side since the last sync is deleted on the other, and one edited
+  on both keeps the newer edit — with a cover and links the other side
+  filled in. On the first sync an album the file has under another id is
+  matched as the same one (same rule as the CSV import). A file with an
+  album the app can't read is left alone, and so is the phone.
+- **The file:** an array of albums (id, year, artist, title, status,
+  cover, links, created/updated), sorted by artist, year and title,
+  two-space indented — so each sync's commit shows exactly what changed.
+  This device's lookup verdicts aren't in it.
+
 ## Importing an existing list (CSV)
 
 An existing list kept in a spreadsheet is imported in the app from a CSV
@@ -67,8 +94,9 @@ to this repository.
 
 ## Covers
 
-Covers are the one place the app talks to another server, and only for
-the image itself — the user decides by adding a URL.
+Besides an optional GitHub sync, covers are the one place the app talks
+to another server, and only for the image itself — the user decides by
+adding a URL.
 
 - **Recommended source: [Cover Art Archive](https://coverartarchive.org)**
   (MusicBrainz) — free, no API key, stable URLs, and it allows the app to

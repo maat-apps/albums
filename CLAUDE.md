@@ -99,6 +99,16 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   hold albums without a cover). Streaming links are user data (in
   backups), unlike covers. E2E mocks MusicBrainz (search and releases),
   the archive and iTunes with `page.route` (service workers blocked). Back uses `useSmartBack`.
+- **GitHub sync** (PRODUCT.md). `lib/github.ts` (one file over the REST
+  contents API, a fine-grained token; >1 MB files read from the blob),
+  `lib/albums-file.ts` (the file format — must stay byte-for-byte what the
+  data repo's `scripts/albums.mjs` writes), `lib/album-merge.ts` (pure:
+  by id, newer `updatedAt` wins, fills empty cover/links, `syncedIds`
+  tells deletions from additions, `sameAlbum` pairs before the first
+  sync), `lib/github-sync.ts` (the connection under `GITHUB_KEY`, **only
+  ever stored encrypted** — no connection without an encrypting lock, the
+  lock's rewrite re-encrypts or deletes it, erase deletes it; `sync` retries
+  once on a 409) and `views/settings/settings-github-section.tsx`.
 - **i18n.** `src/i18n/en.json` and `pl.json` (core's `createTranslation`;
   device language on first launch, Settings → Language after). `t()`
   only accepts keys present in both — keep them in sync.
