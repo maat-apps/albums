@@ -68,7 +68,10 @@ until the user connects.
 - **Settings → Sync with GitHub:** repository (`owner/name`), branch,
   file (default `albums.json`) and the token. Connecting checks the token
   can read the repository; the file may not exist yet.
-- **Sync** (a button, never automatic) merges both sides and writes the
+- **Syncing is automatic** once connected: right after connecting, on
+  launch, when the app comes back after a minute or more, and a few
+  seconds after a change here; a failure shows in Settings, and the
+  **Sync** button there runs it by hand. Each sync merges both sides and writes the
   result to both: albums new on either side are kept, one deleted on
   either side since the last sync is deleted on the other, and one edited
   on both keeps the newer edit — with a cover and links the other side

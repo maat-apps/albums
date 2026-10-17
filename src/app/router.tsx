@@ -1,7 +1,8 @@
-import { lazy } from "react";
+import { lazy, useEffect } from "react";
 import { BrowserRouter, Route, Routes } from "react-router";
 
 import { AppLockGate } from "../components/app-lock-gate";
+import { startAutoSync } from "../lib/github-sync";
 
 const HomeView = lazy(() =>
   import("../views/home/home-view").then((m) => ({ default: m.HomeView })),
@@ -37,6 +38,9 @@ const PickCoverView = lazy(() =>
 );
 
 export function AppRouter() {
+  // GitHub sync runs app-wide, whatever the screen (lib/github-sync.ts).
+  useEffect(() => startAutoSync(), []);
+
   return (
     <AppLockGate>
       <BrowserRouter basename={import.meta.env.BASE_URL}>

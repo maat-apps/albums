@@ -139,7 +139,7 @@
   "githubPath": "Plik",
   "githubToken": "Token dostępu",
   "githubTokenHint": "Token fine-grained tylko do tego repozytorium, z uprawnieniem Contents: read and write.",
-  "githubConnected": "Połączono z GitHubem. Zsynchronizuj, żeby połączyć obie strony.",
+  "githubConnected": "Połączono z GitHubem. Synchronizuję teraz, a dalej samo: przy starcie i po każdej zmianie.",
   "githubSyncAction": "Synchronizuj",
   "githubSyncBusy": "Synchronizuję…",
   "githubSyncDonePushed": "Zsynchronizowano. Tutaj: dodane {added}, zmienione {updated}, usunięte {removed}. Zmiany zapisane na GitHubie.",

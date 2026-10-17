@@ -8,7 +8,10 @@ import {
   SettingsSection,
 } from "@maat-apps/ui/settings-primitives";
 import { useAppSettings } from "../../hooks/use-app-settings";
-import { useGitHubConnection } from "../../hooks/use-github";
+import {
+  useGitHubConnection,
+  useGitHubSyncStatus,
+} from "../../hooks/use-github";
 import { useTranslation } from "../../i18n/use-translation";
 
 import {
@@ -157,12 +160,11 @@ export function GitHubSection({
   const { t } = useTranslation();
   const { lock } = useAppSettings();
   const connection = useGitHubConnection();
+  const { syncing, error } = useGitHubSyncStatus();
   const [connecting, setConnecting] = useState(false);
-  const [syncing, setSyncing] = useState(false);
 
   async function sync() {
     onStatus(null);
-    setSyncing(true);
     try {
       const result = await syncWithGitHub();
       onStatus(
@@ -174,8 +176,6 @@ export function GitHubSection({
       );
     } catch (error) {
       onStatus(t(errorMessage(error)));
-    } finally {
-      setSyncing(false);
     }
   }
 
@@ -194,7 +194,16 @@ export function GitHubSection({
       <SettingsSection title={t("githubSync")}>
         <SettingsRow
           title={`${connection.owner}/${connection.repo}`}
-          description={`${connection.path} · ${connection.branch}`}
+          description={
+            <>
+              {`${connection.path} · ${connection.branch}`}
+              {error !== null && (
+                <span className="text-destructive block">
+                  {t(errorMessage(error))}
+                </span>
+              )}
+            </>
+          }
           action={
             <Button
               variant="outline"

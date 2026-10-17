@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { mergeAlbums } from "@/lib/album-merge";
+import { mergeAlbums, rebaseAlbums } from "@/lib/album-merge";
 import type { Album } from "@/lib/schemas";
 
 const EARLIER = "2026-10-01T10:00:00.000Z";
@@ -130,5 +130,37 @@ describe("mergeAlbums", () => {
 
     expect(result.albums.map((item) => item.id)).toEqual(["r1"]);
     expect(result).toMatchObject({ added: 1, removed: 1 });
+  });
+});
+
+describe("rebaseAlbums", () => {
+  const a = album();
+  const b = album({ id: "b1", artist: "B" });
+  const remote = album({ id: "r1", artist: "Remote" });
+  const merged = [a, b, remote];
+
+  it("is the merge when nothing changed here", () => {
+    expect(rebaseAlbums([a, b], [a, b], merged)).toEqual(merged);
+  });
+
+  it("keeps an album edited here meanwhile", () => {
+    const edited = album({ status: "comingBack", updatedAt: LATER });
+    expect(rebaseAlbums([a, b], [edited, b], merged)).toEqual([
+      edited,
+      b,
+      remote,
+    ]);
+  });
+
+  it("keeps an album deleted here meanwhile deleted", () => {
+    expect(rebaseAlbums([a, b], [a], merged)).toEqual([a, remote]);
+  });
+
+  it("keeps an album added here meanwhile", () => {
+    const added = album({ id: "n1", artist: "New" });
+    expect(rebaseAlbums([a, b], [a, b, added], merged)).toEqual([
+      ...merged,
+      added,
+    ]);
   });
 });
