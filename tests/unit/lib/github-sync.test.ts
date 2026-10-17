@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { RepoFileLocation } from "@/lib/github";
 import type { Album } from "@/lib/schemas";
+import type { RepoLocation as RepoFileLocation } from "@maat-apps/core/github";
 import { resetIndexedDb } from "../reset-indexeddb";
 
 const LOCATION: RepoFileLocation = {
