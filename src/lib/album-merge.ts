@@ -61,3 +61,28 @@ export function mergeAlbums(
   const { items, ...counts } = mergeById(local, remote, syncedIds, albumMerge);
   return { albums: items, ...counts };
 }
+
+/**
+ * A sync's result with what changed here while it ran: `merged` came from
+ * `base`, and `current` is `base` plus this device's edits since — kept
+ * (changed or added), or still deleted. The next sync sends them.
+ */
+export function rebaseAlbums(
+  base: Album[],
+  current: Album[],
+  merged: Album[],
+): Album[] {
+  const before = new Map(base.map((album) => [album.id, album]));
+  const now = new Map(current.map((album) => [album.id, album]));
+  const edited = (album: Album) => before.get(album.id) !== album;
+  const kept = merged.flatMap((album) => {
+    if (before.has(album.id) && !now.has(album.id)) return [];
+    const local = now.get(album.id);
+    return [local && edited(local) ? local : album];
+  });
+  const ids = new Set(kept.map((album) => album.id));
+  return [
+    ...kept,
+    ...current.filter((album) => !ids.has(album.id) && edited(album)),
+  ];
+}

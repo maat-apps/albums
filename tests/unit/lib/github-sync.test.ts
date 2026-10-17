@@ -337,3 +337,125 @@ describe("syncWithGitHub", () => {
     expect(storage.getAlbumsSnapshot()).toEqual([album()]);
   });
 });
+
+describe("automatic sync", () => {
+  const FAST = { delayMs: 10, resumeAfterMs: 0 };
+
+  it("doesn't touch GitHub without a connection", async () => {
+    fakeGitHub("[]\n");
+    const { sync } = await launch();
+
+    const stop = sync.startAutoSync(FAST);
+    await sync.whenGitHubLoaded();
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    stop();
+
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("syncs on launch, then shortly after each change, and not otherwise", async () => {
+    const { formatAlbumsFile } = await import("@/lib/albums-file");
+    const repo = fakeGitHub("[]\n");
+    const first = await launch();
+    first.storage.replaceAllAlbums([album()]);
+    await first.sync.connectGitHub(LOCATION);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    const { storage, sync } = await launch({ key: first.key });
+    const stop = sync.startAutoSync(FAST);
+    await vi.waitFor(() =>
+      expect(repo.file?.text).toBe(formatAlbumsFile([album()])),
+    );
+
+    const changed = album({ status: "comingBack", updatedAt: LATER });
+    storage.replaceAllAlbums([changed]);
+    await vi.waitFor(() =>
+      expect(repo.file?.text).toBe(formatAlbumsFile([changed])),
+    );
+    await vi.waitFor(() =>
+      expect(sync.getGitHubSyncStatus().syncing).toBe(false),
+    );
+    const commits = repo.commits;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    stop();
+
+    expect(repo.commits).toBe(commits);
+  });
+
+  it("syncs right after connecting", async () => {
+    const repo = fakeGitHub(null);
+    const { storage, sync } = await launch();
+    storage.replaceAllAlbums([album()]);
+    const stop = sync.startAutoSync(FAST);
+
+    await sync.connectGitHub(LOCATION);
+
+    await vi.waitFor(() => expect(repo.file?.text).toContain('"id": "a1"'));
+    stop();
+  });
+
+  it("keeps an album changed during a sync and sends it next", async () => {
+    const { formatAlbumsFile } = await import("@/lib/albums-file");
+    const remote = album({ id: "r1", artist: "Remote" });
+    const repo = fakeGitHub(formatAlbumsFile([remote]));
+    const { storage, sync } = await launch();
+    storage.replaceAllAlbums([album()]);
+    await sync.connectGitHub(LOCATION);
+    const edited = album({ status: "comingBack", updatedAt: LATER });
+    repo.beforeWrite = () => storage.replaceAllAlbums([edited]);
+
+    const stop = sync.startAutoSync(FAST);
+
+    await vi.waitFor(() =>
+      expect(repo.file?.text).toBe(formatAlbumsFile([edited, remote])),
+    );
+    await vi.waitFor(() =>
+      expect(storage.getAlbumsSnapshot()).toEqual([remote, edited]),
+    );
+    stop();
+  });
+
+  it("keeps a failure for Settings and clears it once a sync works", async () => {
+    const repo = fakeGitHub("[]\n");
+    const { storage, sync } = await launch();
+    storage.replaceAllAlbums([album()]);
+    await sync.connectGitHub(LOCATION);
+    repo.alwaysRace = true;
+
+    const stop = sync.startAutoSync(FAST);
+    await vi.waitFor(() =>
+      expect(sync.getGitHubSyncStatus().error).toMatchObject({
+        kind: "conflict",
+      }),
+    );
+
+    repo.alwaysRace = false;
+    document.dispatchEvent(new Event("visibilitychange"));
+    await vi.waitFor(() =>
+      expect(sync.getGitHubSyncStatus()).toEqual({
+        syncing: false,
+        error: null,
+      }),
+    );
+    stop();
+    expect(sync.getServerGitHubSyncStatus()).toEqual({
+      syncing: false,
+      error: null,
+    });
+  });
+
+  it("notifies subscribers and shares a running sync", async () => {
+    fakeGitHub("[]\n");
+    const { sync } = await launch();
+    await sync.connectGitHub(LOCATION);
+    const listener = vi.fn();
+    const unsubscribe = sync.subscribeToGitHubSync(listener);
+
+    const [a, b] = [sync.syncWithGitHub(), sync.syncWithGitHub()];
+    expect(a).toBe(b);
+    await a;
+    unsubscribe();
+
+    expect(listener).toHaveBeenCalledTimes(2);
+  });
+});

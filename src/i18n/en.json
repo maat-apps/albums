@@ -139,7 +139,7 @@
   "githubPath": "File",
   "githubToken": "Access token",
   "githubTokenHint": "A fine-grained token for this repository only, with Contents: read and write.",
-  "githubConnected": "Connected to GitHub. Sync to bring both sides together.",
+  "githubConnected": "Connected to GitHub. Syncing now, and from here on by itself: on launch and after each change.",
   "githubSyncAction": "Sync",
   "githubSyncBusy": "Syncing…",
   "githubSyncDonePushed": "Synced. Here: {added} added, {updated} updated, {removed} removed. Changes saved to GitHub.",

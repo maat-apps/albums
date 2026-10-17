@@ -119,8 +119,13 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   `lib/github-sync.ts` (the connection under `GITHUB_KEY`, **only ever
   stored encrypted** — core refuses without an encrypting lock; the
   lock's rewrite re-encrypts or deletes it, erase deletes it; `sync`
-  retries once on a 409) and `views/settings/settings-github-section.tsx`
-  (core's `GitHubError` kinds → messages).
+  retries once on a 409; `startAutoSync`, from `app/router.tsx`, syncs on
+  launch, after connecting, on returning to the app and a few seconds
+  after a change — edits made during a sync go on top of its write-back,
+  `album-merge.ts`'s `rebaseAlbums`; status and the last failure through
+  `hooks/use-github.ts`'s `useGitHubSyncStatus`) and
+  `views/settings/settings-github-section.tsx` (core's `GitHubError`
+  kinds → messages).
 - **i18n.** `src/i18n/en.json` and `pl.json` (core's `createTranslation`;
   device language on first launch, Settings → Language after). `t()`
   only accepts keys present in both — keep them in sync.
