@@ -4,7 +4,9 @@ export type SortKey = "year" | "title" | "artist";
 export type SortDirection = "asc" | "desc";
 export type StatusFilter = AlbumStatus | "all";
 
-const collator = new Intl.Collator(undefined, { sensitivity: "base" });
+// Polish rules, so Ą sorts after A and Ł after L — each a letter of its
+// own, as on the fast scroller's rail (`groupAlbums`).
+const collator = new Intl.Collator("pl", { sensitivity: "base" });
 
 // Letters that don't decompose into base + accent under NFD.
 const FOLDED_LETTERS: Record<string, string> = { ł: "l", ø: "o", đ: "d" };
@@ -93,4 +95,59 @@ export function sortAlbums(
     }
     return 0;
   });
+}
+
+/** A run of albums sharing a fast-scroller label, from `firstIndex` on. */
+export type AlbumGroup = { label: string; firstIndex: number };
+
+/** Year groups become decades once the years span more than this. */
+export const DECADE_SPAN = 20;
+
+const POLISH_LETTERS = new Set("ĄĆĘŁŃÓŚŹŻ");
+
+/**
+ * The first letter, upper-cased: Polish letters stay themselves (the
+ * collator sorts them apart), other accents fold to the base letter (the
+ * collator sorts them together), anything else is "#".
+ */
+export function letterLabel(text: string): string {
+  const first = [...text.trim()][0]?.toLocaleUpperCase("pl") ?? "";
+  if (POLISH_LETTERS.has(first)) return first;
+  const base = first.normalize("NFD").replace(/\p{Diacritic}/gu, "");
+  return /^\p{L}$/u.test(base) ? base : "#";
+}
+
+function yearLabeller(albums: Album[]): (year: number | null) => string {
+  const years = albums.flatMap((album) =>
+    album.year === null ? [] : [album.year],
+  );
+  const decades =
+    years.length > 0 && Math.max(...years) - Math.min(...years) > DECADE_SPAN;
+  return (year) => {
+    if (year === null) return "—";
+    if (!decades) return String(year);
+    const start = Math.floor(year / 10) * 10;
+    return `${start}–${start + 9}`;
+  };
+}
+
+/**
+ * The fast scroller's groups for albums already sorted by `key`: by first
+ * letter for artist/title, by year — or decade, when the years span more
+ * than `DECADE_SPAN` — for year. Groups follow the list's own order, so a
+ * descending sort flips them too.
+ */
+export function groupAlbums(sorted: Album[], key: SortKey): AlbumGroup[] {
+  const yearOf = yearLabeller(sorted);
+  const labelOf =
+    key === "year"
+      ? (album: Album) => yearOf(album.year)
+      : (album: Album) => letterLabel(album[key]);
+  const groups: AlbumGroup[] = [];
+  sorted.forEach((album, index) => {
+    const label = labelOf(album);
+    if (groups.at(-1)?.label !== label)
+      groups.push({ label, firstIndex: index });
+  });
+  return groups;
 }

@@ -1,5 +1,5 @@
 import { Gear, Plus } from "@phosphor-icons/react";
-import { startTransition, useState } from "react";
+import { startTransition, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 
 import { BottomBar, BottomBarButton } from "@maat-apps/ui/bottom-bar";
@@ -11,6 +11,7 @@ import { useTranslation } from "../../i18n/use-translation";
 import {
   countByStatus,
   filterByStatus,
+  groupAlbums,
   sortAlbums,
 } from "../../lib/album-utils";
 import { setCollectionPrefs } from "../../lib/app-settings";
@@ -18,6 +19,7 @@ import { SettingsDrawer } from "../settings/settings-drawer";
 
 import { AlbumCollection } from "./album-collection";
 import { SortAndViewControls, StatusFilterChips } from "./collection-controls";
+import { FastScroller } from "./fast-scroller";
 
 export function HomeView() {
   const { t } = useTranslation();
@@ -25,10 +27,19 @@ export function HomeView() {
   const albums = useAlbums();
   const { collection: prefs } = useAppSettings();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const shown = sortAlbums(
-    filterByStatus(albums, prefs.statusFilter),
-    prefs.sortKey,
-    prefs.sortDirection,
+  const shown = useMemo(
+    () =>
+      sortAlbums(
+        filterByStatus(albums, prefs.statusFilter),
+        prefs.sortKey,
+        prefs.sortDirection,
+      ),
+    [albums, prefs.statusFilter, prefs.sortKey, prefs.sortDirection],
+  );
+
+  const groups = useMemo(
+    () => groupAlbums(shown, prefs.sortKey),
+    [shown, prefs.sortKey],
   );
 
   function open(id: string) {
@@ -62,6 +73,9 @@ export function HomeView() {
           label={t("collection")}
           onOpen={open}
         />
+      )}
+      {shown.length > 0 && (
+        <FastScroller groups={groups} label={t("jumpToGroup")} />
       )}
       <BottomBar
         above={

@@ -33,6 +33,7 @@
   "cancel": "Anuluj",
   "delete": "Usuń",
   "save": "Zapisz",
+  "jumpToGroup": "Przejdź do",
   "collection": "Kolekcja",
   "emptyTitle": "Nie masz jeszcze albumów",
   "emptyDescription": "Zaimportuj listę z pliku CSV albo dotknij +, aby wyszukać album.",
