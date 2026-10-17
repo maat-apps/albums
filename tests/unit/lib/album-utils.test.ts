@@ -230,12 +230,12 @@ describe("groupAlbums", () => {
     expect(labels(list, "artist")).toEqual(["Z", "E", "A"]);
   });
 
-  it("groups by year while the years span little", () => {
+  it("groups by year", () => {
     const list = sortAlbums(albums, "year", "asc");
     expect(labels(list, "year")).toEqual(["1974", "1975", "1990", "—"]);
   });
 
-  it("groups by decade once the years span more than DECADE_SPAN", () => {
+  it("keeps single years however wide the span", () => {
     const list = sortAlbums(
       [1971, 1979, 1994, 2001, null].map((year) =>
         album({ title: String(year), year }),
@@ -243,12 +243,7 @@ describe("groupAlbums", () => {
       "year",
       "desc",
     );
-    expect(labels(list, "year")).toEqual([
-      "—",
-      "2000–2009",
-      "1990–1999",
-      "1970–1979",
-    ]);
+    expect(labels(list, "year")).toEqual(["—", "2001", "1994", "1979", "1971"]);
   });
 
   it("groups albums without any year together", () => {
