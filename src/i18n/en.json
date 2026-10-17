@@ -151,6 +151,7 @@
   "githubErrorUnauthorized": "GitHub rejected the token, or it has no access to this repository.",
   "githubErrorNotFound": "No such repository or branch, or the token can't see it.",
   "githubErrorConflict": "The file kept changing on GitHub. Try again in a moment.",
+  "githubErrorRateLimited": "GitHub is limiting requests right now. Try again in a while.",
   "githubErrorNetwork": "Couldn't reach GitHub. Check your connection.",
   "githubErrorUnexpected": "Something went wrong with GitHub. Nothing was changed.",
   "githubErrorFile": "The file on GitHub has albums the app can't read. Nothing was changed."

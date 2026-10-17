@@ -1,8 +1,4 @@
-import {
-  decryptJson,
-  encryptJson,
-  isEncryptedBlob,
-} from "@maat-apps/core/crypto";
+import { createLocalStore } from "@maat-apps/core/local";
 import { isRecord } from "@maat-apps/core/validation";
 
 import {
@@ -11,101 +7,53 @@ import {
 } from "./app-settings";
 import { deleteCover } from "./cover-store";
 import { encryptionKey } from "./encryption-key";
-import { kvDelete, kvGet, kvSet } from "./idb-store";
+import { keyValueStore, kvDelete } from "./idb-store";
 import { parseAlbums, type Album, type AlbumStatus } from "./schemas";
 import { DATA_KEY, LEGACY_SPOTIFY_KEY } from "./storage-keys";
 
-// An in-memory copy of the albums is the source of truth once loaded;
-// IndexedDB is the write-through backing store — read once in the background
-// at startup, written in the background on every change (maat-core's
-// docs/storage.md). Screens subscribe through src/hooks/use-albums.ts.
+// The albums in @maat-apps/core/local's store (maat-core's docs/storage.md):
+// in memory once loaded, written through to IndexedDB, encrypted with the
+// lock's key — the local copy GitHub sync (github-sync.ts) builds on.
+// Screens subscribe through src/hooks/use-albums.ts.
 
-const EMPTY: Album[] = [];
-
-const listeners = new Set<() => void>();
-let albums: Album[] = EMPTY;
-let loaded: Promise<void> | null = null;
-let ready = false;
-
-function emitChange(): void {
-  for (const listener of listeners) {
-    listener();
-  }
-}
-
-async function loadAlbums(): Promise<void> {
+/** Whether the enrolled lock encrypts — then the first read waits for its key. */
+export async function lockEncrypts(): Promise<boolean> {
   await whenSettingsLoaded();
-  if (getSettingsSnapshot().lock?.encryptionSupported) {
-    // The app sits behind the lock screen until unlock succeeds, so the
-    // albums are never needed — and never readable — before the key is.
-    await encryptionKey.whenSet();
-  }
-  try {
-    const stored = await kvGet<unknown>(DATA_KEY);
-    const key = encryptionKey.get();
-    const data =
-      key && isEncryptedBlob(stored)
-        ? await decryptJson<unknown>(key, stored)
-        : stored;
-    if (isRecord(data)) albums = parseAlbums(data.albums);
-  } catch {
-    // Keep what's in memory — same fallback as a corrupt or missing value.
-  } finally {
-    ready = true;
-    emitChange();
-  }
-  // Spotify was removed from the app: drop the token it left behind.
-  void kvDelete(LEGACY_SPOTIFY_KEY).catch(() => {});
+  return getSettingsSnapshot().lock?.encryptionSupported === true;
 }
+
+export const albumsStore = createLocalStore<Album[], { albums: Album[] }>({
+  storage: keyValueStore,
+  key: DATA_KEY,
+  empty: [],
+  parse: (stored) => (isRecord(stored) ? parseAlbums(stored.albums) : []),
+  serialize: (albums) => ({ albums }),
+  encryption: { keyHolder: encryptionKey, encrypts: lockEncrypts },
+});
+
+// Spotify was removed from the app: drop the token it left behind, once the
+// albums have loaded.
+const stopWatchingLoad = albumsStore.subscribe(() => {
+  if (!albumsStore.isReady()) return;
+  stopWatchingLoad();
+  void kvDelete(LEGACY_SPOTIFY_KEY).catch(() => {});
+});
 
 /** Starts the background read on first use; test-only to await directly. */
-export function whenLoaded(): Promise<void> {
-  loaded ??= loadAlbums();
-  return loaded;
-}
-
-export function subscribe(listener: () => void): () => void {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-}
-
-export function getAlbumsSnapshot(): Album[] {
-  void whenLoaded();
-  return albums;
-}
+export const whenLoaded = albumsStore.whenLoaded;
+export const subscribe = albumsStore.subscribe;
+export const getAlbumsSnapshot = albumsStore.getSnapshot;
+export const getServerAlbumsSnapshot = albumsStore.getServerSnapshot;
 
 /**
  * Whether the initial read has finished — until then "no such album" can't
  * be told apart from "not loaded yet" (a deep link on a cold start).
  */
-export function isAlbumsReady(): boolean {
-  void whenLoaded();
-  return ready;
-}
-
-export function isAlbumsReadyOnServer(): boolean {
-  return false;
-}
-
-export function getServerAlbumsSnapshot(): Album[] {
-  return EMPTY;
-}
-
-async function persist(data: { albums: Album[] }): Promise<void> {
-  try {
-    const key = encryptionKey.get();
-    await kvSet(DATA_KEY, key ? await encryptJson(key, data) : data);
-  } catch {
-    // Best-effort — the in-memory copy (and this tab) already reflects it.
-  }
-}
+export const isAlbumsReady = albumsStore.isReady;
+export const isAlbumsReadyOnServer = albumsStore.isReadyOnServer;
 
 function writeAlbums(next: Album[]): void {
-  albums = next;
-  void persist({ albums: next });
-  emitChange();
+  void albumsStore.replace(next);
 }
 
 /** Replaces every album — backup import and the app lock's rewrite/erase. */

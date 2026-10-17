@@ -1,5 +1,6 @@
 import { useId, useState, type ComponentProps, type FormEvent } from "react";
 
+import { GitHubError } from "@maat-apps/core/github";
 import { Button } from "@maat-apps/ui/button";
 import { Input } from "@maat-apps/ui/input";
 import {
@@ -9,8 +10,7 @@ import {
 import { useAppSettings } from "../../hooks/use-app-settings";
 import { useGitHubConnection } from "../../hooks/use-github";
 import { useTranslation } from "../../i18n/use-translation";
-import { AlbumsFileError } from "../../lib/albums-file";
-import { GitHubError } from "../../lib/github";
+
 import {
   connectGitHub,
   disconnectGitHub,
@@ -20,14 +20,16 @@ import {
 type TranslationKey = Parameters<ReturnType<typeof useTranslation>["t"]>[0];
 
 function errorMessage(error: unknown): TranslationKey {
-  if (error instanceof AlbumsFileError) return "githubErrorFile";
   if (!(error instanceof GitHubError)) return "githubErrorUnexpected";
   const messages: Record<GitHubError["kind"], TranslationKey> = {
     unauthorized: "githubErrorUnauthorized",
     notFound: "githubErrorNotFound",
     conflict: "githubErrorConflict",
+    rateLimited: "githubErrorRateLimited",
     network: "githubErrorNetwork",
-    unexpected: "githubErrorUnexpected",
+    server: "githubErrorUnexpected",
+    // A file with albums the app can't read (albums-file.ts).
+    invalid: "githubErrorFile",
   };
   return messages[error.kind];
 }

@@ -44,12 +44,16 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
 - A Playwright project's reusable test-helper file belongs at
   `e2e/utils.ts`, not `fixtures.ts` — these are plain functions specs call
   directly, not Playwright's own `test.extend()` fixture-injection system.
-- **Storage.** `src/lib/storage.ts` is the in-memory + IndexedDB
-  write-through store for albums (maat-core's `docs/storage.md`), read
-  through `src/hooks/use-albums.ts`; albums are validated per entry
+- **Storage.** The GitHub repository pattern (maat-core's
+  `docs/storage-github.md`) on top of the local one (`docs/storage.md`):
+  `src/lib/storage.ts` is `@maat-apps/core/local`'s `createLocalStore`
+  (`albumsStore`) plus the album mutations, read through
+  `src/hooks/use-albums.ts`; albums are validated per entry
   (`schemas.ts`). Filtering, sorting and duplicate detection are pure
   helpers in `album-utils.ts`. Backups and the pre-update snapshot share
-  one format (`backup.ts`, `app-update.ts`).
+  one format (core's `createLocalBackup`: `backup.ts`, `app-update.ts`);
+  `app-lock.ts` wires store, snapshot, covers and the GitHub connection
+  through `lockData`.
 - **Screens.** `src/app/router.tsx`: `/` (`views/home`: the collection,
   a title that scrolls away; every control in `@maat-apps/ui`'s
   `BottomBar` — settings, status filter chips with counts and add in its
@@ -104,16 +108,19 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   hold albums without a cover). Streaming links are user data (in
   backups), unlike covers. E2E mocks MusicBrainz (search and releases),
   the archive and iTunes with `page.route` (service workers blocked). Back uses `useSmartBack`.
-- **GitHub sync** (PRODUCT.md). `lib/github.ts` (one file over the REST
-  contents API, a fine-grained token; >1 MB files read from the blob),
-  `lib/albums-file.ts` (the file format — must stay byte-for-byte what the
-  data repo's `scripts/albums.mjs` writes), `lib/album-merge.ts` (pure:
-  by id, newer `updatedAt` wins, fills empty cover/links, `syncedIds`
-  tells deletions from additions, `sameAlbum` pairs before the first
-  sync), `lib/github-sync.ts` (the connection under `GITHUB_KEY`, **only
-  ever stored encrypted** — no connection without an encrypting lock, the
-  lock's rewrite re-encrypts or deletes it, erase deletes it; `sync` retries
-  once on a 409) and `views/settings/settings-github-section.tsx`.
+- **GitHub sync** (PRODUCT.md), on `@maat-apps/core/github`'s two-way
+  mode — the client (REST contents API, fine-grained token, >1 MB from the
+  blob), the connection and the sync loop live in core. Albums' own:
+  `lib/albums-file.ts` (the file format over core's `formatJsonFile` —
+  must stay byte-for-byte what the data repo's `scripts/albums.mjs`
+  writes), `lib/album-merge.ts` (`albumMerge` for core's `mergeById`:
+  newer `updatedAt` wins but fills empty cover/links/year, keeps this
+  device's lookup verdicts, `sameAlbum` pairs before the first sync),
+  `lib/github-sync.ts` (the connection under `GITHUB_KEY`, **only ever
+  stored encrypted** — core refuses without an encrypting lock; the
+  lock's rewrite re-encrypts or deletes it, erase deletes it; `sync`
+  retries once on a 409) and `views/settings/settings-github-section.tsx`
+  (core's `GitHubError` kinds → messages).
 - **i18n.** `src/i18n/en.json` and `pl.json` (core's `createTranslation`;
   device language on first launch, Settings → Language after). `t()`
   only accepts keys present in both — keep them in sync.

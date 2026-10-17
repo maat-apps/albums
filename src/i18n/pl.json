@@ -151,6 +151,7 @@
   "githubErrorUnauthorized": "GitHub odrzucił token albo token nie ma dostępu do tego repozytorium.",
   "githubErrorNotFound": "Nie ma takiego repozytorium lub gałęzi albo token go nie widzi.",
   "githubErrorConflict": "Plik na GitHubie ciągle się zmieniał. Spróbuj za chwilę.",
+  "githubErrorRateLimited": "GitHub chwilowo ogranicza zapytania. Spróbuj ponownie za jakiś czas.",
   "githubErrorNetwork": "Brak połączenia z GitHubem. Sprawdź internet.",
   "githubErrorUnexpected": "Coś poszło nie tak z GitHubem. Niczego nie zmieniono.",
   "githubErrorFile": "Plik na GitHubie ma albumy, których aplikacja nie potrafi odczytać. Niczego nie zmieniono."
