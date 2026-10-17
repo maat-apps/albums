@@ -43,7 +43,8 @@ test("jumps between artist letters from the rail", async ({ page }) => {
 test("dragging the thumb moves through the groups", async ({ page }) => {
   await goHome(page);
   await importCsv(page, LONG_CSV);
-  await page.mouse.wheel(0, 200);
+  // Mobile WebKit has no mouse wheel; any scroll shows the rail.
+  await page.evaluate(() => window.scrollBy(0, 200));
   await expect(rail(page)).toBeVisible();
 
   const thumb = await rail(page).boundingBox();
