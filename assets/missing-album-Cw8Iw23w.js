@@ -1,0 +1,1 @@
+import{D as a,M as n,j as s,B as i,r}from"./index-BaBN1XdL.js";function c(){const{t}=a(),e=n();return s.jsxs("div",{className:"grid min-h-dvh place-items-center gap-4 px-5 text-center",children:[s.jsx("p",{className:"m-0",children:t("albumNotFound")}),s.jsx(i,{size:"lg",onClick:()=>r.startTransition(()=>e("/",{replace:!0})),children:t("backToCollection")})]})}export{c as M};
