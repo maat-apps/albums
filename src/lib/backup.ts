@@ -8,7 +8,7 @@ import { clearCovers } from "./cover-store";
 import { encryptionKey } from "./encryption-key";
 import { keyValueStore } from "./idb-store";
 import type { Album } from "./schemas";
-import { albumsStore } from "./storage";
+import { albumsStore, mergeIntoAlbums } from "./storage";
 import { SNAPSHOT_KEY } from "./storage-keys";
 
 // albums' backup and pre-update snapshot (@maat-apps/core/local): the albums
@@ -45,7 +45,15 @@ export const parseBackup = backups.parse;
 /** Same validation for an already-parsed value (e.g. the update snapshot). */
 export const parseBackupValue = backups.parseValue;
 
-/** Overwrites every album with the backup's. */
+/**
+ * Import from Settings: keeps the albums on the device and adds the
+ * backup's, merged as a sync merges (`album-merge.ts`) — nothing deleted.
+ */
+export function mergeBackup(backup: Backup): void {
+  mergeIntoAlbums(backup.data.albums);
+}
+
+/** Overwrites every album with the backup's — restoring the update snapshot. */
 export const applyBackup = backups.apply;
 
 export const backupFileName = backups.fileName;

@@ -9,8 +9,8 @@ import {
 } from "@maat-apps/ui/settings-primitives";
 import { useTranslation } from "../../i18n/use-translation";
 import {
-  applyBackup,
   downloadBackup,
+  mergeBackup,
   parseBackup,
   shareBackup,
   type Backup,
@@ -58,7 +58,7 @@ export function DataSection({
 
   function confirmBackup() {
     if (!pendingBackup) return;
-    applyBackup(pendingBackup);
+    mergeBackup(pendingBackup);
     setPendingBackup(null);
     onStatus(t("importDone"));
   }

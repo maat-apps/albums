@@ -1,6 +1,7 @@
 import { createLocalStore } from "@maat-apps/core/local";
 import { isRecord } from "@maat-apps/core/validation";
 
+import { mergeAlbums } from "./album-merge";
 import {
   getSettingsSnapshot,
   whenLoaded as whenSettingsLoaded,
@@ -56,9 +57,18 @@ function writeAlbums(next: Album[]): void {
   void albumsStore.replace(next);
 }
 
-/** Replaces every album — backup import and the app lock's rewrite/erase. */
+/** Replaces every album — the update snapshot restore and the app lock's rewrite/erase. */
 export function replaceAllAlbums(next: Album[]): void {
   writeAlbums(next);
+}
+
+/**
+ * Adds the albums the device lacks and keeps the newer copy of the rest,
+ * as a sync merges them — but with nothing counted as synced, so nothing
+ * is deleted.
+ */
+export function mergeIntoAlbums(incoming: Album[]): void {
+  writeAlbums(mergeAlbums(getAlbumsSnapshot(), incoming, new Set()).albums);
 }
 
 /** Appends albums in one write (e.g. a CSV import). */

@@ -52,6 +52,9 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   (`schemas.ts`). Filtering, sorting and duplicate detection are pure
   helpers in `album-utils.ts`. Backups and the pre-update snapshot share
   one format (core's `createLocalBackup`: `backup.ts`, `app-update.ts`);
+  a Settings import merges (`mergeBackup` → `storage.ts`'s
+  `mergeIntoAlbums`: `album-merge.ts`'s `mergeAlbums` with nothing
+  synced, so nothing is deleted), only the snapshot restore replaces;
   `app-lock.ts` wires store, snapshot, covers and the GitHub connection
   through `lockData`.
 - **Screens.** `src/app/router.tsx`: `/` (`views/home`: the collection,

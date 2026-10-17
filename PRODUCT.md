@@ -51,7 +51,9 @@ web - PWA, mobile-only (like routines, notes and gym-charts).
   in the album's form, which shows that service's field). Links are the
   user's data: they're part of backups.
 - **Settings** (a drawer): language (English/Polish), app lock, backup
-  export/import, install and update, and the streaming service.
+  export/import (import merges into the collection on the device: the
+  same album is matched as with a sync, the newer edit wins, and nothing
+  is replaced or deleted), install and update, and the streaming service.
 
 ## Syncing with GitHub
 
@@ -114,7 +116,8 @@ adding a URL.
   rest), so covers keep working offline and survive cache clears and app
   updates. Where a server doesn't allow that, the cover is shown straight
   from its URL instead. Stored covers are a cache: never in a backup, and
-  dropped (to load again) when the lock changes or a backup is restored.
+  dropped (to load again) when the lock changes or the pre-update
+  snapshot is restored.
 - Covers found by the app are asked for at 1200px, sharp across a phone's
   full width; covers saved earlier at a smaller size are upgraded the same
   way (the old copy shows until the sharper one has loaded).
