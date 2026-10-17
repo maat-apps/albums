@@ -5,7 +5,11 @@ import {
   SquaresFour,
 } from "@phosphor-icons/react";
 
-import { Button } from "@maat-apps/ui/button";
+import {
+  BottomBarButton,
+  BottomBarChip,
+  BottomBarChips,
+} from "@maat-apps/ui/bottom-bar";
 import {
   Select,
   SelectContent,
@@ -45,24 +49,18 @@ export function StatusFilterChips({
   };
 
   return (
-    <div
-      role="group"
-      aria-label={t("filterByStatus")}
-      className="-ml-4 flex min-w-0 flex-1 [scrollbar-width:none] gap-2 overflow-x-auto [mask-image:linear-gradient(to_right,black_calc(100%-24px),transparent)] pr-6 pl-4"
-    >
+    <BottomBarChips label={t("filterByStatus")}>
       {FILTERS.map((filter) => (
-        <Button
+        <BottomBarChip
           key={filter}
-          variant={prefs.statusFilter === filter ? "default" : "outline"}
-          className="h-14 shrink-0 rounded-2xl px-4 text-base"
-          aria-pressed={prefs.statusFilter === filter}
+          pressed={prefs.statusFilter === filter}
           onClick={() => onChange({ statusFilter: filter })}
         >
           {statusLabel[filter]}
           <span className="opacity-70">{counts[filter]}</span>
-        </Button>
+        </BottomBarChip>
       ))}
-    </div>
+    </BottomBarChips>
   );
 }
 
@@ -97,24 +95,18 @@ export function SortAndViewControls({ prefs, onChange }: ToolbarProps) {
           ))}
         </SelectContent>
       </Select>
-      <Button
-        variant="ghost"
-        size="icon-lg"
-        className="size-14 shrink-0 [&_svg]:size-6"
-        aria-label={ascending ? t("sortAscending") : t("sortDescending")}
+      <BottomBarButton
+        label={ascending ? t("sortAscending") : t("sortDescending")}
         onClick={() => onChange({ sortDirection: ascending ? "desc" : "asc" })}
       >
         {ascending ? <SortAscending /> : <SortDescending />}
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon-lg"
-        className="size-14 shrink-0 [&_svg]:size-6"
-        aria-label={grid ? t("viewGrid") : t("viewList")}
+      </BottomBarButton>
+      <BottomBarButton
+        label={grid ? t("viewGrid") : t("viewList")}
         onClick={() => onChange({ viewMode: grid ? "list" : "grid" })}
       >
         {grid ? <SquaresFour /> : <ListBullets />}
-      </Button>
+      </BottomBarButton>
     </div>
   );
 }
