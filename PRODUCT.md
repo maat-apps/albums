@@ -35,7 +35,7 @@ web - PWA, mobile-only (like routines, notes and gym-charts).
 - **Fast scroller:** on a long collection, a rail along the right side
   appears while scrolling; dragging its thumb jumps by the sort's groups —
   first letter (Polish letters on their own, digits and symbols under
-  "#"), or year, or decade when the years span widely — naming the group
+  "#"), or year — naming the group
   in a bubble and buzzing at each change where the phone can.
 - **Add** an album by searching MusicBrainz: one field, artist, title or
   both; tapping a result adds it — to listen — with its year and cover, and

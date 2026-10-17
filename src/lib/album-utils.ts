@@ -100,9 +100,6 @@ export function sortAlbums(
 /** A run of albums sharing a fast-scroller label, from `firstIndex` on. */
 export type AlbumGroup = { label: string; firstIndex: number };
 
-/** Year groups become decades once the years span more than this. */
-export const DECADE_SPAN = 20;
-
 const POLISH_LETTERS = new Set("ĄĆĘŁŃÓŚŹŻ");
 
 /**
@@ -117,31 +114,20 @@ export function letterLabel(text: string): string {
   return /^\p{L}$/u.test(base) ? base : "#";
 }
 
-function yearLabeller(albums: Album[]): (year: number | null) => string {
-  const years = albums.flatMap((album) =>
-    album.year === null ? [] : [album.year],
-  );
-  const decades =
-    years.length > 0 && Math.max(...years) - Math.min(...years) > DECADE_SPAN;
-  return (year) => {
-    if (year === null) return "—";
-    if (!decades) return String(year);
-    const start = Math.floor(year / 10) * 10;
-    return `${start}–${start + 9}`;
-  };
+function yearLabel(year: number | null): string {
+  return year === null ? "—" : String(year);
 }
 
 /**
  * The fast scroller's groups for albums already sorted by `key`: by first
- * letter for artist/title, by year — or decade, when the years span more
- * than `DECADE_SPAN` — for year. Groups follow the list's own order, so a
- * descending sort flips them too.
+ * letter for artist/title, by single year for year (the owner wants every
+ * year on the rail, however wide the span). Groups follow the list's own
+ * order, so a descending sort flips them too.
  */
 export function groupAlbums(sorted: Album[], key: SortKey): AlbumGroup[] {
-  const yearOf = yearLabeller(sorted);
   const labelOf =
     key === "year"
-      ? (album: Album) => yearOf(album.year)
+      ? (album: Album) => yearLabel(album.year)
       : (album: Album) => letterLabel(album[key]);
   const groups: AlbumGroup[] = [];
   sorted.forEach((album, index) => {
