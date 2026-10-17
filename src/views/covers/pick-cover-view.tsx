@@ -7,26 +7,38 @@ import { Button } from "@maat-apps/ui/button";
 import { useSmartBack } from "@maat-apps/ui/smart-back";
 import { MissingAlbum } from "../../components/missing-album";
 import { useAlbum, useAlbumsReady } from "../../hooks/use-albums";
-import { useSpotifyConnected } from "../../hooks/use-spotify";
 import { useTranslation } from "../../i18n/use-translation";
 import {
   applyMatch,
   withVerdict,
   type AlbumMatch,
+  type LookupSource,
 } from "../../lib/cover-lookup";
-import { SEARCHES } from "../../lib/cover-lookup-runner";
+import { LOOKUP_SOURCES, SEARCHES } from "../../lib/cover-lookup-runner";
+import { RateLimitedError } from "../../lib/musicbrainz";
 import { saveAlbum } from "../../lib/storage";
+
+/** Searched in this order; the first one's verdict records a skip. */
+const SOURCES = LOOKUP_SOURCES;
+
+const SOURCE_NAMES: Record<LookupSource, string> = {
+  musicbrainz: "MusicBrainz",
+  itunes: "iTunes",
+};
+
+/** A source whose search failed, and whether it only asked to slow down. */
+type Failure = { source: LookupSource; rateLimited: boolean };
 
 type Search =
   | { state: "loading" }
-  | { state: "failed" }
+  | { state: "failed"; failures: Failure[] }
   | { state: "done"; matches: AlbumMatch[] };
 
 /** A candidate's cover, straight from its source. */
 function CandidateCover({ url }: { url: string | null }) {
   const [failed, setFailed] = useState(url === null);
   return (
-    <span className="bg-muted text-muted-foreground grid size-16 shrink-0 place-items-center overflow-hidden rounded-md">
+    <span className="bg-muted text-muted-foreground grid size-16 shrink-0 place-items-center overflow-hidden rounded-none">
       {failed ? (
         <VinylRecord aria-hidden="true" className="size-1/3" />
       ) : (
@@ -43,9 +55,9 @@ function CandidateCover({ url }: { url: string | null }) {
 }
 
 /**
- * "/covers/:id": the matches for one album (Spotify's when connected,
- * MusicBrainz's otherwise); picking one fills in what the album is missing,
- * "None of these" stops offering it.
+ * "/covers/:id": the matches for one album (MusicBrainz's, then iTunes');
+ * picking one fills in what the album is missing, "None of these" stops
+ * offering it.
  */
 export function PickCoverView() {
   const { t } = useTranslation();
@@ -53,7 +65,6 @@ export function PickCoverView() {
   const ready = useAlbumsReady();
   const album = useAlbum(id);
   const back = useSmartBack("/covers");
-  const source = useSpotifyConnected() ? "spotify" : "musicbrainz";
   // Tagged with the query it answers, so a stale answer reads as loading.
   const [answer, setAnswer] = useState<{ query: string; search: Search }>();
   const artist = album?.artist;
@@ -62,21 +73,41 @@ export function PickCoverView() {
   useEffect(() => {
     if (artist === undefined || title === undefined) return;
     const controller = new AbortController();
-    const query = `${source}|${artist}|${title}`;
-    SEARCHES[source]({ artist, title }, controller.signal).then(
-      (matches) => setAnswer({ query, search: { state: "done", matches } }),
-      () => {
-        if (!controller.signal.aborted) {
-          setAnswer({ query, search: { state: "failed" } });
-        }
-      },
-    );
+    const query = `${artist}|${title}`;
+    // Each source's matches in order; some failing is fine.
+    Promise.allSettled(
+      SOURCES.map((item) =>
+        SEARCHES[item]({ artist, title }, controller.signal),
+      ),
+    ).then((results) => {
+      if (controller.signal.aborted) return;
+      const matches = results.flatMap((result) =>
+        result.status === "fulfilled" ? result.value : [],
+      );
+      const failures = results.flatMap((result, index) =>
+        result.status === "rejected"
+          ? [
+              {
+                source: SOURCES[index],
+                rateLimited: result.reason instanceof RateLimitedError,
+              },
+            ]
+          : [],
+      );
+      setAnswer({
+        query,
+        search:
+          failures.length === SOURCES.length
+            ? { state: "failed", failures }
+            : { state: "done", matches },
+      });
+    });
     return () => controller.abort();
-  }, [artist, title, source]);
+  }, [artist, title]);
 
   if (!album) return ready ? <MissingAlbum /> : null;
   const search: Search =
-    answer?.query === `${source}|${album.artist}|${album.title}`
+    answer?.query === `${album.artist}|${album.title}`
       ? answer.search
       : { state: "loading" };
 
@@ -88,7 +119,7 @@ export function PickCoverView() {
 
   function skip() {
     if (!album) return;
-    saveAlbum(withVerdict(album, source, "skipped"));
+    saveAlbum(withVerdict(album, SOURCES[0], "skipped"));
     startTransition(back);
   }
 
@@ -112,9 +143,18 @@ export function PickCoverView() {
         <p className="text-muted-foreground m-0">{t("searching")}</p>
       )}
       {search.state === "failed" && (
-        <p className="text-destructive m-0" role="alert">
-          {t("lookupFailed")}
-        </p>
+        <div className="text-destructive grid gap-1" role="alert">
+          <p className="m-0">{t("lookupFailed")}</p>
+          <ul className="m-0 list-none p-0 text-sm">
+            {search.failures.map(({ source, rateLimited }) => (
+              <li key={source}>
+                {t(rateLimited ? "sourceRateLimited" : "sourceUnreachable", {
+                  source: SOURCE_NAMES[source],
+                })}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
       {search.state === "done" && search.matches.length === 0 && (
         <p className="text-muted-foreground m-0">{t("noCandidates")}</p>

@@ -12,8 +12,8 @@ function AlbumGrid({
 }) {
   return (
     <ul className="m-0 grid list-none grid-cols-2 gap-x-3 gap-y-4 p-0">
-      {albums.map((album) => (
-        <li key={album.id}>
+      {albums.map((album, index) => (
+        <li key={album.id} data-album-index={index}>
           <button
             type="button"
             className="grid w-full gap-1.5 text-left"
@@ -43,8 +43,8 @@ function AlbumList({
 }) {
   return (
     <ul className="m-0 grid list-none gap-1 p-0">
-      {albums.map((album) => (
-        <li key={album.id}>
+      {albums.map((album, index) => (
+        <li key={album.id} data-album-index={index}>
           <button
             type="button"
             className="hover:bg-muted flex w-full items-center gap-3 rounded-lg p-1.5 text-left"

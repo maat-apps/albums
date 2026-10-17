@@ -46,10 +46,13 @@ describe("backup", () => {
 
     backup.mergeBackup(backup.parseBackup(text));
 
-    expect(storage.getAlbumsSnapshot().map((item) => item.id)).toEqual([
-      "a2",
-      "a1",
-    ]);
+    // The order is the merge's; the collection is shown sorted anyway.
+    expect(
+      storage
+        .getAlbumsSnapshot()
+        .map((item) => item.id)
+        .sort(),
+    ).toEqual(["a1", "a2"]);
   });
 
   it("rejects another app's backup and non-JSON text", async () => {

@@ -30,7 +30,7 @@ describe("useCoverLookup", () => {
       onProgress(PROGRESS);
       return PROGRESS;
     });
-    const { result } = renderHook(() => useCoverLookup("musicbrainz"));
+    const { result } = renderHook(() => useCoverLookup(["musicbrainz"]));
     expect(result.current.phase).toBe("idle");
 
     act(() => result.current.start());
@@ -39,32 +39,48 @@ describe("useCoverLookup", () => {
     expect(result.current.progress).toEqual(PROGRESS);
   });
 
-  it("stops on request and when the screen closes", async () => {
-    const signals: AbortSignal[] = [];
+  it("stops on request", async () => {
     const useCoverLookup = await load(
       ({ signal }) =>
         new Promise((resolve) => {
-          signals.push(signal);
           signal.addEventListener("abort", () => resolve(PROGRESS));
         }),
     );
-    const { result, unmount } = renderHook(() => useCoverLookup("musicbrainz"));
+    const { result } = renderHook(() => useCoverLookup(["musicbrainz"]));
 
     act(() => result.current.start());
     expect(result.current.phase).toBe("running");
     act(() => result.current.stop());
-    await waitFor(() => expect(result.current.phase).toBe("stopped"));
 
-    act(() => result.current.start());
-    unmount();
-    expect(signals[1].aborted).toBe(true);
+    await waitFor(() => expect(result.current.phase).toBe("stopped"));
+  });
+
+  it("keeps running when the screen closes, and shows the run on return", async () => {
+    const signals: AbortSignal[] = [];
+    const useCoverLookup = await load(
+      ({ signal }) =>
+        new Promise(() => {
+          signals.push(signal);
+        }),
+    );
+    const first = renderHook(() => useCoverLookup(["musicbrainz"]));
+    act(() => first.result.current.start());
+    first.unmount();
+
+    const second = renderHook(() => useCoverLookup(["musicbrainz"]));
+    expect(signals[0].aborted).toBe(false);
+    expect(second.result.current.phase).toBe("running");
+
+    // Starting again while it runs doesn't begin a second run.
+    act(() => second.result.current.start());
+    expect(signals).toHaveLength(1);
   });
 
   it("reports a failed run", async () => {
     const useCoverLookup = await load(() =>
       Promise.reject(new TypeError("offline")),
     );
-    const { result } = renderHook(() => useCoverLookup("musicbrainz"));
+    const { result } = renderHook(() => useCoverLookup(["musicbrainz"]));
 
     act(() => result.current.start());
 

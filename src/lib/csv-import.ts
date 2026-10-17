@@ -1,4 +1,4 @@
-import { albumIdentity } from "./album-utils";
+import { sameAlbum } from "./album-utils";
 import { parseCsv } from "./csv";
 import type { Album, AlbumStatus } from "./schemas";
 
@@ -23,7 +23,9 @@ const STATUS_VALUES: Record<string, AlbumStatus> = {
 export type CsvImportResult = {
   /** The new albums, ready to be added. */
   albums: Album[];
-  /** Rows already in the collection, or repeated earlier in the file. */
+  /** Albums already in the collection whose status the file changes. */
+  updated: Album[];
+  /** Rows already in the collection unchanged, or repeated earlier in the file. */
   skipped: number;
   /** Rows without an artist or title, or with an unknown status. */
   invalid: number;
@@ -54,8 +56,10 @@ function parseYear(value: string): number | null {
 }
 
 /**
- * The albums in `text` that aren't in `existing` yet. Throws
- * `CsvImportError("missingColumns")` when there's no artist/title header.
+ * The albums in `text` that aren't in `existing` yet, and the ones in
+ * `existing` whose status the file changes (a blank or missing status never
+ * overrides one). Throws `CsvImportError("missingColumns")` when there's no
+ * artist/title header.
  */
 export function importAlbumsFromCsv(
   text: string,
@@ -68,33 +72,51 @@ export function importAlbumsFromCsv(
   const cell = (row: string[], column: Column) =>
     columns[column] === -1 ? "" : (row[columns[column]] ?? "").trim();
 
-  const seen = new Set(existing.map(albumIdentity));
-  const result: CsvImportResult = { albums: [], skipped: 0, invalid: 0 };
+  const matched = new Set<string>();
+  const result: CsvImportResult = {
+    albums: [],
+    updated: [],
+    skipped: 0,
+    invalid: 0,
+  };
 
   for (const row of rows) {
     const artist = cell(row, "artist");
     const title = cell(row, "title");
-    const status = STATUS_VALUES[cell(row, "status").toLowerCase()];
+    const statusCell = cell(row, "status").toLowerCase();
+    const status = STATUS_VALUES[statusCell];
     if (!artist || !title || !status) {
       result.invalid += 1;
       continue;
     }
-    const year = parseYear(cell(row, "year"));
-    const identity = albumIdentity({ artist, title, year });
-    if (seen.has(identity)) {
+    const candidate = { artist, title, year: parseYear(cell(row, "year")) };
+    const known =
+      existing.find(
+        (album) => album.year === candidate.year && sameAlbum(album, candidate),
+      ) ?? existing.find((album) => sameAlbum(album, candidate));
+    const repeated = result.albums.some((album) => sameAlbum(album, candidate));
+    if (repeated || (known && matched.has(known.id))) {
       result.skipped += 1;
-      continue;
+    } else if (known) {
+      matched.add(known.id);
+      if (statusCell !== "" && known.status !== status) {
+        result.updated.push({
+          ...known,
+          status,
+          updatedAt: now.toISOString(),
+        });
+      } else {
+        result.skipped += 1;
+      }
+    } else {
+      result.albums.push({
+        id: crypto.randomUUID(),
+        ...candidate,
+        status,
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+      });
     }
-    seen.add(identity);
-    result.albums.push({
-      id: crypto.randomUUID(),
-      year,
-      artist,
-      title,
-      status,
-      createdAt: now.toISOString(),
-      updatedAt: now.toISOString(),
-    });
   }
   return result;
 }

@@ -1,6 +1,8 @@
 import { parseEach } from "@maat-apps/core/validation";
 import * as v from "valibot";
 
+import { largerCoverUrl } from "./cover-url";
+
 // The single source of truth for runtime validation and the album type. Data
 // read back from IndexedDB or a backup is parsed album by album, so one
 // malformed album never takes the rest down with it.
@@ -21,15 +23,25 @@ const AlbumSchema = v.object({
   artist: v.string(),
   title: v.string(),
   status: v.fallback(v.picklist(ALBUM_STATUSES), "toListen"),
-  // A malformed URL is dropped rather than dropping the whole album.
-  coverUrl: v.fallback(v.optional(HttpsUrlSchema), undefined),
+  // A malformed URL is dropped rather than dropping the whole album; one
+  // saved at a smaller size is read as its sharper version (cover-url.ts).
+  coverUrl: v.fallback(
+    v.optional(v.pipe(HttpsUrlSchema, v.transform(largerCoverUrl))),
+    undefined,
+  ),
+  // Links to the album on streaming services (streaming.ts).
+  deezerUrl: v.fallback(v.optional(HttpsUrlSchema), undefined),
   spotifyUrl: v.fallback(v.optional(HttpsUrlSchema), undefined),
+  appleMusicUrl: v.fallback(v.optional(HttpsUrlSchema), undefined),
   // The last MusicBrainz lookup's verdict for an album still without a
   // cover (cover-lookup.ts): "review" — candidates to pick from, "none" — nothing
   // found, "skipped" — the user rejected them. Absent until looked up.
   lookup: v.fallback(v.optional(v.picklist(LOOKUP_RESULTS)), undefined),
-  // The same verdict from a Spotify lookup, which also fills missing links.
-  spotifyLookup: v.fallback(v.optional(v.picklist(LOOKUP_RESULTS)), undefined),
+  // "done" once MusicBrainz's links for the matched album were read (any
+  // streaming links found are filled in), so they aren't asked for again.
+  linksLookup: v.fallback(v.optional(v.literal("done")), undefined),
+  // And from an iTunes lookup, the fallback for what the others missed.
+  itunesLookup: v.fallback(v.optional(v.picklist(LOOKUP_RESULTS)), undefined),
   createdAt: v.string(),
   updatedAt: v.string(),
 });

@@ -16,11 +16,11 @@ import {
   type Backup,
 } from "../../lib/backup";
 import { importAlbumsFromCsv } from "../../lib/csv-import";
-import { addAlbums, getAlbumsSnapshot } from "../../lib/storage";
+import { applyImport, getAlbumsSnapshot } from "../../lib/storage";
 
 // Backups (export/import) and "Import from CSV" (PRODUCT.md). Files are read
-// on the device and never leave it; a CSV import skips albums already in the
-// collection, a backup import replaces everything after a confirmation.
+// on the device and never leave it; a CSV import adds new albums and updates the
+// status of those already in the collection, a backup import replaces everything after a confirmation.
 export function DataSection({
   onStatus,
 }: {
@@ -74,10 +74,11 @@ export function DataSection({
         await file.text(),
         getAlbumsSnapshot(),
       );
-      addAlbums(result.albums);
+      applyImport(result.albums, result.updated);
       onStatus(
         t("importCsvSummary", {
           imported: result.albums.length,
+          updated: result.updated.length,
           skipped: result.skipped,
           invalid: result.invalid,
         }),

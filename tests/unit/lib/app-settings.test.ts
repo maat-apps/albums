@@ -159,3 +159,66 @@ describe("collection prefs", () => {
     });
   });
 });
+
+describe("streaming service", () => {
+  it("defaults to Deezer, and remembers a change", async () => {
+    const appSettings = await freshAppSettings();
+    expect(appSettings.getSettingsSnapshot().streamingService).toBe("deezer");
+
+    appSettings.setStreamingService("spotify");
+
+    expect(appSettings.getSettingsSnapshot().streamingService).toBe("spotify");
+  });
+
+  it("reads a stored service, and an unknown one as Deezer", async () => {
+    for (const [stored, read] of [
+      ["appleMusic", "appleMusic"],
+      ["tidal", "deezer"],
+    ]) {
+      vi.resetModules();
+      await resetIndexedDb();
+      const { kvSet } = await import("@/lib/idb-store");
+      const { SETTINGS_KEY } = await import("@/lib/storage-keys");
+      await kvSet(SETTINGS_KEY, { streamingService: stored });
+      const appSettings = await freshAppSettings();
+      await appSettings.whenLoaded();
+
+      expect(appSettings.getSettingsSnapshot().streamingService).toBe(read);
+    }
+  });
+});
+
+describe("relockAfterMs", () => {
+  it("defaults to 30 seconds", async () => {
+    const appSettings = await freshAppSettings();
+    expect(appSettings.relockAfterMs()).toBe(30_000);
+  });
+
+  it("follows the chosen setting", async () => {
+    const appSettings = await freshAppSettings();
+    appSettings.setRelockAfter("now");
+    expect(appSettings.relockAfterMs()).toBe(0);
+    appSettings.setRelockAfter("close");
+    expect(appSettings.relockAfterMs()).toBeNull();
+  });
+
+  it("falls back to 30 seconds for an unknown stored choice", async () => {
+    vi.resetModules();
+    const { kvSet } = await import("@/lib/idb-store");
+    const { SETTINGS_KEY } = await import("@/lib/storage-keys");
+    await kvSet(SETTINGS_KEY, { relockAfter: "never" });
+    const appSettings = await freshAppSettings();
+    await appSettings.whenLoaded();
+    expect(appSettings.getSettingsSnapshot().relockAfter).toBe("30s");
+  });
+
+  it("loads a stored choice", async () => {
+    vi.resetModules();
+    const { kvSet } = await import("@/lib/idb-store");
+    const { SETTINGS_KEY } = await import("@/lib/storage-keys");
+    await kvSet(SETTINGS_KEY, { relockAfter: "now" });
+    const appSettings = await freshAppSettings();
+    await appSettings.whenLoaded();
+    expect(appSettings.relockAfterMs()).toBe(0);
+  });
+});

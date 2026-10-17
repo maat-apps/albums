@@ -1,17 +1,21 @@
-import { CaretRight, SpotifyLogo } from "@phosphor-icons/react";
+import { CaretRight } from "@phosphor-icons/react";
 import { startTransition } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 
 import { AppBar } from "@maat-apps/ui/app-bar";
 import { Button } from "@maat-apps/ui/button";
+import { SectionTitle } from "@maat-apps/ui/page-header";
 import { useSmartBack } from "@maat-apps/ui/smart-back";
 import { useAlbums } from "../../hooks/use-albums";
+import { useAppSettings } from "../../hooks/use-app-settings";
 import { useCoverLookup } from "../../hooks/use-cover-lookup";
-import { useSpotifyConnected } from "../../hooks/use-spotify";
 import { useTranslation } from "../../i18n/use-translation";
 import { awaitsReview, needsLookup, notFound } from "../../lib/cover-lookup";
+import { LOOKUP_SOURCES } from "../../lib/cover-lookup-runner";
 import type { Album } from "../../lib/schemas";
-import { beginConnect, disconnect } from "../../lib/spotify-session";
+
+/** Tried in order for each album; the first one's verdicts are reviewed here. */
+const SOURCES = LOOKUP_SOURCES;
 
 function AlbumLinks({
   label,
@@ -25,7 +29,7 @@ function AlbumLinks({
   if (albums.length === 0) return null;
   return (
     <section className="grid gap-2">
-      <h2 className="m-0 text-base font-semibold">{label}</h2>
+      <SectionTitle>{label}</SectionTitle>
       <ul className="m-0 grid list-none gap-1 p-0" aria-label={label}>
         {albums.map((album) => (
           <li key={album.id}>
@@ -50,54 +54,23 @@ function AlbumLinks({
   );
 }
 
-/** Connect or disconnect Spotify — the lookup's better source. */
-function SpotifyConnection({ connected }: { connected: boolean }) {
-  const { t } = useTranslation();
-  const location = useLocation();
-  const result = (location.state as { spotify?: string } | null)?.spotify;
-  return (
-    <section className="bg-muted/40 grid gap-3 rounded-xl p-4">
-      <p className="m-0 flex items-center gap-2 font-semibold">
-        <SpotifyLogo aria-hidden="true" className="size-5" />
-        {t(connected ? "spotifyConnected" : "spotifyNotConnected")}
-      </p>
-      <p className="text-muted-foreground m-0 text-sm">
-        {t(connected ? "spotifyConnectedHint" : "spotifyConnectHint")}
-      </p>
-      {result === "failed" && (
-        <p className="text-destructive m-0 text-sm" role="alert">
-          {t("spotifyConnectFailed")}
-        </p>
-      )}
-      {connected ? (
-        <Button variant="outline" onClick={() => void disconnect()}>
-          {t("spotifyDisconnect")}
-        </Button>
-      ) : (
-        <Button variant="outline" onClick={() => void beginConnect()}>
-          {t("spotifyConnect")}
-        </Button>
-      )}
-    </section>
-  );
-}
-
 /**
- * "/covers": looks covers, years and Spotify links up — on Spotify when
- * it's connected, on MusicBrainz otherwise — for every album missing them,
- * then lists what needs a decision.
+ * "/covers": looks covers, years and links to the user's streaming service
+ * up — on MusicBrainz, then iTunes — for every album missing them, then
+ * lists the albums without a cover that need a decision.
  */
 export function CoversView() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const back = useSmartBack("/");
   const albums = useAlbums();
-  const connected = useSpotifyConnected();
-  const source = connected ? "spotify" : "musicbrainz";
-  const { phase, progress, start, stop } = useCoverLookup(source);
-  const remaining = albums.filter((album) => needsLookup(album, source)).length;
-  const toReview = albums.filter((album) => awaitsReview(album, source));
-  const missing = albums.filter((album) => notFound(album, source));
+  const { streamingService } = useAppSettings();
+  const { phase, progress, start, stop } = useCoverLookup(SOURCES);
+  const remaining = albums.filter((album) =>
+    SOURCES.some((item) => needsLookup(album, item, streamingService)),
+  ).length;
+  const toReview = albums.filter((album) => awaitsReview(album, SOURCES[0]));
+  const missing = albums.filter((album) => notFound(album, SOURCES[0]));
 
   function open(id: string) {
     startTransition(() => navigate(`/covers/${encodeURIComponent(id)}`));
@@ -110,10 +83,7 @@ export function CoversView() {
         backLabel={t("back")}
         onBack={() => startTransition(back)}
       />
-      <SpotifyConnection connected={connected} />
-      <p className="text-muted-foreground m-0">
-        {t(connected ? "findCoversIntroSpotify" : "findCoversIntro")}
-      </p>
+      <p className="text-muted-foreground m-0">{t("findCoversIntro")}</p>
       <div className="grid gap-3">
         <p className="m-0" aria-live="polite">
           {phase === "running" && progress

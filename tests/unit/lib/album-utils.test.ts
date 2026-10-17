@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  albumIdentity,
+  albumKey,
   countByStatus,
   filterByStatus,
-  mergeAlbums,
+  groupAlbums,
+  letterLabel,
+  sameAlbum,
   sortAlbums,
 } from "@/lib/album-utils";
 import type { Album } from "@/lib/schemas";
@@ -36,17 +38,54 @@ const albums = [
 
 const titles = (list: Album[]) => list.map((item) => item.title);
 
-describe("albumIdentity", () => {
+describe("albumKey", () => {
   it("ignores case, accents and surrounding spaces", () => {
-    expect(albumIdentity({ artist: " Émile ", title: "ALPHA", year: 1 })).toBe(
-      albumIdentity({ artist: "emile", title: "alpha", year: 1 }),
+    expect(albumKey({ artist: " Émile ", title: "ALPHA" })).toBe(
+      albumKey({ artist: "emile", title: "alpha" }),
     );
   });
 
-  it("tells different years apart", () => {
-    expect(albumIdentity({ artist: "a", title: "b", year: 1 })).not.toBe(
-      albumIdentity({ artist: "a", title: "b", year: null }),
+  it("ignores punctuation, repeated spaces and a leading The", () => {
+    expect(albumKey({ artist: "The Band", title: "Hello,  World!" })).toBe(
+      albumKey({ artist: "band", title: "hello world" }),
     );
+  });
+
+  it("treats & as and", () => {
+    expect(albumKey({ artist: "A & B", title: "T" })).toBe(
+      albumKey({ artist: "A and B", title: "T" }),
+    );
+  });
+
+  it("folds letters without an accent decomposition", () => {
+    expect(albumKey({ artist: "Łódź", title: "T" })).toBe(
+      albumKey({ artist: "lodz", title: "T" }),
+    );
+  });
+
+  it("tells different titles apart", () => {
+    expect(albumKey({ artist: "a", title: "b" })).not.toBe(
+      albumKey({ artist: "a", title: "c" }),
+    );
+  });
+});
+
+describe("sameAlbum", () => {
+  const base = { artist: "a", title: "b" };
+
+  it("tells two known years apart", () => {
+    expect(sameAlbum({ ...base, year: 1 }, { ...base, year: 2 })).toBe(false);
+  });
+
+  it("matches when either year is missing", () => {
+    expect(sameAlbum({ ...base, year: 1 }, { ...base, year: null })).toBe(true);
+    expect(sameAlbum({ ...base, year: null }, { ...base, year: 2 })).toBe(true);
+  });
+
+  it("never matches different albums", () => {
+    expect(
+      sameAlbum({ ...base, year: 1 }, { artist: "a", title: "c", year: 1 }),
+    ).toBe(false);
   });
 });
 
@@ -117,6 +156,19 @@ describe("sortAlbums", () => {
     ]);
   });
 
+  it("sorts Polish letters after their base letter", () => {
+    const list = ["Łąka", "Zima", "Lato", "Ąb", "Ab"].map((title) =>
+      album({ title }),
+    );
+    expect(titles(sortAlbums(list, "title", "asc"))).toEqual([
+      "Ab",
+      "Ąb",
+      "Lato",
+      "Łąka",
+      "Zima",
+    ]);
+  });
+
   it("doesn't change the input", () => {
     const copy = [...albums];
     sortAlbums(albums, "title", "asc");
@@ -124,37 +176,81 @@ describe("sortAlbums", () => {
   });
 });
 
-describe("mergeAlbums", () => {
-  const older = album({ id: "a", title: "Older", updatedAt: "2026-10-01" });
-  const newer = album({ id: "a", title: "Older", updatedAt: "2026-10-02" });
-  const other = album({ id: "b", title: "Other" });
-
-  it("adds the incoming albums the current ones lack", () => {
-    expect(mergeAlbums([older], [other])).toEqual([older, other]);
+describe("letterLabel", () => {
+  it("upper-cases the first letter", () => {
+    expect(letterLabel("abba")).toBe("A");
   });
 
-  it("keeps an album missing from the incoming ones", () => {
-    expect(mergeAlbums([older, other], [])).toEqual([older, other]);
+  it("keeps Polish letters as their own", () => {
+    expect(
+      ["ąb", "Ćma", "ęz", "łódź", "Ńa", "óz", "śpiew", "źdźbło", "żaba"].map(
+        letterLabel,
+      ),
+    ).toEqual(["Ą", "Ć", "Ę", "Ł", "Ń", "Ó", "Ś", "Ź", "Ż"]);
   });
 
-  it("takes the incoming copy when it is newer", () => {
-    expect(mergeAlbums([older], [newer])).toEqual([newer]);
+  it("folds other accents to the base letter", () => {
+    expect(letterLabel("Émile")).toBe("E");
   });
 
-  it("keeps the current copy when it is newer or equally old", () => {
-    expect(mergeAlbums([newer], [older])).toEqual([newer]);
-    expect(mergeAlbums([older], [{ ...older, status: "comingBack" }])).toEqual([
-      older,
+  it("puts digits, symbols and blanks under #", () => {
+    expect(["1999", '"Heroes"', "  ", ""].map(letterLabel)).toEqual([
+      "#",
+      "#",
+      "#",
+      "#",
+    ]);
+  });
+});
+
+describe("groupAlbums", () => {
+  const labels = (list: Album[], key: "artist" | "title" | "year") =>
+    groupAlbums(list, key).map((group) => group.label);
+
+  it("groups a sorted list by first letter, with the first index of each", () => {
+    const list = sortAlbums(
+      ["Beta", "alpha", "Ąb", "ćma", "Cello", "1984", "Bravo"].map((title) =>
+        album({ title }),
+      ),
+      "title",
+      "asc",
+    );
+    expect(groupAlbums(list, "title")).toEqual([
+      { label: "#", firstIndex: 0 },
+      { label: "A", firstIndex: 1 },
+      { label: "Ą", firstIndex: 2 },
+      { label: "B", firstIndex: 3 },
+      { label: "C", firstIndex: 5 },
+      { label: "Ć", firstIndex: 6 },
     ]);
   });
 
-  it("skips an incoming album that is already there under another id", () => {
-    const twin = { ...other, id: "c", title: "OTHER" };
-    expect(mergeAlbums([other], [twin])).toEqual([other]);
+  it("follows a descending sort", () => {
+    const list = sortAlbums(albums, "artist", "desc");
+    expect(labels(list, "artist")).toEqual(["Z", "E", "A"]);
   });
 
-  it("adds an album once when the backup holds it twice", () => {
-    const twin = { ...other, id: "c" };
-    expect(mergeAlbums([], [other, twin])).toEqual([other]);
+  it("groups by year", () => {
+    const list = sortAlbums(albums, "year", "asc");
+    expect(labels(list, "year")).toEqual(["1974", "1975", "1990", "—"]);
+  });
+
+  it("keeps single years however wide the span", () => {
+    const list = sortAlbums(
+      [1971, 1979, 1994, 2001, null].map((year) =>
+        album({ title: String(year), year }),
+      ),
+      "year",
+      "desc",
+    );
+    expect(labels(list, "year")).toEqual(["—", "2001", "1994", "1979", "1971"]);
+  });
+
+  it("groups albums without any year together", () => {
+    expect(labels([album({ year: null })], "year")).toEqual(["—"]);
+  });
+
+  it("returns no groups for no albums", () => {
+    expect(groupAlbums([], "title")).toEqual([]);
   });
 });

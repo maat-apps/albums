@@ -11,6 +11,19 @@ function csv(...rows: string[]): string {
   return [HEADER, ...rows].join("\n");
 }
 
+function album(overrides: Partial<Album>): Album {
+  return {
+    id: "existing",
+    year: 1999,
+    artist: "Artist A",
+    title: "Album A",
+    status: "toListen",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
 describe("importAlbumsFromCsv", () => {
   it("maps columns and statuses", () => {
     const { albums } = importAlbumsFromCsv(
@@ -93,22 +106,114 @@ describe("importAlbumsFromCsv", () => {
     expect(albums.map((album) => album.year)).toEqual([null, null]);
   });
 
-  it("skips albums already in the collection or repeated in the file", () => {
-    const existing = [
-      { artist: "Artist A", title: "Album A", year: 1999 },
-    ] as Album[];
+  it("skips an unchanged album and a row repeated in the file", () => {
+    const existing = [album({ artist: "Artist A", title: "Album A" })];
 
     const result = importAlbumsFromCsv(
       csv(
-        "1999,artist a,ALBUM A,GREEN",
+        "1999,artist a,ALBUM A,",
         "2000,Artist B,Album B,",
         "2000,Artist B,Album B,RED",
       ),
       existing,
     );
 
-    expect(result.albums.map((album) => album.artist)).toEqual(["Artist B"]);
+    expect(result.albums.map((item) => item.artist)).toEqual(["Artist B"]);
+    expect(result.updated).toEqual([]);
     expect(result.skipped).toBe(2);
+  });
+
+  it("updates the status of an existing album, keeping the rest", () => {
+    const existing = [
+      album({
+        artist: "Artist A",
+        title: "Album A",
+        coverUrl: "https://x.y/c",
+      }),
+    ];
+
+    const result = importAlbumsFromCsv(
+      csv("1999,Artist A,Album A,GREEN"),
+      existing,
+      NOW,
+    );
+
+    expect(result.albums).toEqual([]);
+    expect(result.updated).toEqual([
+      {
+        ...existing[0],
+        status: "comingBack",
+        updatedAt: NOW.toISOString(),
+      },
+    ]);
+    expect(result.skipped).toBe(0);
+  });
+
+  it("skips an existing album whose status already matches", () => {
+    const existing = [album({ status: "comingBack" })];
+
+    const result = importAlbumsFromCsv(
+      csv("1999,Artist A,Album A,green"),
+      existing,
+    );
+
+    expect(result).toMatchObject({ updated: [], skipped: 1 });
+  });
+
+  it("never overrides a status with an empty cell or a missing column", () => {
+    const existing = [album({ status: "notComingBack" })];
+
+    const blank = importAlbumsFromCsv(csv("1999,Artist A,Album A,"), existing);
+    const noColumn = importAlbumsFromCsv(
+      "Rok,Artysta,Tytuł\n1999,Artist A,Album A",
+      existing,
+    );
+
+    expect(blank.updated).toEqual([]);
+    expect(noColumn.updated).toEqual([]);
+  });
+
+  it("applies the first of two rows for the same existing album", () => {
+    const result = importAlbumsFromCsv(
+      csv("1999,Artist A,Album A,GREEN", "1999,Artist A,Album A,RED"),
+      [album({})],
+    );
+
+    expect(result.updated.map((item) => item.status)).toEqual(["comingBack"]);
+    expect(result.skipped).toBe(1);
+  });
+
+  it("matches despite punctuation, a leading The or a missing year", () => {
+    const existing = [
+      album({ artist: "The Band", title: "Hello, World!", year: 1999 }),
+    ];
+
+    const result = importAlbumsFromCsv(csv(",band,hello world,RED"), existing);
+
+    expect(result.albums).toEqual([]);
+    expect(result.updated).toHaveLength(1);
+  });
+
+  it("prefers the existing album with the same year", () => {
+    const existing = [
+      album({ id: "old", year: 1990 }),
+      album({ id: "new", year: 1999 }),
+    ];
+
+    const result = importAlbumsFromCsv(
+      csv("1999,Artist A,Album A,RED"),
+      existing,
+    );
+
+    expect(result.updated.map((item) => item.id)).toEqual(["new"]);
+  });
+
+  it("adds a different year of the same title as a new album", () => {
+    const result = importAlbumsFromCsv(csv("2010,Artist A,Album A,"), [
+      album({}),
+    ]);
+
+    expect(result.albums).toHaveLength(1);
   });
 
   it("counts rows without artist or title, or with an unknown status, as invalid", () => {
@@ -116,7 +221,12 @@ describe("importAlbumsFromCsv", () => {
       csv("1999,,Album,", "1999,Artist,,", "1999,Artist,Album,BLUE"),
       [],
     );
-    expect(result).toEqual({ albums: [], skipped: 0, invalid: 3 });
+    expect(result).toEqual({
+      albums: [],
+      updated: [],
+      skipped: 0,
+      invalid: 3,
+    });
   });
 
   it("reads a short row's missing cells as empty", () => {

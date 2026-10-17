@@ -1,42 +1,30 @@
-import { useEffect, useRef, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 import type { LookupSource } from "../lib/cover-lookup";
-import { lookUpCovers, type LookupProgress } from "../lib/cover-lookup-runner";
+import {
+  getLookupState,
+  startLookup,
+  stopLookup,
+  subscribeToLookup,
+} from "../lib/cover-lookup-job";
+import { useAppSettings } from "./use-app-settings";
 
-export type LookupPhase = "idle" | "running" | "done" | "stopped" | "failed";
+export type { LookupPhase } from "../lib/cover-lookup-job";
 
 /**
- * Runs the bulk cover lookup (cover-lookup-runner.ts) while the screen is
- * open: leaving it stops the run, and starting again carries on with the
- * albums still left.
+ * The app-wide bulk cover lookup (cover-lookup-job.ts): leaving the screen
+ * doesn't stop it, and opening the screen again shows the run in progress.
  */
-export function useCoverLookup(source: LookupSource) {
-  const [phase, setPhase] = useState<LookupPhase>("idle");
-  const [progress, setProgress] = useState<LookupProgress | null>(null);
-  const controller = useRef<AbortController | null>(null);
-
-  useEffect(() => () => controller.current?.abort(), []);
-
-  function start() {
-    const current = new AbortController();
-    controller.current = current;
-    setPhase("running");
-    lookUpCovers({
-      source,
-      signal: current.signal,
-      onProgress: setProgress,
-    }).then(
-      (final) => {
-        setProgress(final);
-        setPhase(current.signal.aborted ? "stopped" : "done");
-      },
-      () => setPhase("failed"),
-    );
-  }
-
-  function stop() {
-    controller.current?.abort();
-  }
-
-  return { phase, progress, start, stop };
+export function useCoverLookup(sources: LookupSource[]) {
+  const { streamingService } = useAppSettings();
+  const { phase, progress } = useSyncExternalStore(
+    subscribeToLookup,
+    getLookupState,
+  );
+  return {
+    phase,
+    progress,
+    start: () => startLookup(sources, streamingService),
+    stop: stopLookup,
+  };
 }

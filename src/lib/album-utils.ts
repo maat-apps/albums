@@ -4,19 +4,43 @@ export type SortKey = "year" | "title" | "artist";
 export type SortDirection = "asc" | "desc";
 export type StatusFilter = AlbumStatus | "all";
 
-const collator = new Intl.Collator(undefined, { sensitivity: "base" });
+// Polish rules, so Ą sorts after A and Ł after L — each a letter of its
+// own, as on the fast scroller's rail (`groupAlbums`).
+const collator = new Intl.Collator("pl", { sensitivity: "base" });
 
-/** Case- and accent-insensitive identity: the same album twice is a duplicate. */
-export function albumIdentity(
-  album: Pick<Album, "artist" | "title" | "year">,
-): string {
-  const normalize = (text: string) =>
-    text
-      .normalize("NFD")
-      .replace(/\p{Diacritic}/gu, "")
-      .trim()
-      .toLowerCase();
-  return `${normalize(album.artist)}\u0000${normalize(album.title)}\u0000${album.year ?? ""}`;
+// Letters that don't decompose into base + accent under NFD.
+const FOLDED_LETTERS: Record<string, string> = { ł: "l", ø: "o", đ: "d" };
+
+function normalizeText(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[łøđ]/g, (letter) => FOLDED_LETTERS[letter] ?? letter)
+    .replace(/&/g, " and ")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()
+    .replace(/^the /, "");
+}
+
+/**
+ * Artist and title with case, accents, punctuation, spacing, "&" vs "and"
+ * and a leading "The" ignored. The year is compared apart (`sameAlbum`).
+ */
+export function albumKey(album: Pick<Album, "artist" | "title">): string {
+  return `${normalizeText(album.artist)}\u0000${normalizeText(album.title)}`;
+}
+
+/**
+ * Whether two albums are the same record: equal `albumKey`, and equal years
+ * unless one of them has none (a missing year can't tell a reissue apart).
+ */
+export function sameAlbum(
+  a: Pick<Album, "artist" | "title" | "year">,
+  b: Pick<Album, "artist" | "title" | "year">,
+): boolean {
+  if (albumKey(a) !== albumKey(b)) return false;
+  return a.year === null || b.year === null || a.year === b.year;
 }
 
 export function filterByStatus(albums: Album[], filter: StatusFilter): Album[] {
@@ -73,26 +97,43 @@ export function sortAlbums(
   });
 }
 
+/** A run of albums sharing a fast-scroller label, from `firstIndex` on. */
+export type AlbumGroup = { label: string; firstIndex: number };
+
+const POLISH_LETTERS = new Set("ĄĆĘŁŃÓŚŹŻ");
+
 /**
- * `current` plus the `incoming` albums it lacks; an album in both (by id)
- * keeps the more recently edited version, and ties keep the current one. An
- * incoming album that is the same album as a current one under another id
- * (see `albumIdentity`) is skipped. A merge never deletes.
+ * The first letter, upper-cased: Polish letters stay themselves (the
+ * collator sorts them apart), other accents fold to the base letter (the
+ * collator sorts them together), anything else is "#".
  */
-export function mergeAlbums(current: Album[], incoming: Album[]): Album[] {
-  const incomingById = new Map(incoming.map((album) => [album.id, album]));
-  const merged = current.map((album) => {
-    const other = incomingById.get(album.id);
-    return other && other.updatedAt > album.updatedAt ? other : album;
+export function letterLabel(text: string): string {
+  const first = [...text.trim()][0]?.toLocaleUpperCase("pl") ?? "";
+  if (POLISH_LETTERS.has(first)) return first;
+  const base = first.normalize("NFD").replace(/\p{Diacritic}/gu, "");
+  return /^\p{L}$/u.test(base) ? base : "#";
+}
+
+function yearLabel(year: number | null): string {
+  return year === null ? "—" : String(year);
+}
+
+/**
+ * The fast scroller's groups for albums already sorted by `key`: by first
+ * letter for artist/title, by single year for year (the owner wants every
+ * year on the rail, however wide the span). Groups follow the list's own
+ * order, so a descending sort flips them too.
+ */
+export function groupAlbums(sorted: Album[], key: SortKey): AlbumGroup[] {
+  const labelOf =
+    key === "year"
+      ? (album: Album) => yearLabel(album.year)
+      : (album: Album) => letterLabel(album[key]);
+  const groups: AlbumGroup[] = [];
+  sorted.forEach((album, index) => {
+    const label = labelOf(album);
+    if (groups.at(-1)?.label !== label)
+      groups.push({ label, firstIndex: index });
   });
-  const knownIds = new Set(current.map((album) => album.id));
-  const knownIdentities = new Set(current.map(albumIdentity));
-  const added = incoming.filter((album) => {
-    if (knownIds.has(album.id)) return false;
-    const identity = albumIdentity(album);
-    if (knownIdentities.has(identity)) return false;
-    knownIdentities.add(identity);
-    return true;
-  });
-  return [...merged, ...added];
+  return groups;
 }

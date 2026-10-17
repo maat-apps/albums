@@ -1,110 +1,60 @@
-import {
-  decryptJson,
-  encryptJson,
-  isEncryptedBlob,
-} from "@maat-apps/core/crypto";
+import { createLocalStore } from "@maat-apps/core/local";
 import { isRecord } from "@maat-apps/core/validation";
 
-import { mergeAlbums } from "./album-utils";
+import { mergeAlbums } from "./album-merge";
 import {
   getSettingsSnapshot,
   whenLoaded as whenSettingsLoaded,
 } from "./app-settings";
 import { deleteCover } from "./cover-store";
 import { encryptionKey } from "./encryption-key";
-import { kvGet, kvSet } from "./idb-store";
+import { keyValueStore, kvDelete } from "./idb-store";
 import { parseAlbums, type Album, type AlbumStatus } from "./schemas";
-import { DATA_KEY } from "./storage-keys";
+import { DATA_KEY, LEGACY_SPOTIFY_KEY } from "./storage-keys";
 
-// An in-memory copy of the albums is the source of truth once loaded;
-// IndexedDB is the write-through backing store — read once in the background
-// at startup, written in the background on every change (maat-core's
-// docs/storage.md). Screens subscribe through src/hooks/use-albums.ts.
+// The albums in @maat-apps/core/local's store (maat-core's docs/storage.md):
+// in memory once loaded, written through to IndexedDB, encrypted with the
+// lock's key — the local copy GitHub sync (github-sync.ts) builds on.
+// Screens subscribe through src/hooks/use-albums.ts.
 
-const EMPTY: Album[] = [];
-
-const listeners = new Set<() => void>();
-let albums: Album[] = EMPTY;
-let loaded: Promise<void> | null = null;
-let ready = false;
-
-function emitChange(): void {
-  for (const listener of listeners) {
-    listener();
-  }
-}
-
-async function loadAlbums(): Promise<void> {
+/** Whether the enrolled lock encrypts — then the first read waits for its key. */
+export async function lockEncrypts(): Promise<boolean> {
   await whenSettingsLoaded();
-  if (getSettingsSnapshot().lock?.encryptionSupported) {
-    // The app sits behind the lock screen until unlock succeeds, so the
-    // albums are never needed — and never readable — before the key is.
-    await encryptionKey.whenSet();
-  }
-  try {
-    const stored = await kvGet<unknown>(DATA_KEY);
-    const key = encryptionKey.get();
-    const data =
-      key && isEncryptedBlob(stored)
-        ? await decryptJson<unknown>(key, stored)
-        : stored;
-    if (isRecord(data)) albums = parseAlbums(data.albums);
-  } catch {
-    // Keep what's in memory — same fallback as a corrupt or missing value.
-  } finally {
-    ready = true;
-    emitChange();
-  }
+  return getSettingsSnapshot().lock?.encryptionSupported === true;
 }
+
+export const albumsStore = createLocalStore<Album[], { albums: Album[] }>({
+  storage: keyValueStore,
+  key: DATA_KEY,
+  empty: [],
+  parse: (stored) => (isRecord(stored) ? parseAlbums(stored.albums) : []),
+  serialize: (albums) => ({ albums }),
+  encryption: { keyHolder: encryptionKey, encrypts: lockEncrypts },
+});
+
+// Spotify was removed from the app: drop the token it left behind, once the
+// albums have loaded.
+const stopWatchingLoad = albumsStore.subscribe(() => {
+  if (!albumsStore.isReady()) return;
+  stopWatchingLoad();
+  void kvDelete(LEGACY_SPOTIFY_KEY).catch(() => {});
+});
 
 /** Starts the background read on first use; test-only to await directly. */
-export function whenLoaded(): Promise<void> {
-  loaded ??= loadAlbums();
-  return loaded;
-}
-
-export function subscribe(listener: () => void): () => void {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-}
-
-export function getAlbumsSnapshot(): Album[] {
-  void whenLoaded();
-  return albums;
-}
+export const whenLoaded = albumsStore.whenLoaded;
+export const subscribe = albumsStore.subscribe;
+export const getAlbumsSnapshot = albumsStore.getSnapshot;
+export const getServerAlbumsSnapshot = albumsStore.getServerSnapshot;
 
 /**
  * Whether the initial read has finished — until then "no such album" can't
  * be told apart from "not loaded yet" (a deep link on a cold start).
  */
-export function isAlbumsReady(): boolean {
-  void whenLoaded();
-  return ready;
-}
-
-export function isAlbumsReadyOnServer(): boolean {
-  return false;
-}
-
-export function getServerAlbumsSnapshot(): Album[] {
-  return EMPTY;
-}
-
-async function persist(data: { albums: Album[] }): Promise<void> {
-  try {
-    const key = encryptionKey.get();
-    await kvSet(DATA_KEY, key ? await encryptJson(key, data) : data);
-  } catch {
-    // Best-effort — the in-memory copy (and this tab) already reflects it.
-  }
-}
+export const isAlbumsReady = albumsStore.isReady;
+export const isAlbumsReadyOnServer = albumsStore.isReadyOnServer;
 
 function writeAlbums(next: Album[]): void {
-  albums = next;
-  void persist({ albums: next });
-  emitChange();
+  void albumsStore.replace(next);
 }
 
 /** Replaces every album — the update snapshot restore and the app lock's rewrite/erase. */
@@ -112,15 +62,29 @@ export function replaceAllAlbums(next: Album[]): void {
   writeAlbums(next);
 }
 
-/** Adds the albums the device lacks and keeps the newer copy of the rest. */
+/**
+ * Adds the albums the device lacks and keeps the newer copy of the rest,
+ * as a sync merges them — but with nothing counted as synced, so nothing
+ * is deleted.
+ */
 export function mergeIntoAlbums(incoming: Album[]): void {
-  writeAlbums(mergeAlbums(getAlbumsSnapshot(), incoming));
+  writeAlbums(mergeAlbums(getAlbumsSnapshot(), incoming, new Set()).albums);
 }
 
 /** Appends albums in one write (e.g. a CSV import). */
 export function addAlbums(added: Album[]): void {
   if (added.length === 0) return;
   writeAlbums([...getAlbumsSnapshot(), ...added]);
+}
+
+/** Applies a CSV import — new albums and changed ones — in one write. */
+export function applyImport(added: Album[], updated: Album[]): void {
+  if (added.length === 0 && updated.length === 0) return;
+  const replacements = new Map(updated.map((album) => [album.id, album]));
+  writeAlbums([
+    ...getAlbumsSnapshot().map((album) => replacements.get(album.id) ?? album),
+    ...added,
+  ]);
 }
 
 /** Saves a new or changed album, stamping `updatedAt`. */

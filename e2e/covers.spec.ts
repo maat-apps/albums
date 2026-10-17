@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-import { goHome } from "./utils";
+import { answerLookupsEmpty, goHome } from "./utils";
 
-const COVER_URL = "https://coverartarchive.org/release/e2e/front-250";
+const COVER_URL = "https://coverartarchive.org/release/e2e/front-1200";
 
 // A 1×1 PNG.
 const PNG = Buffer.from(
@@ -26,9 +26,11 @@ test("stores a cover once and shows it offline after a reload", async ({
       headers: { "access-control-allow-origin": "*" },
     });
   });
+  await answerLookupsEmpty(page);
 
   await goHome(page);
   await page.getByRole("button", { name: "Add album" }).click();
+  await page.getByRole("button", { name: "Not there? Add it by hand" }).click();
   await page.getByLabel("Artist", { exact: true }).fill("Made-up Artist");
   await page.getByLabel("Title", { exact: true }).fill("Made-up Title");
   await page.getByLabel("Cover image URL").fill(COVER_URL);

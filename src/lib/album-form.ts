@@ -1,6 +1,7 @@
+import { coverArtUrl, type ReleaseGroup } from "./musicbrainz";
 import { isHttpsUrl, type Album, type AlbumStatus } from "./schemas";
 
-// The add/edit form's values as typed (strings), and the pure conversion
+// Adding an album found on MusicBrainz, and the edit form's values as typed (strings), and the pure conversion
 // to and from an Album — kept out of the view so it's unit-tested.
 
 export type AlbumFormValues = {
@@ -9,7 +10,9 @@ export type AlbumFormValues = {
   title: string;
   status: AlbumStatus;
   coverUrl: string;
+  deezerUrl: string;
   spotifyUrl: string;
+  appleMusicUrl: string;
 };
 
 export type AlbumFormField = keyof AlbumFormValues;
@@ -22,7 +25,9 @@ export const EMPTY_ALBUM_FORM: AlbumFormValues = {
   title: "",
   status: "toListen",
   coverUrl: "",
+  deezerUrl: "",
   spotifyUrl: "",
+  appleMusicUrl: "",
 };
 
 export function albumToForm(album: Album): AlbumFormValues {
@@ -32,11 +37,20 @@ export function albumToForm(album: Album): AlbumFormValues {
     title: album.title,
     status: album.status,
     coverUrl: album.coverUrl ?? "",
+    deezerUrl: album.deezerUrl ?? "",
     spotifyUrl: album.spotifyUrl ?? "",
+    appleMusicUrl: album.appleMusicUrl ?? "",
   };
 }
 
 const YEAR_PATTERN = /^\d{4}$/;
+
+const URL_FIELDS = [
+  "coverUrl",
+  "deezerUrl",
+  "spotifyUrl",
+  "appleMusicUrl",
+] as const;
 
 export function validateAlbumForm(values: AlbumFormValues): AlbumFormErrors {
   const errors: AlbumFormErrors = {};
@@ -45,7 +59,7 @@ export function validateAlbumForm(values: AlbumFormValues): AlbumFormErrors {
   if (values.year.trim() && !YEAR_PATTERN.test(values.year.trim())) {
     errors.year = "year";
   }
-  for (const field of ["coverUrl", "spotifyUrl"] as const) {
+  for (const field of URL_FIELDS) {
     const url = values[field].trim();
     if (url && !isHttpsUrl(url)) errors[field] = "url";
   }
@@ -62,8 +76,12 @@ export function formToAlbum(
   now = new Date(),
 ): Album {
   const year = values.year.trim();
-  const coverUrl = values.coverUrl.trim();
-  const spotifyUrl = values.spotifyUrl.trim();
+  const urls = Object.fromEntries(
+    URL_FIELDS.flatMap((field) => {
+      const url = values[field].trim();
+      return url ? [[field, url]] : [];
+    }),
+  );
   return {
     id: base?.id ?? crypto.randomUUID(),
     createdAt: base?.createdAt ?? now.toISOString(),
@@ -72,7 +90,26 @@ export function formToAlbum(
     artist: values.artist.trim(),
     title: values.title.trim(),
     status: values.status,
-    ...(coverUrl && { coverUrl }),
-    ...(spotifyUrl && { spotifyUrl }),
+    ...urls,
+  };
+}
+
+/**
+ * A new album, to listen to, from a MusicBrainz search result, its cover
+ * from the archive. Its streaming links come from the album's own lookup.
+ */
+export function releaseGroupToAlbum(
+  group: ReleaseGroup,
+  now = new Date(),
+): Album {
+  return {
+    id: crypto.randomUUID(),
+    createdAt: now.toISOString(),
+    updatedAt: now.toISOString(),
+    year: group.year,
+    artist: group.artist,
+    title: group.title,
+    status: "toListen",
+    coverUrl: coverArtUrl(group.id),
   };
 }

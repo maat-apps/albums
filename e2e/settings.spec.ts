@@ -85,3 +85,15 @@ test("a backup exports and imports by merging", async ({ page }) => {
   await expect(page.getByRole("button", { name: /Alpha/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Quokka/ })).toBeVisible();
 });
+
+test("GitHub sync is only offered with a lock that encrypts", async ({
+  page,
+}) => {
+  await goHome(page);
+  await openSettings(page);
+
+  await expect(
+    page.getByText(/Syncing with GitHub needs the app lock with encryption/),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Connect" })).toHaveCount(0);
+});

@@ -44,39 +44,91 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
 - A Playwright project's reusable test-helper file belongs at
   `e2e/utils.ts`, not `fixtures.ts` — these are plain functions specs call
   directly, not Playwright's own `test.extend()` fixture-injection system.
-- **Storage.** `src/lib/storage.ts` is the in-memory + IndexedDB
-  write-through store for albums (maat-core's `docs/storage.md`), read
-  through `src/hooks/use-albums.ts`; albums are validated per entry
+- **Storage.** The GitHub repository pattern (maat-core's
+  `docs/storage-github.md`) on top of the local one (`docs/storage.md`):
+  `src/lib/storage.ts` is `@maat-apps/core/local`'s `createLocalStore`
+  (`albumsStore`) plus the album mutations, read through
+  `src/hooks/use-albums.ts`; albums are validated per entry
   (`schemas.ts`). Filtering, sorting and duplicate detection are pure
   helpers in `album-utils.ts`. Backups and the pre-update snapshot share
-  one format (`backup.ts`, `app-update.ts`).
-- **Screens.** `src/app/router.tsx`: `/` (`views/home`: the collection —
-  status filter chips with counts, sort key + direction, grid/list, all
-  remembered in `app-settings.ts`'s `collection` prefs; settings drawer),
-  `/new` and `/:id/edit` (`views/album/album-form-view.tsx`, validated by
-  `lib/album-form.ts`), `/:id` (`album-view.tsx`: cover, one-tap status,
-  Spotify link). Covers render through `components/album-cover.tsx`
-  (placeholder on a missing or broken URL) via `hooks/use-cover-src.ts`:
+  one format (core's `createLocalBackup`: `backup.ts`, `app-update.ts`);
+  a Settings import merges (`mergeBackup` → `storage.ts`'s
+  `mergeIntoAlbums`: `album-merge.ts`'s `mergeAlbums` with nothing
+  synced, so nothing is deleted), only the snapshot restore replaces;
+  `app-lock.ts` wires store, snapshot, covers and the GitHub connection
+  through `lockData`.
+- **Screens.** `src/app/router.tsx`: `/` (`views/home`: the collection,
+  a title that scrolls away; every control in `@maat-apps/ui`'s
+  `BottomBar` — settings, status filter chips with counts and add in its
+  main row, sort key + direction and grid/list above
+  (`collection-controls.tsx`), all remembered in `app-settings.ts`'s
+  `collection` prefs; on a collection 4+ screens tall, `fast-scroller.tsx`
+  — a rail shown while scrolling (`hooks/use-scroll-activity.ts`) that
+  jumps by `album-utils.ts`'s `groupAlbums`, the sort's groups — to each
+  group's first `data-album-index` row; sorting uses `Intl.Collator("pl")`
+  so groups stay contiguous),
+  `/new` (`views/album/add-album-view.tsx`: a MusicBrainz text search —
+  `musicbrainz.ts`'s `searchReleaseGroupsByText`, debounced for its rate
+  limit; tapping a result saves `album-form.ts`'s `releaseGroupToAlbum`, or
+  opens the album already matching it per `sameAlbum`), `/new/manual` (the
+  by-hand fallback) and `/:id/edit` (`views/album/album-form-view.tsx`,
+  validated by `lib/album-form.ts`), `/:id` (`album-view.tsx`: cover, one-tap status,
+  "Open in …" for the streaming service chosen in Settings
+  (`app-settings.ts`'s `streamingService`; `lib/streaming.ts`: Deezer,
+  Spotify, Apple Music — `deezerUrl`/`spotifyUrl`/`appleMusicUrl`, read
+  and normalised by `readLinks`), shown only with a link; opening
+  it looks a missing cover/link/year up by itself via
+  `hooks/use-album-lookup.ts` → the runner's `lookUpAlbumNow`, once per
+  source verdict and without waiting out rate limits; the hook reports
+  the search for the cover/link skeletons, and "Find a cover" shows only
+  after it).
+  Covers render through `components/album-cover.tsx` (placeholder on a missing or broken URL) via `hooks/use-cover-src.ts`:
   once in view, `lib/cover-store.ts` serves the IndexedDB copy or fetches
   (CORS) and stores it — per album id, encrypted with the lock's key,
   tracked in an index key since the store can't list keys; on failure the
   `<img>` uses the URL directly. Covers are a cache: not in backups,
   cleared by the lock's rewrite/erase and a backup restore, deleted with
-  their album. Finding covers: `lib/musicbrainz.ts` (search + Cover Art
-  Archive URLs), `lib/cover-lookup.ts` (pure matching: `pickMatch`,
-  `applyMatch`, the album's `lookup` verdict — review/none/skipped),
-  `lib/cover-lookup-runner.ts` (bulk run at ~1 req/s, saves each album as
-  it goes) and `views/covers/` (`/covers`, `/covers/:id`). With Spotify
-  connected the lookup searches Spotify instead (`lib/spotify-api.ts`; its
-  verdict is the album's `spotifyLookup`): `lib/spotify-auth.ts` (PKCE,
-  the public client id, redirect URI = the app's root — registered for
-  `https://maat-apps.github.io/albums/` only, so PR previews can't
-  connect), `lib/spotify-session.ts` (token in IndexedDB, encrypted,
-  refreshed; rewritten/erased by the lock; never in backups) and
-  `SpotifyCallback` in `src/app/router.tsx` (finishes `?code=` and opens
-  `/covers`). E2E mocks MusicBrainz, the archive and Spotify (login
-  redirect, token, search) with `page.route` (service workers blocked). Back uses
-  `useSmartBack`.
+  their album. Cover sizes: `lib/cover-url.ts` (1200px — Cover Art
+  Archive and iTunes URLs name the size; stored smaller URLs are read as
+  1200px by `schemas.ts`, and the old cached copy stands in until the new
+  one loads). Finding covers and links: `lib/musicbrainz.ts` (search and
+  Cover Art Archive URLs; fills missing years; `findLinks` reads a matched
+  release group's releases' URL relationships for its streaming links,
+  then `linksLookup: "done"`. Deezer's own API and Odesli send no CORS
+  headers and Spotify's needs a sign-in, so the browser can't use them),
+  `lib/cover-lookup.ts` (pure matching: `pickMatch` — the artist may be
+  a typo or two off, `editDistance` — `applyMatch`, what
+  each source can still add — `isMissing` — and the album's `lookup`
+  verdict — review/none/skipped), `lib/itunes.ts` (iTunes Search, the last
+  fallback; its results carry Apple Music links, so it's also asked for
+  one when that's the chosen service; `itunesLookup` verdict),
+  `lib/cover-lookup-runner.ts` (bulk run, asks `sources` in order for what
+  each album still misses — ~1 req/s on MusicBrainz, plus one for the
+  links after a match, ~20/min on iTunes — leaves out a source that fails
+  for the rest of the run, saves each album as it goes;
+  `lib/cover-lookup-job.ts` runs it app-wide, so leaving `/covers` doesn't
+  stop it) and `views/covers/` (`/covers`, `/covers/:id`; review lists
+  hold albums without a cover). Streaming links are user data (in
+  backups), unlike covers. E2E mocks MusicBrainz (search and releases),
+  the archive and iTunes with `page.route` (service workers blocked). Back uses `useSmartBack`.
+- **GitHub sync** (PRODUCT.md), on `@maat-apps/core/github`'s two-way
+  mode — the client (REST contents API, fine-grained token, >1 MB from the
+  blob), the connection and the sync loop live in core. Albums' own:
+  `lib/albums-file.ts` (the file format over core's `formatJsonFile` —
+  must stay byte-for-byte what the data repo's `scripts/albums.mjs`
+  writes), `lib/album-merge.ts` (`albumMerge` for core's `mergeById`:
+  newer `updatedAt` wins but fills empty cover/links/year, keeps this
+  device's lookup verdicts, `sameAlbum` pairs before the first sync),
+  `lib/github-sync.ts` (the connection under `GITHUB_KEY`, **only ever
+  stored encrypted** — core refuses without an encrypting lock; the
+  lock's rewrite re-encrypts or deletes it, erase deletes it; `sync`
+  retries once on a 409; `startAutoSync`, from `app/router.tsx`, syncs on
+  launch, after connecting, on returning to the app and a few seconds
+  after a change — edits made during a sync go on top of its write-back,
+  `album-merge.ts`'s `rebaseAlbums`; status and the last failure through
+  `hooks/use-github.ts`'s `useGitHubSyncStatus`) and
+  `views/settings/settings-github-section.tsx` (core's `GitHubError`
+  kinds → messages).
 - **i18n.** `src/i18n/en.json` and `pl.json` (core's `createTranslation`;
   device language on first launch, Settings → Language after). `t()`
   only accepts keys present in both — keep them in sync.
@@ -92,7 +144,9 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   `@maat-apps/ui/app-lock-gate`, wrapped around the router in
   `src/app/router.tsx`). `src/lib/app-lock.ts` rewrites the albums with
   the current key and erases them plus the update snapshot; `storage.ts`
-  and `app-update.ts` encrypt with `src/lib/encryption-key.ts`. **Never
+  and `app-update.ts` encrypt with `src/lib/encryption-key.ts`. The lock comes back after
+  time in the background per `app-settings.ts`'s `relockAfter` (Settings →
+  Security; `relockAfterMs` feeds `createAppLock`). **Never
   change `HKDF_INFO` (`"albums-data-v1"`)** — existing encrypted data
   would become unreadable.
 - Full pattern log: none yet — run `/learn-patterns` after a non-trivial

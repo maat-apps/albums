@@ -25,7 +25,7 @@ export function LanguageSection() {
             onValueChange={(value) => setLocale(value as "pl" | "en")}
           >
             <SelectTrigger
-              className="h-8.5 w-auto min-w-26 text-sm"
+              className="w-auto min-w-26 text-sm"
               aria-label={t("language")}
             >
               <SelectValue>

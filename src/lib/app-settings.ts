@@ -1,10 +1,15 @@
-import { parseLockEnrolment, type LockEnrolment } from "@maat-apps/core/lock";
+import {
+  DEFAULT_RELOCK_AFTER_MS,
+  parseLockEnrolment,
+  type LockEnrolment,
+} from "@maat-apps/core/lock";
 import { createPersistedStore } from "@maat-apps/core/persisted";
 
 import type { SortDirection, SortKey, StatusFilter } from "./album-utils";
 import { keyValueStore } from "./idb-store";
 import { ALBUM_STATUSES } from "./schemas";
 import { SETTINGS_KEY } from "./storage-keys";
+import { STREAMING_SERVICES, type StreamingService } from "./streaming";
 
 // Settings that aren't part of the app's data (or a backup): the app lock's
 // enrolment and browser/install state. @maat-apps/core/persisted keeps them
@@ -19,11 +24,25 @@ export type CollectionPrefs = {
   statusFilter: StatusFilter;
 };
 
+/** Right away, after 30 seconds in the background, or only once closed. */
+export const RELOCK_CHOICES = ["now", "30s", "close"] as const;
+export type RelockAfter = (typeof RELOCK_CHOICES)[number];
+
+const RELOCK_AFTER_MS: Record<RelockAfter, number | null> = {
+  now: 0,
+  "30s": DEFAULT_RELOCK_AFTER_MS,
+  close: null,
+};
+
 export type AppSettings = {
   /** The app lock's enrolment (@maat-apps/core/lock), `null` when off. */
   lock: LockEnrolment | null;
+  /** How soon the lock comes back once the app is left. */
+  relockAfter: RelockAfter;
   installed: boolean;
   collection: CollectionPrefs;
+  /** Where "Open in …" leads, and whose links lookups fill in. */
+  streamingService: StreamingService;
 };
 
 const DEFAULT_COLLECTION: CollectionPrefs = {
@@ -54,13 +73,26 @@ function parseCollection(value: unknown): CollectionPrefs {
 const settingsStore = createPersistedStore<AppSettings>({
   storage: keyValueStore,
   key: SETTINGS_KEY,
-  defaults: { lock: null, installed: false, collection: DEFAULT_COLLECTION },
+  defaults: {
+    lock: null,
+    relockAfter: "30s",
+    installed: false,
+    collection: DEFAULT_COLLECTION,
+    streamingService: "deezer",
+  },
   parse: (stored) => {
     const value = stored as Record<string, unknown>;
     return {
       lock: parseLockEnrolment(value.lock),
+      relockAfter:
+        RELOCK_CHOICES.find((choice) => choice === value.relockAfter) ?? "30s",
       installed: value.installed === true,
       collection: parseCollection(value.collection),
+      streamingService: pick(
+        value.streamingService,
+        STREAMING_SERVICES,
+        "deezer",
+      ),
     };
   },
 });
@@ -85,6 +117,15 @@ export function setLockEnrolment(lock: LockEnrolment | null): void {
 
 /** Chrome stops offering the install prompt once installed, even to a plain
  * browser tab — this flag is the only record of it. */
+export function setRelockAfter(relockAfter: RelockAfter): void {
+  settingsStore.set({ relockAfter });
+}
+
+/** The lock's `relockAfterMs`: read on every hide, so a change applies at once. */
+export function relockAfterMs(): number | null {
+  return RELOCK_AFTER_MS[getSettingsSnapshot().relockAfter];
+}
+
 export function markInstalled(): void {
   if (getSettingsSnapshot().installed) return;
   settingsStore.set({ installed: true });
@@ -94,4 +135,8 @@ export function setCollectionPrefs(changes: Partial<CollectionPrefs>): void {
   settingsStore.set({
     collection: { ...getSettingsSnapshot().collection, ...changes },
   });
+}
+
+export function setStreamingService(streamingService: StreamingService): void {
+  settingsStore.set({ streamingService });
 }

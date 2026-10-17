@@ -1,87 +1,63 @@
 import {
   BackupError,
-  backupFileName as coreBackupFileName,
-  downloadBackup as coreDownloadBackup,
-  shareBackup as coreShareBackup,
-  readBackupEnvelope,
-  readBackupJson,
-} from "@maat-apps/core/backup";
-import { isRecord } from "@maat-apps/core/validation";
+  createLocalBackup,
+  type LocalBackup,
+} from "@maat-apps/core/local";
 
 import { clearCovers } from "./cover-store";
-import { parseAlbums, type Album } from "./schemas";
-import {
-  getAlbumsSnapshot,
-  mergeIntoAlbums,
-  replaceAllAlbums,
-} from "./storage";
+import { encryptionKey } from "./encryption-key";
+import { keyValueStore } from "./idb-store";
+import type { Album } from "./schemas";
+import { albumsStore, mergeIntoAlbums } from "./storage";
+import { SNAPSHOT_KEY } from "./storage-keys";
 
-// albums' backup format on top of @maat-apps/core/backup, which handles the
-// envelope checks, the backup file and the download.
+// albums' backup and pre-update snapshot (@maat-apps/core/local): the albums
+// as `data`, validated through the same schema as storage read-back.
 
 export { BackupError };
 
 export const BACKUP_VERSION = 1;
 
-export type Backup = {
-  app: "albums";
-  version: number;
-  exportedAt: string;
-  data: { albums: Album[] };
-};
+export type Backup = LocalBackup<{ albums: Album[] }>;
 
-const messages = {
-  notJson: "The file is not valid JSON.",
-  wrongApp: "The file is not an albums backup.",
-};
+export const backups = createLocalBackup({
+  app: "albums",
+  version: BACKUP_VERSION,
+  store: albumsStore,
+  messages: {
+    notJson: "The file is not valid JSON.",
+    wrongApp: "The file is not an albums backup.",
+  },
+  // Covers of albums the backup doesn't have would otherwise linger.
+  afterApply: () => void clearCovers(),
+  snapshot: {
+    storage: keyValueStore,
+    key: SNAPSHOT_KEY,
+    keyHolder: encryptionKey,
+  },
+});
 
-export function createBackup(): Backup {
-  return {
-    app: "albums",
-    version: BACKUP_VERSION,
-    exportedAt: new Date().toISOString(),
-    data: { albums: getAlbumsSnapshot() },
-  };
-}
+export const createBackup = backups.create;
 
 /** Validates a backup file's text; unrecognised albums are dropped. */
-export function parseBackup(text: string): Backup {
-  return parseBackupValue(readBackupJson(text, messages));
-}
+export const parseBackup = backups.parse;
 
 /** Same validation for an already-parsed value (e.g. the update snapshot). */
-export function parseBackupValue(parsed: unknown): Backup {
-  const envelope = readBackupEnvelope(parsed, { app: "albums", messages });
-  const data = isRecord(envelope.data) ? envelope.data : {};
-  return {
-    app: "albums",
-    version: BACKUP_VERSION,
-    exportedAt: envelope.exportedAt,
-    data: { albums: parseAlbums(data.albums) },
-  };
-}
+export const parseBackupValue = backups.parseValue;
 
-/** Import from Settings: keeps the albums on the device and adds the backup's. */
+/**
+ * Import from Settings: keeps the albums on the device and adds the
+ * backup's, merged as a sync merges (`album-merge.ts`) — nothing deleted.
+ */
 export function mergeBackup(backup: Backup): void {
   mergeIntoAlbums(backup.data.albums);
 }
 
-/** Overwrites every album with the backup's (restoring the update snapshot). */
-export function applyBackup(backup: Backup): void {
-  replaceAllAlbums(backup.data.albums);
-  // Covers of albums the backup doesn't have would otherwise linger.
-  void clearCovers();
-}
+/** Overwrites every album with the backup's — restoring the update snapshot. */
+export const applyBackup = backups.apply;
 
-export function backupFileName(date = new Date()): string {
-  return coreBackupFileName("albums", date);
-}
-
-export function downloadBackup(backup: Backup = createBackup()): void {
-  coreDownloadBackup(backup);
-}
+export const backupFileName = backups.fileName;
+export const downloadBackup = backups.download;
 
 /** Offers the backup to the share sheet; "unavailable" means download it. */
-export function shareBackup(backup: Backup = createBackup()) {
-  return coreShareBackup(backup);
-}
+export const shareBackup = backups.share;
