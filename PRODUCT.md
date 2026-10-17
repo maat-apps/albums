@@ -9,7 +9,7 @@ IndexedDB, encrypted when the app lock is on.
 
 ## Platform
 
-web - PWA, mobile-only (like routines, trainer and notes).
+web - PWA, mobile-only (like routines, notes and gym-charts).
 
 ## An album
 
