@@ -4,6 +4,8 @@ import {
   albumKey,
   countByStatus,
   filterByStatus,
+  groupAlbums,
+  letterLabel,
   sameAlbum,
   sortAlbums,
 } from "@/lib/album-utils";
@@ -154,9 +156,106 @@ describe("sortAlbums", () => {
     ]);
   });
 
+  it("sorts Polish letters after their base letter", () => {
+    const list = ["Łąka", "Zima", "Lato", "Ąb", "Ab"].map((title) =>
+      album({ title }),
+    );
+    expect(titles(sortAlbums(list, "title", "asc"))).toEqual([
+      "Ab",
+      "Ąb",
+      "Lato",
+      "Łąka",
+      "Zima",
+    ]);
+  });
+
   it("doesn't change the input", () => {
     const copy = [...albums];
     sortAlbums(albums, "title", "asc");
     expect(albums).toEqual(copy);
+  });
+});
+
+describe("letterLabel", () => {
+  it("upper-cases the first letter", () => {
+    expect(letterLabel("abba")).toBe("A");
+  });
+
+  it("keeps Polish letters as their own", () => {
+    expect(
+      ["ąb", "Ćma", "ęz", "łódź", "Ńa", "óz", "śpiew", "źdźbło", "żaba"].map(
+        letterLabel,
+      ),
+    ).toEqual(["Ą", "Ć", "Ę", "Ł", "Ń", "Ó", "Ś", "Ź", "Ż"]);
+  });
+
+  it("folds other accents to the base letter", () => {
+    expect(letterLabel("Émile")).toBe("E");
+  });
+
+  it("puts digits, symbols and blanks under #", () => {
+    expect(["1999", '"Heroes"', "  ", ""].map(letterLabel)).toEqual([
+      "#",
+      "#",
+      "#",
+      "#",
+    ]);
+  });
+});
+
+describe("groupAlbums", () => {
+  const labels = (list: Album[], key: "artist" | "title" | "year") =>
+    groupAlbums(list, key).map((group) => group.label);
+
+  it("groups a sorted list by first letter, with the first index of each", () => {
+    const list = sortAlbums(
+      ["Beta", "alpha", "Ąb", "ćma", "Cello", "1984", "Bravo"].map((title) =>
+        album({ title }),
+      ),
+      "title",
+      "asc",
+    );
+    expect(groupAlbums(list, "title")).toEqual([
+      { label: "#", firstIndex: 0 },
+      { label: "A", firstIndex: 1 },
+      { label: "Ą", firstIndex: 2 },
+      { label: "B", firstIndex: 3 },
+      { label: "C", firstIndex: 5 },
+      { label: "Ć", firstIndex: 6 },
+    ]);
+  });
+
+  it("follows a descending sort", () => {
+    const list = sortAlbums(albums, "artist", "desc");
+    expect(labels(list, "artist")).toEqual(["Z", "E", "A"]);
+  });
+
+  it("groups by year while the years span little", () => {
+    const list = sortAlbums(albums, "year", "asc");
+    expect(labels(list, "year")).toEqual(["1974", "1975", "1990", "—"]);
+  });
+
+  it("groups by decade once the years span more than DECADE_SPAN", () => {
+    const list = sortAlbums(
+      [1971, 1979, 1994, 2001, null].map((year) =>
+        album({ title: String(year), year }),
+      ),
+      "year",
+      "desc",
+    );
+    expect(labels(list, "year")).toEqual([
+      "—",
+      "2000–2009",
+      "1990–1999",
+      "1970–1979",
+    ]);
+  });
+
+  it("groups albums without any year together", () => {
+    expect(labels([album({ year: null })], "year")).toEqual(["—"]);
+  });
+
+  it("returns no groups for no albums", () => {
+    expect(groupAlbums([], "title")).toEqual([]);
   });
 });

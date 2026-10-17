@@ -55,7 +55,11 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   `BottomBar` — settings, status filter chips with counts and add in its
   main row, sort key + direction and grid/list above
   (`collection-controls.tsx`), all remembered in `app-settings.ts`'s
-  `collection` prefs),
+  `collection` prefs; on a collection 4+ screens tall, `fast-scroller.tsx`
+  — a rail shown while scrolling (`hooks/use-scroll-activity.ts`) that
+  jumps by `album-utils.ts`'s `groupAlbums`, the sort's groups — to each
+  group's first `data-album-index` row; sorting uses `Intl.Collator("pl")`
+  so groups stay contiguous),
   `/new` (`views/album/add-album-view.tsx`: a MusicBrainz text search —
   `musicbrainz.ts`'s `searchReleaseGroupsByText`, debounced for its rate
   limit; tapping a result saves `album-form.ts`'s `releaseGroupToAlbum`, or

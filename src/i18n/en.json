@@ -33,6 +33,7 @@
   "cancel": "Cancel",
   "delete": "Delete",
   "save": "Save",
+  "jumpToGroup": "Jump to",
   "collection": "Collection",
   "emptyTitle": "No albums yet",
   "emptyDescription": "Import your list from a CSV file, or tap + to find an album.",

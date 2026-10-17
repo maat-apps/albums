@@ -31,7 +31,12 @@ web - PWA, mobile-only (like routines, notes and gym-charts).
   covers, or a list with a cover thumbnail, artist, title and year.
 - **Filter** by status: all, to listen, coming back, not coming back.
 - **Sort** by year, title or artist, ascending or descending — available
-  in both view modes.
+  in both view modes. Text sorts by Polish rules (Ą after A, Ł after L).
+- **Fast scroller:** on a long collection, a rail along the right side
+  appears while scrolling; dragging its thumb jumps by the sort's groups —
+  first letter (Polish letters on their own, digits and symbols under
+  "#"), or year, or decade when the years span widely — naming the group
+  in a bubble and buzzing at each change where the phone can.
 - **Add** an album by searching MusicBrainz: one field, artist, title or
   both; tapping a result adds it — to listen — with its year and cover, and
   its streaming link is found when it opens. Results already in the
