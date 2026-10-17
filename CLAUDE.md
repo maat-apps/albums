@@ -51,10 +51,11 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   helpers in `album-utils.ts`. Backups and the pre-update snapshot share
   one format (`backup.ts`, `app-update.ts`).
 - **Screens.** `src/app/router.tsx`: `/` (`views/home`: the collection,
-  title-only header; every control in a fixed bottom bar — status filter
-  chips with counts, sort key + direction, grid/list
+  a title that scrolls away; every control in `@maat-apps/ui`'s
+  `BottomBar` — settings, status filter chips with counts and add in its
+  main row, sort key + direction and grid/list above
   (`collection-controls.tsx`), all remembered in `app-settings.ts`'s
-  `collection` prefs; settings drawer and add),
+  `collection` prefs),
   `/new` (`views/album/add-album-view.tsx`: a MusicBrainz text search —
   `musicbrainz.ts`'s `searchReleaseGroupsByText`, debounced for its rate
   limit; tapping a result saves `album-form.ts`'s `releaseGroupToAlbum`, or
