@@ -43,6 +43,18 @@ export function sameAlbum(
   return a.year === null || b.year === null || a.year === b.year;
 }
 
+/**
+ * Albums whose artist, title or year hold every word of `query`, ignoring
+ * case and accents as `albumKey` does; all of them for a blank query.
+ */
+export function searchAlbums(albums: Album[], query: string): Album[] {
+  const words = normalizeText(query).split(" ").filter(Boolean);
+  return albums.filter((album) => {
+    const text = `${normalizeText(album.artist)} ${normalizeText(album.title)} ${album.year ?? ""}`;
+    return words.every((word) => text.includes(word));
+  });
+}
+
 export function filterByStatus(albums: Album[], filter: StatusFilter): Album[] {
   return filter === "all"
     ? albums

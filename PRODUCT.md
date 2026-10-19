@@ -31,6 +31,9 @@ web - PWA, mobile-only (like routines, notes and gym-charts).
   covers, or a list with a cover thumbnail, artist, title and year.
 - **Filter** by status: all, to listen, coming back, not coming back.
   Every launch opens on all; the choice lasts until the app is closed.
+- **Search** the collection: a magnifier next to add opens a screen with
+  the field pinned at the bottom; it matches artist, title and year,
+  ignoring case and accents, and lists the matches.
 - **Sort** by year, title or artist, ascending or descending — available
   in both view modes. Text sorts by Polish rules (Ą after A, Ł after L).
 - **Fast scroller:** on a long collection, a rail along the right side

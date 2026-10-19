@@ -60,3 +60,24 @@ test("switches between grid and list, remembering the choice", async ({
   await page.reload();
   await expect(page.getByRole("button", { name: /^List/ })).toBeVisible();
 });
+
+test("searches the collection, keeping the results after opening one", async ({
+  page,
+}) => {
+  await goHome(page);
+  await importCsv(page);
+
+  await page.getByRole("button", { name: "Search the collection" }).click();
+  const field = page.getByRole("searchbox", { name: "Search the collection" });
+  await field.fill("zeta 1999");
+  const results = page.getByRole("region", { name: "Search results" });
+  await expect(results.getByRole("button")).toHaveCount(1);
+  await expect(results).toContainText("Alpha");
+
+  await results.getByRole("button", { name: /Alpha/ }).click();
+  await page.getByRole("button", { name: "Back", exact: true }).click();
+  await expect(field).toHaveValue("zeta 1999");
+
+  await field.fill("nothing like it");
+  await expect(page.getByText("No albums match.")).toBeVisible();
+});
