@@ -1,8 +1,12 @@
 import {
+  CheckCircle,
+  Headphones,
   ListBullets,
   SortAscending,
   SortDescending,
   SquaresFour,
+  XCircle,
+  type Icon,
 } from "@phosphor-icons/react";
 
 import {
@@ -18,48 +22,72 @@ import {
   SelectValue,
 } from "@maat-apps/ui/select";
 import { useTranslation } from "../../i18n/use-translation";
-import type { SortKey, StatusFilter } from "../../lib/album-utils";
+import type { SortKey } from "../../lib/album-utils";
 import type { CollectionPrefs } from "../../lib/app-settings";
+import { ALBUM_STATUSES, type AlbumStatus } from "../../lib/schemas";
 
-const FILTERS: StatusFilter[] = [
-  "all",
-  "toListen",
-  "comingBack",
-  "notComingBack",
-];
 const SORT_KEYS: SortKey[] = ["artist", "title", "year"];
+
+// Each status's mark, in its own colour: green for coming back, red for
+// not, grey for not listened to yet.
+const STATUS_ICONS: Record<AlbumStatus, { icon: Icon; className: string }> = {
+  toListen: { icon: Headphones, className: "text-muted-foreground" },
+  comingBack: { icon: CheckCircle, className: "text-green-600" },
+  notComingBack: { icon: XCircle, className: "text-red-600" },
+};
 
 type ToolbarProps = {
   prefs: CollectionPrefs;
   onChange: (changes: Partial<CollectionPrefs>) => void;
 };
 
-/** One chip per status, with its count; remembered in settings. */
+/**
+ * One toggle per status, with its count: the collection shows the albums
+ * with any status that's on, or every album while none is.
+ */
 export function StatusFilterChips({
   prefs,
   counts,
   onChange,
-}: ToolbarProps & { counts: Record<StatusFilter, number> }) {
+}: ToolbarProps & { counts: Record<AlbumStatus, number> }) {
   const { t } = useTranslation();
-  const statusLabel: Record<StatusFilter, string> = {
-    all: t("statusAll"),
+  const statusLabel: Record<AlbumStatus, string> = {
     toListen: t("statusToListen"),
     comingBack: t("statusComingBack"),
     notComingBack: t("statusNotComingBack"),
   };
 
+  function toggle(status: AlbumStatus) {
+    const chosen = prefs.statusFilters;
+    onChange({
+      statusFilters: chosen.includes(status)
+        ? chosen.filter((other) => other !== status)
+        : ALBUM_STATUSES.filter(
+            (other) => other === status || chosen.includes(other),
+          ),
+    });
+  }
+
   return (
     <BottomBarChips label={t("filterByStatus")}>
-      {FILTERS.map((filter) => (
-        <BottomBarChip
-          key={filter}
-          pressed={prefs.statusFilter === filter}
-          onClick={() => onChange({ statusFilter: filter })}
-        >
-          {statusLabel[filter]}
-          <span className="opacity-70">{counts[filter]}</span>
-        </BottomBarChip>
-      ))}
+      {ALBUM_STATUSES.map((status) => {
+        const { icon: StatusIcon, className } = STATUS_ICONS[status];
+        return (
+          <BottomBarChip
+            key={status}
+            pressed={prefs.statusFilters.includes(status)}
+            onClick={() => toggle(status)}
+          >
+            <StatusIcon
+              weight="duotone"
+              aria-hidden="true"
+              className={`size-6 ${className}`}
+            />
+            <span className="sr-only">{statusLabel[status]}</span>
+            <span className="tabular-nums">{counts[status]}</span>
+          </BottomBarChip>
+        );
+      })}
     </BottomBarChips>
   );
 }

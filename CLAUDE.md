@@ -60,10 +60,11 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
 - **Screens.** `src/app/router.tsx`: `/` (`views/home`: the collection,
   a header pinned to the top — the title and the settings gear; the
   collection's controls in `@maat-apps/ui`'s `BottomBar` — sort key +
-  direction, grid/list, search and add in its main row, status filter chips with
-  counts above (`collection-controls.tsx`), all remembered in
-  `app-settings.ts`'s `collection` prefs — but each launch opens on the
-  "all" filter; on a collection 4+ screens tall,
+  direction, grid/list, search and add in its main row, status toggles above —
+  duotone icon and count each, multiselect, none on shows every album
+  (`collection-controls.tsx`, `album-utils.ts`'s `filterByStatus`) — all
+  remembered in `app-settings.ts`'s `collection` prefs, but each launch
+  opens with no status toggled; on a collection 4+ screens tall,
   `fast-scroller.tsx` — a rail at the right edge, below the header, shown while scrolling (`hooks/use-scroll-activity.ts`) that
   jumps by `album-utils.ts`'s `groupAlbums`, the sort's groups — to each
   group's first `data-album-index` row; sorting uses `Intl.Collator("pl")`

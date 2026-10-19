@@ -29,8 +29,11 @@ web - PWA, mobile-only (like routines, notes and gym-charts).
   top, pinned while scrolling, is the title and the settings gear.
 - **Two view modes**, switchable and remembered: a two-column grid of
   covers, or a list with a cover thumbnail, artist, title and year.
-- **Filter** by status: all, to listen, coming back, not coming back.
-  Every launch opens on all; the choice lasts until the app is closed.
+- **Filter** by status: one toggle each for to listen (grey headphones),
+  coming back (green check) and not coming back (red cross), with their
+  counts. Any number can be on: the collection shows the albums with any
+  of them, or every album while none is. Every launch opens with none on;
+  the choice lasts until the app is closed.
 - **Search** the collection: a magnifier next to add opens a screen with
   the field pinned at the bottom; it matches artist, title and year,
   ignoring case and accents, and lists the matches.

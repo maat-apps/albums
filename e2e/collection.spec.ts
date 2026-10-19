@@ -9,17 +9,25 @@ function titles(page: Page) {
     .allInnerTexts();
 }
 
-test("filters by status with counts", async ({ page }) => {
+test("filters by any of the chosen statuses, with counts", async ({ page }) => {
   await goHome(page);
   await importCsv(page);
+  const comingBack = page.getByRole("button", { name: /^Coming back\s*1$/ });
+  const toListen = page.getByRole("button", { name: /^To listen\s*1$/ });
 
-  await page.getByRole("button", { name: /^Coming back/ }).click();
-
-  await expect(
-    page.getByRole("button", { name: /^Coming back\s*1$/ }),
-  ).toHaveAttribute("aria-pressed", "true");
+  await comingBack.click();
+  await expect(comingBack).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(() => titles(page)).toHaveLength(1);
   expect((await titles(page)).join(" ")).toContain("Alpha");
-  expect((await titles(page)).join(" ")).not.toContain("Middle");
+
+  await toListen.click();
+  await expect.poll(() => titles(page)).toHaveLength(2);
+  expect((await titles(page)).join(" ")).toContain("Middle");
+
+  await comingBack.click();
+  await toListen.click();
+  await expect(toListen).toHaveAttribute("aria-pressed", "false");
+  await expect.poll(() => titles(page)).toHaveLength(3);
 });
 
 test("sorts by year both ways, and the choice survives a reload", async ({
