@@ -31,11 +31,11 @@ export function HomeView() {
   const shown = useMemo(
     () =>
       sortAlbums(
-        filterByStatus(albums, prefs.statusFilter),
+        filterByStatus(albums, prefs.statusFilters),
         prefs.sortKey,
         prefs.sortDirection,
       ),
-    [albums, prefs.statusFilter, prefs.sortKey, prefs.sortDirection],
+    [albums, prefs.statusFilters, prefs.sortKey, prefs.sortDirection],
   );
 
   const groups = useMemo(

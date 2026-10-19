@@ -5,8 +5,9 @@ import {
 } from "@maat-apps/core/lock";
 import { createPersistedStore } from "@maat-apps/core/persisted";
 
-import type { SortDirection, SortKey, StatusFilter } from "./album-utils";
+import type { SortDirection, SortKey } from "./album-utils";
 import { keyValueStore } from "./idb-store";
+import type { AlbumStatus } from "./schemas";
 import { SETTINGS_KEY } from "./storage-keys";
 import { STREAMING_SERVICES, type StreamingService } from "./streaming";
 
@@ -16,12 +17,13 @@ import { STREAMING_SERVICES, type StreamingService } from "./streaming";
 export type ViewMode = "grid" | "list";
 
 /** How the collection is shown — remembered across launches (PRODUCT.md),
- * except the status filter, which starts at "all" on every launch. */
+ * except the status filters, which start empty (everything) on every launch. */
 export type CollectionPrefs = {
   viewMode: ViewMode;
   sortKey: SortKey;
   sortDirection: SortDirection;
-  statusFilter: StatusFilter;
+  /** The statuses shown; none chosen shows every album. */
+  statusFilters: AlbumStatus[];
 };
 
 /** Right away, after 30 seconds in the background, or only once closed. */
@@ -49,7 +51,7 @@ const DEFAULT_COLLECTION: CollectionPrefs = {
   viewMode: "grid",
   sortKey: "artist",
   sortDirection: "asc",
-  statusFilter: "all",
+  statusFilters: [],
 };
 
 function pick<T extends string>(
@@ -66,9 +68,9 @@ function parseCollection(value: unknown): CollectionPrefs {
     viewMode: pick(stored.viewMode, ["grid", "list"], "grid"),
     sortKey: pick(stored.sortKey, ["year", "title", "artist"], "artist"),
     sortDirection: pick(stored.sortDirection, ["asc", "desc"], "asc"),
-    // Every launch opens on the whole collection; the filter lasts only
+    // Every launch opens on the whole collection; the filters last only
     // until the app is closed.
-    statusFilter: "all",
+    statusFilters: [],
   };
 }
 

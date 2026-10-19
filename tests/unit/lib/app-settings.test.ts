@@ -125,7 +125,7 @@ describe("collection prefs", () => {
       viewMode: "grid",
       sortKey: "artist",
       sortDirection: "asc",
-      statusFilter: "all",
+      statusFilters: [],
     });
   });
 
@@ -133,11 +133,11 @@ describe("collection prefs", () => {
     const appSettings = await freshAppSettings();
 
     appSettings.setCollectionPrefs({ viewMode: "list" });
-    appSettings.setCollectionPrefs({ statusFilter: "toListen" });
+    appSettings.setCollectionPrefs({ statusFilters: ["toListen"] });
 
     expect(appSettings.getSettingsSnapshot().collection).toMatchObject({
       viewMode: "list",
-      statusFilter: "toListen",
+      statusFilters: ["toListen"],
     });
   });
 
@@ -146,7 +146,7 @@ describe("collection prefs", () => {
     const { kvSet } = await import("@/lib/idb-store");
     const { SETTINGS_KEY } = await import("@/lib/storage-keys");
     await kvSet(SETTINGS_KEY, {
-      collection: { viewMode: "list", sortKey: "rating", statusFilter: 3 },
+      collection: { viewMode: "list", sortKey: "rating", statusFilters: 3 },
     });
     const appSettings = await freshAppSettings();
     await appSettings.whenLoaded();
@@ -155,7 +155,7 @@ describe("collection prefs", () => {
       viewMode: "list",
       sortKey: "artist",
       sortDirection: "asc",
-      statusFilter: "all",
+      statusFilters: [],
     });
   });
 
@@ -164,14 +164,14 @@ describe("collection prefs", () => {
     const { kvSet } = await import("@/lib/idb-store");
     const { SETTINGS_KEY } = await import("@/lib/storage-keys");
     await kvSet(SETTINGS_KEY, {
-      collection: { viewMode: "list", statusFilter: "toListen" },
+      collection: { viewMode: "list", statusFilters: ["toListen"] },
     });
     const appSettings = await freshAppSettings();
     await appSettings.whenLoaded();
 
     expect(appSettings.getSettingsSnapshot().collection).toMatchObject({
       viewMode: "list",
-      statusFilter: "all",
+      statusFilters: [],
     });
   });
 });

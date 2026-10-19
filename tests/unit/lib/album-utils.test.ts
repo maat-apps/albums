@@ -91,20 +91,25 @@ describe("sameAlbum", () => {
 });
 
 describe("filterByStatus / countByStatus", () => {
-  it("returns everything for all", () => {
-    expect(filterByStatus(albums, "all")).toBe(albums);
+  it("returns everything while no status is chosen", () => {
+    expect(filterByStatus(albums, [])).toBe(albums);
   });
 
   it("filters by one status", () => {
-    expect(titles(filterByStatus(albums, "toListen"))).toEqual([
+    expect(titles(filterByStatus(albums, ["toListen"]))).toEqual([
       "Gamma",
       "Delta",
     ]);
   });
 
+  it("keeps albums with any of several statuses", () => {
+    expect(
+      titles(filterByStatus(albums, ["comingBack", "notComingBack"])),
+    ).toHaveLength(2);
+  });
+
   it("counts each status", () => {
     expect(countByStatus(albums)).toEqual({
-      all: 4,
       toListen: 2,
       comingBack: 1,
       notComingBack: 1,

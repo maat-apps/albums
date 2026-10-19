@@ -2,7 +2,6 @@ import type { Album, AlbumStatus } from "./schemas";
 
 export type SortKey = "year" | "title" | "artist";
 export type SortDirection = "asc" | "desc";
-export type StatusFilter = AlbumStatus | "all";
 
 // Polish rules, so Ą sorts after A and Ł after L — each a letter of its
 // own, as on the fast scroller's rail (`groupAlbums`).
@@ -55,15 +54,18 @@ export function searchAlbums(albums: Album[], query: string): Album[] {
   });
 }
 
-export function filterByStatus(albums: Album[], filter: StatusFilter): Album[] {
-  return filter === "all"
+/** Albums with any of `statuses`; all of them when none is chosen. */
+export function filterByStatus(
+  albums: Album[],
+  statuses: readonly AlbumStatus[],
+): Album[] {
+  return statuses.length === 0
     ? albums
-    : albums.filter((album) => album.status === filter);
+    : albums.filter((album) => statuses.includes(album.status));
 }
 
-export function countByStatus(albums: Album[]): Record<StatusFilter, number> {
+export function countByStatus(albums: Album[]): Record<AlbumStatus, number> {
   const counts = {
-    all: albums.length,
     toListen: 0,
     comingBack: 0,
     notComingBack: 0,
