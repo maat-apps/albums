@@ -9,3 +9,16 @@
    doesn't scan by default — without this their classes get purged. The
    whole dist/, because shared chunk-*.js files have no stable names. */
 @source "../../node_modules/@maat-apps/ui/dist";
+
+/* No native scrollbar on the page: the home screen's fast scroller
+   (fast-scroller.tsx) takes its place, and a phone shows none at rest
+   anyway. Scrolling itself is untouched. */
+@layer base {
+  html {
+    scrollbar-width: none;
+  }
+
+  html::-webkit-scrollbar {
+    display: none;
+  }
+}
