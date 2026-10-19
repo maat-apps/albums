@@ -7,6 +7,7 @@ import {
   groupAlbums,
   letterLabel,
   sameAlbum,
+  searchAlbums,
   sortAlbums,
 } from "@/lib/album-utils";
 import type { Album } from "@/lib/schemas";
@@ -252,5 +253,35 @@ describe("groupAlbums", () => {
 
   it("returns no groups for no albums", () => {
     expect(groupAlbums([], "title")).toEqual([]);
+  });
+});
+
+describe("searchAlbums", () => {
+  const collection = [
+    album({ title: "Kosmos", artist: "Łona", year: 2001 }),
+    album({ title: "Abbey Road", artist: "The Beatles", year: 1969 }),
+    album({ title: "Road Songs", artist: "Other", year: null }),
+  ];
+
+  function titles(query: string) {
+    return searchAlbums(collection, query).map((found) => found.title);
+  }
+
+  it("matches the artist or the title, ignoring case and accents", () => {
+    expect(titles("lona")).toEqual(["Kosmos"]);
+    expect(titles("ROAD")).toEqual(["Abbey Road", "Road Songs"]);
+  });
+
+  it("needs every word, in any field and order", () => {
+    expect(titles("road beatles")).toEqual(["Abbey Road"]);
+    expect(titles("road 1969")).toEqual(["Abbey Road"]);
+  });
+
+  it("finds nothing when one word matches nowhere", () => {
+    expect(titles("road zzz")).toEqual([]);
+  });
+
+  it("keeps everything for a blank query", () => {
+    expect(titles("  ")).toHaveLength(3);
   });
 });

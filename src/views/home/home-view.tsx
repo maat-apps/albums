@@ -1,4 +1,4 @@
-import { Gear, Plus } from "@phosphor-icons/react";
+import { Gear, MagnifyingGlass, Plus } from "@phosphor-icons/react";
 import { startTransition, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 
@@ -103,13 +103,23 @@ export function HomeView() {
           )
         }
         action={
-          <BottomBarButton
-            label={t("addAlbum")}
-            variant="primary"
-            onClick={() => startTransition(() => navigate("/new"))}
-          >
-            <Plus />
-          </BottomBarButton>
+          <>
+            {albums.length > 0 && (
+              <BottomBarButton
+                label={t("searchCollection")}
+                onClick={() => startTransition(() => navigate("/search"))}
+              >
+                <MagnifyingGlass />
+              </BottomBarButton>
+            )}
+            <BottomBarButton
+              label={t("addAlbum")}
+              variant="primary"
+              onClick={() => startTransition(() => navigate("/new"))}
+            >
+              <Plus />
+            </BottomBarButton>
+          </>
         }
       >
         {albums.length > 0 && (

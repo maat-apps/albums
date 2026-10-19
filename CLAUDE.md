@@ -60,7 +60,7 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
 - **Screens.** `src/app/router.tsx`: `/` (`views/home`: the collection,
   a header pinned to the top — the title and the settings gear; the
   collection's controls in `@maat-apps/ui`'s `BottomBar` — sort key +
-  direction, grid/list and add in its main row, status filter chips with
+  direction, grid/list, search and add in its main row, status filter chips with
   counts above (`collection-controls.tsx`), all remembered in
   `app-settings.ts`'s `collection` prefs — but each launch opens on the
   "all" filter; on a collection 4+ screens tall,
@@ -68,6 +68,9 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   jumps by `album-utils.ts`'s `groupAlbums`, the sort's groups — to each
   group's first `data-album-index` row; sorting uses `Intl.Collator("pl")`
   so groups stay contiguous),
+  `/search` (`views/search/search-view.tsx`: the collection filtered by
+  `album-utils.ts`'s `searchAlbums`, as a list; the field pinned in a
+  `BottomBar`, the query in `?q=` so Back from an album keeps it),
   `/new` (`views/album/add-album-view.tsx`: a MusicBrainz text search —
   `musicbrainz.ts`'s `searchReleaseGroupsByText`, debounced for its rate
   limit; tapping a result saves `album-form.ts`'s `releaseGroupToAlbum`, or

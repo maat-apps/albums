@@ -26,6 +26,12 @@ const EditAlbumView = lazy(() =>
   })),
 );
 
+const SearchView = lazy(() =>
+  import("../views/search/search-view").then((m) => ({
+    default: m.SearchView,
+  })),
+);
+
 const CoversView = lazy(() =>
   import("../views/covers/covers-view").then((m) => ({
     default: m.CoversView,
@@ -48,6 +54,7 @@ export function AppRouter() {
           <Route path="/" element={<HomeView />} />
           <Route path="/new" element={<AddAlbumView />} />
           <Route path="/new/manual" element={<NewAlbumView />} />
+          <Route path="/search" element={<SearchView />} />
           <Route path="/covers" element={<CoversView />} />
           <Route path="/covers/:id" element={<PickCoverView />} />
           <Route path="/:id" element={<AlbumView />} />

@@ -82,7 +82,7 @@ export function SortAndViewControls({ prefs, onChange }: ToolbarProps) {
         onValueChange={(value) => onChange({ sortKey: value as SortKey })}
       >
         <SelectTrigger
-          className="h-14 min-w-0 flex-1 rounded-2xl text-base"
+          className="h-14 min-w-0 flex-1 rounded-2xl px-4 text-base"
           aria-label={t("sortBy")}
         >
           <SelectValue>{(value) => sortLabel[value as SortKey]}</SelectValue>
