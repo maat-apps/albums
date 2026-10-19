@@ -58,12 +58,13 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   `app-lock.ts` wires store, snapshot, covers and the GitHub connection
   through `lockData`.
 - **Screens.** `src/app/router.tsx`: `/` (`views/home`: the collection,
-  a title that scrolls away; every control in `@maat-apps/ui`'s
-  `BottomBar` — settings, status filter chips with counts and add in its
-  main row, sort key + direction and grid/list above
-  (`collection-controls.tsx`), all remembered in `app-settings.ts`'s
-  `collection` prefs; on a collection 4+ screens tall, `fast-scroller.tsx`
-  — a rail shown while scrolling (`hooks/use-scroll-activity.ts`) that
+  a header that scrolls away — the title and the settings gear; the
+  collection's controls in `@maat-apps/ui`'s `BottomBar` — sort key +
+  direction, grid/list and add in its main row, status filter chips with
+  counts above (`collection-controls.tsx`), all remembered in
+  `app-settings.ts`'s `collection` prefs; on a collection 4+ screens tall,
+  `fast-scroller.tsx` — a rail at the right edge, below the header's
+  place, shown while scrolling (`hooks/use-scroll-activity.ts`) that
   jumps by `album-utils.ts`'s `groupAlbums`, the sort's groups — to each
   group's first `data-album-index` row; sorting uses `Intl.Collator("pl")`
   so groups stay contiguous),

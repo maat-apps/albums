@@ -3,6 +3,7 @@ import { startTransition, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 
 import { BottomBar, BottomBarButton } from "@maat-apps/ui/bottom-bar";
+import { Button } from "@maat-apps/ui/button";
 import { EmptyState } from "@maat-apps/ui/empty-state";
 import { PageTitle } from "@maat-apps/ui/page-header";
 import { useAlbums } from "../../hooks/use-albums";
@@ -46,11 +47,25 @@ export function HomeView() {
     startTransition(() => navigate(`/${encodeURIComponent(id)}`));
   }
 
-  // Everything to tap sits in the bottom bar, within the thumb's reach: the
-  // status filters, used most, in its main row, sort and view above them.
+  // The collection's controls sit in the bottom bar, within the thumb's
+  // reach: sort and view in its main row, the status filters above them.
+  // Settings, used rarely, sits next to the title, which scrolls away.
   return (
     <div className="mx-auto flex min-h-dvh w-[min(100%,480px)] flex-col gap-5 px-5 pt-10">
-      <PageTitle>{t("appName")}</PageTitle>
+      <header
+        data-slot="home-header"
+        className="flex items-center justify-between gap-4"
+      >
+        <PageTitle>{t("appName")}</PageTitle>
+        <Button
+          variant="ghost"
+          size="icon-lg"
+          aria-label={t("settings")}
+          onClick={() => setSettingsOpen(true)}
+        >
+          <Gear className="size-6" />
+        </Button>
+      </header>
       {albums.length === 0 ? (
         <EmptyState
           title={t("emptyTitle")}
@@ -80,16 +95,12 @@ export function HomeView() {
       <BottomBar
         above={
           albums.length > 0 && (
-            <SortAndViewControls prefs={prefs} onChange={setCollectionPrefs} />
+            <StatusFilterChips
+              prefs={prefs}
+              counts={countByStatus(albums)}
+              onChange={setCollectionPrefs}
+            />
           )
-        }
-        settings={
-          <BottomBarButton
-            label={t("settings")}
-            onClick={() => setSettingsOpen(true)}
-          >
-            <Gear />
-          </BottomBarButton>
         }
         action={
           <BottomBarButton
@@ -102,11 +113,7 @@ export function HomeView() {
         }
       >
         {albums.length > 0 && (
-          <StatusFilterChips
-            prefs={prefs}
-            counts={countByStatus(albums)}
-            onChange={setCollectionPrefs}
-          />
+          <SortAndViewControls prefs={prefs} onChange={setCollectionPrefs} />
         )}
       </BottomBar>
       <SettingsDrawer open={settingsOpen} onOpenChange={setSettingsOpen} />
