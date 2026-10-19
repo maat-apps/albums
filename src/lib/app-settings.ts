@@ -7,7 +7,6 @@ import { createPersistedStore } from "@maat-apps/core/persisted";
 
 import type { SortDirection, SortKey, StatusFilter } from "./album-utils";
 import { keyValueStore } from "./idb-store";
-import { ALBUM_STATUSES } from "./schemas";
 import { SETTINGS_KEY } from "./storage-keys";
 import { STREAMING_SERVICES, type StreamingService } from "./streaming";
 
@@ -16,7 +15,8 @@ import { STREAMING_SERVICES, type StreamingService } from "./streaming";
 // in memory, backed by IndexedDB.
 export type ViewMode = "grid" | "list";
 
-/** How the collection is shown — remembered across launches (PRODUCT.md). */
+/** How the collection is shown — remembered across launches (PRODUCT.md),
+ * except the status filter, which starts at "all" on every launch. */
 export type CollectionPrefs = {
   viewMode: ViewMode;
   sortKey: SortKey;
@@ -66,7 +66,9 @@ function parseCollection(value: unknown): CollectionPrefs {
     viewMode: pick(stored.viewMode, ["grid", "list"], "grid"),
     sortKey: pick(stored.sortKey, ["year", "title", "artist"], "artist"),
     sortDirection: pick(stored.sortDirection, ["asc", "desc"], "asc"),
-    statusFilter: pick(stored.statusFilter, ["all", ...ALBUM_STATUSES], "all"),
+    // Every launch opens on the whole collection; the filter lasts only
+    // until the app is closed.
+    statusFilter: "all",
   };
 }
 

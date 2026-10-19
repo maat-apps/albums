@@ -49,12 +49,12 @@ export function HomeView() {
 
   // The collection's controls sit in the bottom bar, within the thumb's
   // reach: sort and view in its main row, the status filters above them.
-  // Settings, used rarely, sits next to the title, which scrolls away.
+  // Settings, used rarely, sits next to the title, pinned to the top.
   return (
-    <div className="mx-auto flex min-h-dvh w-[min(100%,480px)] flex-col gap-5 px-5 pt-10">
+    <div className="mx-auto flex min-h-dvh w-[min(100%,480px)] flex-col gap-5 px-5">
       <header
         data-slot="home-header"
-        className="flex items-center justify-between gap-4"
+        className="bg-background sticky top-0 z-10 -mx-5 flex h-27 shrink-0 items-center justify-between gap-4 px-5"
       >
         <PageTitle>{t("appName")}</PageTitle>
         <Button

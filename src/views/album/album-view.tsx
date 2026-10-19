@@ -6,7 +6,7 @@ import {
   SpotifyLogo,
   type Icon,
 } from "@phosphor-icons/react";
-import { startTransition } from "react";
+import { startTransition, useLayoutEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 
 import { AppBar } from "@maat-apps/ui/app-bar";
@@ -52,6 +52,12 @@ export function AlbumView() {
   const back = useSmartBack("/");
   const { streamingService } = useAppSettings();
   const searching = useAlbumLookup(album);
+
+  // The page scroll carries over from the collection; this screen fits
+  // without scrolling, so it starts at the top with the whole cover.
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
 
   if (!album) return ready ? <MissingAlbum /> : null;
   const link = linkTo(album, streamingService);

@@ -58,13 +58,13 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   `app-lock.ts` wires store, snapshot, covers and the GitHub connection
   through `lockData`.
 - **Screens.** `src/app/router.tsx`: `/` (`views/home`: the collection,
-  a header that scrolls away — the title and the settings gear; the
+  a header pinned to the top — the title and the settings gear; the
   collection's controls in `@maat-apps/ui`'s `BottomBar` — sort key +
   direction, grid/list and add in its main row, status filter chips with
   counts above (`collection-controls.tsx`), all remembered in
-  `app-settings.ts`'s `collection` prefs; on a collection 4+ screens tall,
-  `fast-scroller.tsx` — a rail at the right edge, below the header's
-  place, shown while scrolling (`hooks/use-scroll-activity.ts`) that
+  `app-settings.ts`'s `collection` prefs — but each launch opens on the
+  "all" filter; on a collection 4+ screens tall,
+  `fast-scroller.tsx` — a rail at the right edge, below the header, shown while scrolling (`hooks/use-scroll-activity.ts`) that
   jumps by `album-utils.ts`'s `groupAlbums`, the sort's groups — to each
   group's first `data-album-index` row; sorting uses `Intl.Collator("pl")`
   so groups stay contiguous),
@@ -73,7 +73,8 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   limit; tapping a result saves `album-form.ts`'s `releaseGroupToAlbum`, or
   opens the album already matching it per `sameAlbum`), `/new/manual` (the
   by-hand fallback) and `/:id/edit` (`views/album/album-form-view.tsx`,
-  validated by `lib/album-form.ts`), `/:id` (`album-view.tsx`, one screen with no scrolling — the cover
+  validated by `lib/album-form.ts`), `/:id` (`album-view.tsx`, one screen with no scrolling, opened at the
+  top — the cover
   shrinks to the largest square that fits: cover, one-tap status,
   "Open in …" for the streaming service chosen in Settings
   (`app-settings.ts`'s `streamingService`; `lib/streaming.ts`: Deezer,
