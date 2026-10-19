@@ -72,7 +72,8 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   limit; tapping a result saves `album-form.ts`'s `releaseGroupToAlbum`, or
   opens the album already matching it per `sameAlbum`), `/new/manual` (the
   by-hand fallback) and `/:id/edit` (`views/album/album-form-view.tsx`,
-  validated by `lib/album-form.ts`), `/:id` (`album-view.tsx`: cover, one-tap status,
+  validated by `lib/album-form.ts`), `/:id` (`album-view.tsx`, one screen with no scrolling — the cover
+  shrinks to the largest square that fits: cover, one-tap status,
   "Open in …" for the streaming service chosen in Settings
   (`app-settings.ts`'s `streamingService`; `lib/streaming.ts`: Deezer,
   Spotify, Apple Music — `deezerUrl`/`spotifyUrl`/`appleMusicUrl`, read
