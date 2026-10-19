@@ -55,7 +55,9 @@ export function AlbumView() {
 
   // The page scroll carries over from the collection; this screen fits
   // without scrolling, so it starts at the top with the whole cover.
-  useLayoutEffect(() => window.scrollTo(0, 0), [id]);
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
 
   if (!album) return ready ? <MissingAlbum /> : null;
   const link = linkTo(album, streamingService);
