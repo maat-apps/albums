@@ -39,8 +39,9 @@ const OPEN_LABELS = {
 
 /**
  * "/:id": one album — its cover, details, status and a link to the user's
- * streaming service. A missing cover or link is looked up as soon as it
- * opens.
+ * streaming service, all on one screen without scrolling: the cover takes
+ * the room the rest leaves, as the largest square that fits. A missing
+ * cover or link is looked up as soon as it opens.
  */
 export function AlbumView() {
   const { t } = useTranslation();
@@ -57,7 +58,7 @@ export function AlbumView() {
   const ServiceIcon = SERVICE_ICONS[streamingService];
 
   return (
-    <div className="mx-auto grid min-h-dvh w-[min(100%,480px)] content-start gap-5 px-5 pt-27 pb-[calc(32px+env(safe-area-inset-bottom))]">
+    <div className="mx-auto flex h-dvh w-[min(100%,480px)] flex-col gap-5 px-5 pt-27 pb-[calc(32px+env(safe-area-inset-bottom))]">
       <AppBar
         backLabel={t("back")}
         onBack={() => startTransition(back)}
@@ -76,16 +77,20 @@ export function AlbumView() {
           </Button>
         }
       />
-      <AlbumCover
-        album={album}
-        searching={searching && !album.coverUrl}
-        className="w-full"
-      />
+      {/* A square size container as wide as the column, shrinking when the
+          rest needs the height: the cover is the largest square inside. */}
+      <div className="[container-type:size] grid aspect-square min-h-0 w-full place-items-center">
+        <AlbumCover
+          album={album}
+          searching={searching && !album.coverUrl}
+          className="size-[min(100cqw,100cqh)]"
+        />
+      </div>
       <div className="grid gap-1">
-        <h2 className="font-heading m-0 text-2xl font-semibold break-words">
+        <h2 className="font-heading m-0 line-clamp-2 text-2xl font-semibold break-words">
           {album.title}
         </h2>
-        <p className="text-muted-foreground m-0 text-lg break-words">
+        <p className="text-muted-foreground m-0 line-clamp-2 text-lg break-words">
           {album.artist}
           {album.year !== null && ` · ${album.year}`}
         </p>
