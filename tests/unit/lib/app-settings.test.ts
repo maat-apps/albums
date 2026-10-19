@@ -158,6 +158,22 @@ describe("collection prefs", () => {
       statusFilter: "all",
     });
   });
+
+  it("opens on every status after a relaunch, keeping the rest", async () => {
+    vi.resetModules();
+    const { kvSet } = await import("@/lib/idb-store");
+    const { SETTINGS_KEY } = await import("@/lib/storage-keys");
+    await kvSet(SETTINGS_KEY, {
+      collection: { viewMode: "list", statusFilter: "toListen" },
+    });
+    const appSettings = await freshAppSettings();
+    await appSettings.whenLoaded();
+
+    expect(appSettings.getSettingsSnapshot().collection).toMatchObject({
+      viewMode: "list",
+      statusFilter: "all",
+    });
+  });
 });
 
 describe("streaming service", () => {

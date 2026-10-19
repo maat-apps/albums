@@ -26,10 +26,11 @@ web - PWA, mobile-only (like routines, notes and gym-charts).
 
 - **Thumb-first:** on the collection, everything used often — filters,
   sort, view mode and add — sits in a bar at the bottom of the screen; the
-  top is the title and the settings gear.
+  top, pinned while scrolling, is the title and the settings gear.
 - **Two view modes**, switchable and remembered: a two-column grid of
   covers, or a list with a cover thumbnail, artist, title and year.
 - **Filter** by status: all, to listen, coming back, not coming back.
+  Every launch opens on all; the choice lasts until the app is closed.
 - **Sort** by year, title or artist, ascending or descending — available
   in both view modes. Text sorts by Polish rules (Ą after A, Ł after L).
 - **Fast scroller:** on a long collection, a rail along the right side

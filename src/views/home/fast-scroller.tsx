@@ -18,11 +18,20 @@ const IDLE_MS = 1500;
 const THUMB_HEIGHT = 56;
 /** Gap between the rail and the header above / the bottom bar below. */
 const RAIL_GAP = 16;
-/** A group counts as current once its first album is this close to the top. */
+/** A group counts as current once its first album is this close to the header. */
 const CURRENT_LINE = 80;
 
 function albumElement(index: number): HTMLElement | null {
   return document.querySelector(`[data-album-index="${index}"]`);
+}
+
+/** Where the pinned header ends, in the viewport. */
+function headerBottom(): number {
+  return (
+    document
+      .querySelector<HTMLElement>("[data-slot=home-header]")
+      ?.getBoundingClientRect().bottom ?? 0
+  );
 }
 
 function currentGroup(groups: AlbumGroup[]): number {
@@ -32,10 +41,11 @@ function currentGroup(groups: AlbumGroup[]): number {
     window.scrollY + window.innerHeight >=
     document.documentElement.scrollHeight - 1;
   if (atBottom && window.scrollY > 0) return groups.length - 1;
+  const line = headerBottom() + CURRENT_LINE;
   let current = 0;
   groups.forEach((group, index) => {
     const top = albumElement(group.firstIndex)?.getBoundingClientRect().top;
-    if (top !== undefined && top <= CURRENT_LINE) current = index;
+    if (top !== undefined && top <= line) current = index;
   });
   return current;
 }
@@ -44,7 +54,11 @@ function jumpTo(group: AlbumGroup) {
   const element = albumElement(group.firstIndex);
   if (!element) return;
   window.scrollTo({
-    top: element.getBoundingClientRect().top + window.scrollY - RAIL_GAP,
+    top:
+      element.getBoundingClientRect().top +
+      window.scrollY -
+      headerBottom() -
+      RAIL_GAP,
   });
 }
 
@@ -52,7 +66,7 @@ function jumpTo(group: AlbumGroup) {
  * A rail along the collection's right side, as in Google Photos: it shows
  * while the collection moves, and dragging its thumb jumps from group to
  * group (`groupAlbums`), naming the group in a bubble and buzzing at each
- * change. Starts below the header (title and settings) and ends above the
+ * change. Starts below the pinned header (title and settings) and ends above the
  * bottom bar; the thumb hugs the screen's right edge.
  */
 export function FastScroller({
@@ -68,7 +82,7 @@ export function FastScroller({
   const [current, setCurrent] = useState(0);
   const [longEnough, setLongEnough] = useState(false);
   const [barHeight, setBarHeight] = useState(0);
-  const [headerBottom, setHeaderBottom] = useState(0);
+  const [railTop, setRailTop] = useState(0);
   const railRef = useRef<HTMLDivElement>(null);
   const dragIndex = useRef<number | null>(null);
   const index = Math.min(current, groups.length - 1);
@@ -83,14 +97,7 @@ export function FastScroller({
         document.querySelector<HTMLElement>("[data-slot=bottom-bar]")
           ?.offsetHeight ?? 0,
       );
-      // Measured in the document, not the viewport: the rail's place stays
-      // put while the header scrolls away.
-      const header = document.querySelector<HTMLElement>(
-        "[data-slot=home-header]",
-      );
-      setHeaderBottom(
-        header ? header.getBoundingClientRect().bottom + window.scrollY : 0,
-      );
+      setRailTop(headerBottom());
     }
     measure();
     const observer = new ResizeObserver(measure);
@@ -170,7 +177,7 @@ export function FastScroller({
       data-visible={visible}
       className="pointer-events-none fixed right-0 z-10 w-11 opacity-0 transition-opacity duration-300 data-[visible=true]:opacity-100 motion-reduce:transition-none"
       style={{
-        top: `calc(max(env(safe-area-inset-top), ${headerBottom}px) + ${RAIL_GAP}px)`,
+        top: `calc(max(env(safe-area-inset-top), ${railTop}px) + ${RAIL_GAP}px)`,
         bottom: barHeight + RAIL_GAP,
       }}
     >
