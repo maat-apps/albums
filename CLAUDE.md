@@ -61,7 +61,7 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   a header pinned to the top — the title and the settings gear; the
   collection's controls in `@maat-apps/ui`'s `BottomBar` — sort key +
   direction, grid/list, search and add in its main row, status toggles above —
-  duotone icon and count each, multiselect, none on shows every album
+  duotone icon and count each, three equal columns across, multiselect, none on shows every album
   (`collection-controls.tsx`, `album-utils.ts`'s `filterByStatus`) — all
   remembered in `app-settings.ts`'s `collection` prefs, but each launch
   opens with no status toggled; on a collection 4+ screens tall,

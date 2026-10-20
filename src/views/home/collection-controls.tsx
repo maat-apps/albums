@@ -9,11 +9,7 @@ import {
   type Icon,
 } from "@phosphor-icons/react";
 
-import {
-  BottomBarButton,
-  BottomBarChip,
-  BottomBarChips,
-} from "@maat-apps/ui/bottom-bar";
+import { BottomBarButton, BottomBarChip } from "@maat-apps/ui/bottom-bar";
 import {
   Select,
   SelectContent,
@@ -42,8 +38,9 @@ type ToolbarProps = {
 };
 
 /**
- * One toggle per status, with its count: the collection shows the albums
- * with any status that's on, or every album while none is.
+ * One toggle per status, with its count, as three equal columns across the
+ * bar: the collection shows the albums with any status that's on, or every
+ * album while none is.
  */
 export function StatusFilterChips({
   prefs,
@@ -69,7 +66,11 @@ export function StatusFilterChips({
   }
 
   return (
-    <BottomBarChips label={t("filterByStatus")}>
+    <div
+      role="group"
+      aria-label={t("filterByStatus")}
+      className="grid min-w-0 flex-1 grid-cols-3 gap-2"
+    >
       {ALBUM_STATUSES.map((status) => {
         const { icon: StatusIcon, className } = STATUS_ICONS[status];
         return (
@@ -88,7 +89,7 @@ export function StatusFilterChips({
           </BottomBarChip>
         );
       })}
-    </BottomBarChips>
+    </div>
   );
 }
 
