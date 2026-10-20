@@ -60,7 +60,8 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
 - **Screens.** `src/app/router.tsx`: `/` (`views/home`: the collection,
   a header pinned to the top — the title and the settings gear; the
   collection's controls in `@maat-apps/ui`'s `BottomBar` — sort key +
-  direction, grid/list, search and add in its main row, status toggles above —
+  direction, search and add in its main row (grid/list is in Settings,
+  `settings-collection-section.tsx`), status toggles above —
   duotone icon and count each, multiselect, none on shows every album
   (`collection-controls.tsx`, `album-utils.ts`'s `filterByStatus`) — all
   remembered in `app-settings.ts`'s `collection` prefs, but each launch

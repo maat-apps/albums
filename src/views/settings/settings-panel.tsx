@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { AppSection } from "./settings-app-section";
+import { CollectionSection } from "./settings-collection-section";
 import { DataSection } from "./settings-data-section";
 import { GitHubSection } from "./settings-github-section";
 import { LanguageSection } from "./settings-language-section";
@@ -13,6 +14,7 @@ export function SettingsPanel() {
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-2.5">
       <LanguageSection />
+      <CollectionSection />
       <StreamingSection />
       <SecuritySection />
       <DataSection onStatus={setStatus} />
