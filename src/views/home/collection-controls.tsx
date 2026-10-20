@@ -1,10 +1,8 @@
 import {
   CheckCircle,
   Headphones,
-  ListBullets,
   SortAscending,
   SortDescending,
-  SquaresFour,
   XCircle,
   type Icon,
 } from "@phosphor-icons/react";
@@ -93,8 +91,8 @@ export function StatusFilterChips({
   );
 }
 
-/** Sort key and direction, grid or list; remembered in settings. */
-export function SortAndViewControls({ prefs, onChange }: ToolbarProps) {
+/** Sort key and direction; remembered in settings. */
+export function SortControls({ prefs, onChange }: ToolbarProps) {
   const { t } = useTranslation();
   const sortLabel: Record<SortKey, string> = {
     artist: t("sortArtist"),
@@ -102,7 +100,6 @@ export function SortAndViewControls({ prefs, onChange }: ToolbarProps) {
     year: t("sortYear"),
   };
   const ascending = prefs.sortDirection === "asc";
-  const grid = prefs.viewMode === "grid";
 
   return (
     <div className="flex min-w-0 flex-1 items-center gap-1">
@@ -129,12 +126,6 @@ export function SortAndViewControls({ prefs, onChange }: ToolbarProps) {
         onClick={() => onChange({ sortDirection: ascending ? "desc" : "asc" })}
       >
         {ascending ? <SortAscending /> : <SortDescending />}
-      </BottomBarButton>
-      <BottomBarButton
-        label={grid ? t("viewGrid") : t("viewList")}
-        onClick={() => onChange({ viewMode: grid ? "list" : "grid" })}
-      >
-        {grid ? <SquaresFour /> : <ListBullets />}
       </BottomBarButton>
     </div>
   );

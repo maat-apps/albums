@@ -1,6 +1,12 @@
 import { expect, type Page, test } from "@playwright/test";
 
-import { goHome, importCsv, waitForStoredPrefs } from "./utils";
+import {
+  closeSettings,
+  goHome,
+  importCsv,
+  openSettings,
+  waitForStoredPrefs,
+} from "./utils";
 
 function titles(page: Page) {
   return page
@@ -59,14 +65,19 @@ test("switches between grid and list, remembering the choice", async ({
   await goHome(page);
   await importCsv(page);
 
-  await page.getByRole("button", { name: /^Grid/ }).click();
+  await openSettings(page);
+  await page.getByRole("combobox", { name: "View" }).click();
+  await page.getByRole("option", { name: "List" }).click();
+  await closeSettings(page);
   await expect(
     page.getByRole("button", { name: /Middle.*1985/ }),
   ).toBeVisible();
 
   await waitForStoredPrefs(page, { viewMode: "list" });
   await page.reload();
-  await expect(page.getByRole("button", { name: /^List/ })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /Middle.*1985/ }),
+  ).toBeVisible();
 });
 
 test("searches the collection, keeping the results after opening one", async ({

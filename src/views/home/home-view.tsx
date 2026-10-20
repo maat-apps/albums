@@ -19,7 +19,7 @@ import { setCollectionPrefs } from "../../lib/app-settings";
 import { SettingsDrawer } from "../settings/settings-drawer";
 
 import { AlbumCollection } from "./album-collection";
-import { SortAndViewControls, StatusFilterChips } from "./collection-controls";
+import { SortControls, StatusFilterChips } from "./collection-controls";
 import { FastScroller } from "./fast-scroller";
 
 export function HomeView() {
@@ -48,7 +48,8 @@ export function HomeView() {
   }
 
   // The collection's controls sit in the bottom bar, within the thumb's
-  // reach: sort and view in its main row, the status filters above them.
+  // reach: sort, search and add in its main row, the status filters above
+  // them. Grid or list is chosen in Settings.
   // Settings, used rarely, sits next to the title, pinned to the top.
   return (
     <div className="mx-auto flex min-h-dvh w-[min(100%,480px)] flex-col gap-5 px-5">
@@ -123,7 +124,7 @@ export function HomeView() {
         }
       >
         {albums.length > 0 && (
-          <SortAndViewControls prefs={prefs} onChange={setCollectionPrefs} />
+          <SortControls prefs={prefs} onChange={setCollectionPrefs} />
         )}
       </BottomBar>
       <SettingsDrawer open={settingsOpen} onOpenChange={setSettingsOpen} />

@@ -25,10 +25,10 @@ web - PWA, mobile-only (like routines, notes and gym-charts).
 ## Behavior
 
 - **Thumb-first:** on the collection, everything used often — filters,
-  sort, view mode and add — sits in a bar at the bottom of the screen; the
+  sort, search and add — sits in a bar at the bottom of the screen; the
   top, pinned while scrolling, is the title and the settings gear.
-- **Two view modes**, switchable and remembered: a two-column grid of
-  covers, or a list with a cover thumbnail, artist, title and year.
+- **Two view modes**, chosen in Settings and remembered: a two-column grid
+  of covers, or a list with a cover thumbnail, artist, title and year.
 - **Filter** by status: one toggle each for to listen (grey headphones),
   coming back (green check) and not coming back (red cross), with their
   counts. Any number can be on: the collection shows the albums with any
