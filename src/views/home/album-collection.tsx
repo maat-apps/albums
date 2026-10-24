@@ -1,4 +1,5 @@
 import { AlbumCover } from "../../components/album-cover";
+import { StatusIcon } from "../../components/status-icon";
 import type { ViewMode } from "../../lib/app-settings";
 import type { Album } from "../../lib/schemas";
 
@@ -33,12 +34,17 @@ function AlbumGrid({
   );
 }
 
-/** One row per album: thumbnail, title, artist and year. */
+/**
+ * One row per album: thumbnail, title, artist and year — plus its status's
+ * icon at the right edge with `showStatus`.
+ */
 function AlbumList({
   albums,
+  showStatus,
   onOpen,
 }: {
   albums: Album[];
+  showStatus: boolean;
   onOpen: (id: string) => void;
 }) {
   return (
@@ -62,6 +68,9 @@ function AlbumList({
                 {album.year}
               </span>
             )}
+            {showStatus && (
+              <StatusIcon status={album.status} className="size-6 shrink-0" />
+            )}
           </button>
         </li>
       ))}
@@ -73,11 +82,13 @@ export function AlbumCollection({
   albums,
   viewMode,
   label,
+  showStatus = false,
   onOpen,
 }: {
   albums: Album[];
   viewMode: ViewMode;
   label: string;
+  showStatus?: boolean;
   onOpen: (id: string) => void;
 }) {
   return (
@@ -85,7 +96,7 @@ export function AlbumCollection({
       {viewMode === "grid" ? (
         <AlbumGrid albums={albums} onOpen={onOpen} />
       ) : (
-        <AlbumList albums={albums} onOpen={onOpen} />
+        <AlbumList albums={albums} showStatus={showStatus} onOpen={onOpen} />
       )}
     </section>
   );

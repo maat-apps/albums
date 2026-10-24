@@ -92,6 +92,9 @@ test("searches the collection, keeping the results after opening one", async ({
   const results = page.getByRole("region", { name: "Search results" });
   await expect(results.getByRole("button")).toHaveCount(1);
   await expect(results).toContainText("Alpha");
+  await expect(
+    results.getByRole("button", { name: /Alpha.*Coming back$/ }),
+  ).toBeVisible();
 
   await results.getByRole("button", { name: /Alpha/ }).click();
   await page.getByRole("button", { name: "Back", exact: true }).click();
