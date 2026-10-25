@@ -1,11 +1,4 @@
-import {
-  CheckCircle,
-  Headphones,
-  SortAscending,
-  SortDescending,
-  XCircle,
-  type Icon,
-} from "@phosphor-icons/react";
+import { SortAscending, SortDescending } from "@phosphor-icons/react";
 
 import { BottomBarButton, BottomBarChip } from "@maat-apps/ui/bottom-bar";
 import {
@@ -15,20 +8,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@maat-apps/ui/select";
+import { StatusIcon } from "../../components/status-icon";
 import { useTranslation } from "../../i18n/use-translation";
 import type { SortKey } from "../../lib/album-utils";
 import type { CollectionPrefs } from "../../lib/app-settings";
 import { ALBUM_STATUSES, type AlbumStatus } from "../../lib/schemas";
 
 const SORT_KEYS: SortKey[] = ["artist", "title", "year"];
-
-// Each status's mark, in its own colour: green for coming back, red for
-// not, grey for not listened to yet.
-const STATUS_ICONS: Record<AlbumStatus, { icon: Icon; className: string }> = {
-  toListen: { icon: Headphones, className: "text-muted-foreground" },
-  comingBack: { icon: CheckCircle, className: "text-green-600" },
-  notComingBack: { icon: XCircle, className: "text-red-600" },
-};
 
 type ToolbarProps = {
   prefs: CollectionPrefs;
@@ -46,11 +32,6 @@ export function StatusFilterChips({
   onChange,
 }: ToolbarProps & { counts: Record<AlbumStatus, number> }) {
   const { t } = useTranslation();
-  const statusLabel: Record<AlbumStatus, string> = {
-    toListen: t("statusToListen"),
-    comingBack: t("statusComingBack"),
-    notComingBack: t("statusNotComingBack"),
-  };
 
   function toggle(status: AlbumStatus) {
     const chosen = prefs.statusFilters;
@@ -69,24 +50,16 @@ export function StatusFilterChips({
       aria-label={t("filterByStatus")}
       className="grid min-w-0 flex-1 grid-cols-3 gap-2"
     >
-      {ALBUM_STATUSES.map((status) => {
-        const { icon: StatusIcon, className } = STATUS_ICONS[status];
-        return (
-          <BottomBarChip
-            key={status}
-            pressed={prefs.statusFilters.includes(status)}
-            onClick={() => toggle(status)}
-          >
-            <StatusIcon
-              weight="duotone"
-              aria-hidden="true"
-              className={`size-6 ${className}`}
-            />
-            <span className="sr-only">{statusLabel[status]}</span>
-            <span className="tabular-nums">{counts[status]}</span>
-          </BottomBarChip>
-        );
-      })}
+      {ALBUM_STATUSES.map((status) => (
+        <BottomBarChip
+          key={status}
+          pressed={prefs.statusFilters.includes(status)}
+          onClick={() => toggle(status)}
+        >
+          <StatusIcon status={status} className="size-6" />
+          <span className="tabular-nums">{counts[status]}</span>
+        </BottomBarChip>
+      ))}
     </div>
   );
 }

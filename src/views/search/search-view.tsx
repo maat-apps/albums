@@ -11,9 +11,10 @@ import { searchAlbums, sortAlbums } from "../../lib/album-utils";
 import { AlbumCollection } from "../home/album-collection";
 
 /**
- * "/search": the collection's albums matching what's typed, as a list. The
- * field sits in the bottom bar, within the thumb's reach; the query lives
- * in the URL, so coming back from an album finds the same results.
+ * "/search": the collection's albums matching what's typed, as a list with
+ * each one's status icon on the right. The field sits in the bottom bar,
+ * within the thumb's reach; the query lives in the URL, so coming back from
+ * an album finds the same results.
  */
 export function SearchView() {
   const { t } = useTranslation();
@@ -53,6 +54,7 @@ export function SearchView() {
           albums={found}
           viewMode="list"
           label={t("searchResults")}
+          showStatus
           onOpen={open}
         />
       )}
