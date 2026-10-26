@@ -79,6 +79,7 @@
   "year": "Year",
   "coverUrl": "Cover image URL",
   "deezerUrl": "Deezer URL",
+  "clearField": "Clear {field}",
   "spotifyUrl": "Spotify URL",
   "appleMusicUrl": "Apple Music URL",
   "errorRequired": "Required.",

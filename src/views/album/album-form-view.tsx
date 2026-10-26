@@ -1,4 +1,4 @@
-import { Trash } from "@phosphor-icons/react";
+import { Trash, X } from "@phosphor-icons/react";
 import { startTransition, useId, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router";
 
@@ -45,6 +45,8 @@ function TextField({
   const { t } = useTranslation();
   const id = useId();
   const error = errors[field];
+  const value = values[field];
+  const clearable = inputMode === "url" && value !== "";
   const message: Record<AlbumFormError, string> = {
     required: t("errorRequired"),
     year: t("errorYear"),
@@ -55,14 +57,29 @@ function TextField({
       <label htmlFor={id} className="text-sm font-medium">
         {label}
       </label>
-      <Input
-        id={id}
-        value={values[field]}
-        inputMode={inputMode}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${id}-error` : undefined}
-        onChange={(event) => onChange(field, event.target.value)}
-      />
+      <div className="relative">
+        <Input
+          id={id}
+          value={value}
+          inputMode={inputMode}
+          className={clearable ? "pr-10" : undefined}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${id}-error` : undefined}
+          onChange={(event) => onChange(field, event.target.value)}
+        />
+        {clearable && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="absolute inset-y-0 right-0 my-auto"
+            aria-label={t("clearField", { field: label })}
+            onClick={() => onChange(field, "")}
+          >
+            <X className="size-4" />
+          </Button>
+        )}
+      </div>
       {error && (
         <p id={`${id}-error`} className="text-destructive m-0 text-xs">
           {message[error]}
