@@ -99,10 +99,14 @@ test("adding by hand, viewing, changing status, editing and deleting an album", 
 
   await page.getByRole("button", { name: "Edit album" }).click();
   await page.getByLabel("Title").fill("Renamed");
-  await page.getByLabel("Deezer URL").fill("deezer.com/album/1");
+  await page
+    .getByLabel("Deezer URL", { exact: true })
+    .fill("deezer.com/album/1");
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page.getByText("Use a full https:// link.")).toBeVisible();
-  await page.getByLabel("Deezer URL").fill("https://www.deezer.com/album/1");
+  await page
+    .getByLabel("Deezer URL", { exact: true })
+    .fill("https://www.deezer.com/album/1");
   await page.getByRole("button", { name: "Save" }).click();
   await expect(
     page.getByRole("heading", { name: "Renamed" }).first(),
@@ -114,7 +118,7 @@ test("adding by hand, viewing, changing status, editing and deleting an album", 
   // One tap clears the link.
   await page.getByRole("button", { name: "Edit album" }).click();
   await page.getByRole("button", { name: "Clear Deezer URL" }).click();
-  await expect(page.getByLabel("Deezer URL")).toHaveValue("");
+  await expect(page.getByLabel("Deezer URL", { exact: true })).toHaveValue("");
   await expect(
     page.getByRole("button", { name: "Clear Deezer URL" }),
   ).toHaveCount(0);
