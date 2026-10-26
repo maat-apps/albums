@@ -79,6 +79,7 @@
   "year": "Rok",
   "coverUrl": "Adres okładki (URL)",
   "deezerUrl": "Adres w Deezerze (URL)",
+  "clearField": "Wyczyść: {field}",
   "spotifyUrl": "Adres w Spotify (URL)",
   "appleMusicUrl": "Adres w Apple Music (URL)",
   "errorRequired": "Wymagane.",

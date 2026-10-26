@@ -111,6 +111,18 @@ test("adding by hand, viewing, changing status, editing and deleting an album", 
     page.getByRole("link", { name: "Open in Deezer" }),
   ).toHaveAttribute("href", "https://www.deezer.com/album/1");
 
+  // One tap clears the link.
+  await page.getByRole("button", { name: "Edit album" }).click();
+  await page.getByRole("button", { name: "Clear Deezer URL" }).click();
+  await expect(page.getByLabel("Deezer URL")).toHaveValue("");
+  await expect(
+    page.getByRole("button", { name: "Clear Deezer URL" }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByRole("link", { name: "Open in Deezer" })).toHaveCount(
+    0,
+  );
+
   await page.getByRole("button", { name: "Edit album" }).click();
   await page.getByRole("button", { name: "Delete album" }).click();
   await page.getByRole("button", { name: "Delete", exact: true }).click();
