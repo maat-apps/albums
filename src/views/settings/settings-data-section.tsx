@@ -1,26 +1,19 @@
-import { startTransition, useRef, useState, type ChangeEvent } from "react";
+import { startTransition, useRef, type ChangeEvent } from "react";
 import { useNavigate } from "react-router";
 
 import { Button } from "@maat-apps/ui/button";
-import { ConfirmDrawer } from "@maat-apps/ui/confirm-drawer";
-import {
-  SettingsRow,
-  SettingsSection,
-} from "@maat-apps/ui/settings-primitives";
+import { SettingsRow } from "@maat-apps/ui/settings-primitives";
+import { DataSection as SharedDataSection } from "@maat-apps/ui/settings-sections";
 import { useTranslation } from "../../i18n/use-translation";
-import {
-  downloadBackup,
-  mergeBackup,
-  parseBackup,
-  shareBackup,
-  type Backup,
-} from "../../lib/backup";
+import { backups, mergeBackup } from "../../lib/backup";
 import { importAlbumsFromCsv } from "../../lib/csv-import";
 import { applyImport, getAlbumsSnapshot } from "../../lib/storage";
 
-// Backups (export/import) and "Import from CSV" (PRODUCT.md). Files are read
-// on the device and never leave it; a CSV import adds new albums and updates the
-// status of those already in the collection, a backup import replaces everything after a confirmation.
+// Backups (export/import, @maat-apps/ui's DataSection) and this app's own
+// rows: "Import from CSV" and "Find covers" (PRODUCT.md). Files are read on
+// the device and never leave it; a CSV import adds new albums and updates
+// the status of those already in the collection, a backup import merges
+// after a confirmation.
 export function DataSection({
   onStatus,
 }: {
@@ -29,39 +22,6 @@ export function DataSection({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const csvInput = useRef<HTMLInputElement>(null);
-  const backupInput = useRef<HTMLInputElement>(null);
-  const [pendingBackup, setPendingBackup] = useState<Backup | null>(null);
-
-  async function exportBackup() {
-    onStatus(null);
-    const result = await shareBackup();
-    if (result === "shared") {
-      onStatus(t("exportShared"));
-    } else if (result === "unavailable") {
-      downloadBackup();
-      onStatus(t("exportDone"));
-    }
-    // "cancelled" — the user dismissed the share sheet; nothing to report.
-  }
-
-  async function chooseBackup(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-    onStatus(null);
-    try {
-      setPendingBackup(parseBackup(await file.text()));
-    } catch {
-      onStatus(t("importFailed"));
-    }
-  }
-
-  function confirmBackup() {
-    if (!pendingBackup) return;
-    mergeBackup(pendingBackup);
-    setPendingBackup(null);
-    onStatus(t("importDone"));
-  }
 
   async function importCsv(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -89,89 +49,63 @@ export function DataSection({
   }
 
   return (
-    <>
-      <SettingsSection title={t("sectionData")}>
-        <SettingsRow
-          title={t("exportData")}
-          description={t("exportDataDescription")}
-          action={
-            <Button
-              variant="outline"
-              className="min-h-10.5 px-4"
-              onClick={() => void exportBackup()}
-            >
-              {t("exportAction")}
-            </Button>
-          }
-        />
-        <SettingsRow
-          title={t("importData")}
-          description={t("importDataDescription")}
-          action={
-            <Button
-              variant="outline"
-              className="min-h-10.5 px-4"
-              onClick={() => backupInput.current?.click()}
-            >
-              {t("importAction")}
-            </Button>
-          }
-        />
-        <input
-          ref={backupInput}
-          type="file"
-          accept="application/json,.json,text/plain,.txt"
-          aria-label={t("importData")}
-          className="hidden"
-          onChange={(event) => void chooseBackup(event)}
-        />
-        <SettingsRow
-          title={t("importCsv")}
-          description={t("importCsvDescription")}
-          action={
-            <Button
-              variant="outline"
-              className="min-h-10.5 px-4"
-              onClick={() => csvInput.current?.click()}
-            >
-              {t("importAction")}
-            </Button>
-          }
-        />
-        <input
-          ref={csvInput}
-          type="file"
-          accept=".csv,text/csv"
-          aria-label={t("importCsv")}
-          className="hidden"
-          onChange={(event) => void importCsv(event)}
-        />
-        <SettingsRow
-          title={t("findCovers")}
-          description={t("findCoversDescription")}
-          action={
-            <Button
-              variant="outline"
-              className="min-h-10.5 px-4"
-              onClick={() => startTransition(() => navigate("/covers"))}
-            >
-              {t("openAction")}
-            </Button>
-          }
-        />
-        <p className="text-muted-foreground px-1 text-xs">
-          {t("coversNotice")}
-        </p>
-      </SettingsSection>
-      <ConfirmDrawer
-        open={pendingBackup !== null}
-        onOpenChange={(open) => !open && setPendingBackup(null)}
-        title={t("importTitle")}
-        description={t("importDescription")}
-        cancelLabel={t("cancel")}
-        confirmLabel={t("importConfirm")}
-        onConfirm={confirmBackup}
+    <SharedDataSection
+      backups={backups}
+      onImport={mergeBackup}
+      onStatus={onStatus}
+      labels={{
+        title: t("sectionData"),
+        exportData: t("exportData"),
+        exportDataDescription: t("exportDataDescription"),
+        exportAction: t("exportAction"),
+        exportShared: t("exportShared"),
+        exportDone: t("exportDone"),
+        importData: t("importData"),
+        importDataDescription: t("importDataDescription"),
+        importAction: t("importAction"),
+        importFailed: t("importFailed"),
+        importTitle: t("importTitle"),
+        importDescription: t("importDescription"),
+        importConfirm: t("importConfirm"),
+        importDone: t("importDone"),
+        cancel: t("cancel"),
+      }}
+    >
+      <SettingsRow
+        title={t("importCsv")}
+        description={t("importCsvDescription")}
+        action={
+          <Button
+            variant="outline"
+            className="min-h-10.5 px-4"
+            onClick={() => csvInput.current?.click()}
+          >
+            {t("importAction")}
+          </Button>
+        }
       />
-    </>
+      <input
+        ref={csvInput}
+        type="file"
+        accept=".csv,text/csv"
+        aria-label={t("importCsv")}
+        className="hidden"
+        onChange={(event) => void importCsv(event)}
+      />
+      <SettingsRow
+        title={t("findCovers")}
+        description={t("findCoversDescription")}
+        action={
+          <Button
+            variant="outline"
+            className="min-h-10.5 px-4"
+            onClick={() => startTransition(() => navigate("/covers"))}
+          >
+            {t("openAction")}
+          </Button>
+        }
+      />
+      <p className="text-muted-foreground px-1 text-xs">{t("coversNotice")}</p>
+    </SharedDataSection>
   );
 }

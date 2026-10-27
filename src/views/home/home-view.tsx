@@ -6,6 +6,7 @@ import { BottomBar, BottomBarButton } from "@maat-apps/ui/bottom-bar";
 import { Button } from "@maat-apps/ui/button";
 import { EmptyState } from "@maat-apps/ui/empty-state";
 import { PageTitle } from "@maat-apps/ui/page-header";
+import { SettingsDrawer } from "@maat-apps/ui/settings-sections";
 import { useAlbums } from "../../hooks/use-albums";
 import { useAppSettings } from "../../hooks/use-app-settings";
 import { useTranslation } from "../../i18n/use-translation";
@@ -16,11 +17,12 @@ import {
   sortAlbums,
 } from "../../lib/album-utils";
 import { setCollectionPrefs } from "../../lib/app-settings";
-import { SettingsDrawer } from "../settings/settings-drawer";
+import { SettingsPanel } from "../settings/settings-panel";
 
 import { AlbumCollection } from "./album-collection";
 import { SortControls, StatusFilterChips } from "./collection-controls";
 import { FastScroller } from "./fast-scroller";
+import { SharedBackupImport } from "./shared-backup-import";
 
 export function HomeView() {
   const { t } = useTranslation();
@@ -127,7 +129,14 @@ export function HomeView() {
           <SortControls prefs={prefs} onChange={setCollectionPrefs} />
         )}
       </BottomBar>
-      <SettingsDrawer open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <SharedBackupImport />
+      <SettingsDrawer
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        title={t("settings")}
+      >
+        <SettingsPanel />
+      </SettingsDrawer>
     </div>
   );
 }

@@ -7,6 +7,19 @@
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
+  "share_target": {
+    "action": "/albums/share-target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "backup",
+          "accept": ["application/json", ".json", "text/plain", ".txt"]
+        }
+      ]
+    }
+  },
   "icons": [
     {
       "src": "/albums/icon.svg",
