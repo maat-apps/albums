@@ -160,5 +160,6 @@
   "githubErrorRateLimited": "GitHub is limiting requests right now. Try again in a while.",
   "githubErrorNetwork": "Couldn't reach GitHub. Check your connection.",
   "githubErrorUnexpected": "Something went wrong with GitHub. Nothing was changed.",
-  "githubErrorFile": "The file on GitHub has albums the app can't read. Nothing was changed."
+  "githubErrorFile": "The file on GitHub has albums the app can't read. Nothing was changed.",
+  "done": "Done"
 }

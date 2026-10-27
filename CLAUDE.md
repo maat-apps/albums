@@ -51,7 +51,7 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   `src/hooks/use-albums.ts`; albums are validated per entry
   (`schemas.ts`). Filtering, sorting and duplicate detection are pure
   helpers in `album-utils.ts`. Backups and the pre-update snapshot share
-  one format (core's `createLocalBackup`: `backup.ts`, `app-update.ts`);
+  one format (core's `createLocalBackup`: `backup.ts`);
   a Settings import merges (`mergeBackup` → `storage.ts`'s
   `mergeIntoAlbums`: `album-merge.ts`'s `mergeAlbums` with nothing
   synced, so nothing is deleted), only the snapshot restore replaces;
@@ -137,6 +137,15 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   `hooks/use-github.ts`'s `useGitHubSyncStatus`) and
   `views/settings/settings-github-section.tsx` (core's `GitHubError`
   kinds → messages).
+- **Settings** is a drawer (`@maat-apps/ui/settings-sections`'
+  `SettingsDrawer`, from home): `views/settings/settings-panel.tsx` puts
+  the shared Language, Security and App sections (labels from `t()`)
+  around albums' own — collection, streaming, data (ui's `DataSection`
+  plus CSV import and "Find covers"), GitHub.
+- **Shared backups.** `public/manifest.json`'s `share_target` lets
+  Android share a backup file to the installed app; the worker
+  (`sw.ts`'s `shareTarget`, `lib/shared-backup.ts`) parks it, and home's
+  `shared-backup-import.tsx` asks before merging it.
 - **i18n.** `src/i18n/en.json` and `pl.json` (core's `createTranslation`;
   device language on first launch, Settings → Language after). `t()`
   only accepts keys present in both — keep them in sync.
@@ -152,9 +161,11 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   `@maat-apps/ui/app-lock-gate`, wrapped around the router in
   `src/app/router.tsx`). `src/lib/app-lock.ts` rewrites the albums with
   the current key and erases them plus the update snapshot; `storage.ts`
-  and `app-update.ts` encrypt with `src/lib/encryption-key.ts`. The lock comes back after
-  time in the background per `app-settings.ts`'s `relockAfter` (Settings →
-  Security; `relockAfterMs` feeds `createAppLock`). **Never
+  and the update snapshot (`backup.ts`) encrypt with
+  `src/lib/encryption-key.ts`. The lock comes back after time in the
+  background per `app-settings.ts`'s `relockAfter` (core's
+  `createAppSettings`; Settings → Security; `relockAfterMs` feeds
+  `createAppLock`). **Never
   change `HKDF_INFO` (`"albums-data-v1"`)** — existing encrypted data
   would become unreadable.
 - Full pattern log: none yet — run `/learn-patterns` after a non-trivial

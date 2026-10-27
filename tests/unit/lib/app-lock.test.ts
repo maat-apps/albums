@@ -108,7 +108,7 @@ describe("data wiring", () => {
     const { appLock } = await freshModules();
     const storage = await import("@/lib/storage");
     await storage.whenLoaded();
-    const appUpdate = await import("@/lib/app-update");
+    const { backups } = await import("@/lib/backup");
     storage.saveAlbum({
       id: "a1",
       year: null,
@@ -118,11 +118,11 @@ describe("data wiring", () => {
       createdAt: "2026-10-01T10:00:00.000Z",
       updatedAt: "2026-10-01T10:00:00.000Z",
     });
-    await appUpdate.saveUpdateSnapshot();
+    await backups.snapshot.save();
 
     await appLock.disableAndErase();
 
     expect(storage.getAlbumsSnapshot()).toEqual([]);
-    expect(appUpdate.hasUpdateSnapshot()).toBe(false);
+    expect(backups.snapshot.has()).toBe(false);
   });
 });
