@@ -150,7 +150,9 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   device language on first launch, Settings → Language after). `t()`
   only accepts keys present in both — keep them in sync.
 - **E2E.** Settings persist in the background: before a reload that should
-  keep a pref, wait with `e2e/utils.ts`'s `waitForStoredPrefs`. A spec
+  keep a pref, wait with `e2e/utils.ts`'s `waitForStoredPrefs` (on
+  `@maat-apps/config/playwright`'s `readStored`). Vite, Vitest and the unit
+  test setup are `@maat-apps/config`'s presets. A spec
   that `page.route`s a cover blocks service workers (`covers.spec.ts`) —
   the worker's own fetches bypass the route.
 - **CSV import.** `csv.ts` parses RFC 4180 CSV; `csv-import.ts` maps a

@@ -1,6 +1,7 @@
 // Reusable Playwright test helpers — plain functions specs call directly,
 // not test.extend() fixtures (hence "utils.ts", not "fixtures.ts" — see
 // maat-core/STRUCTURE.md's Testing section for why that naming matters).
+import { readStored } from "@maat-apps/config/playwright";
 import { expect, type Page } from "@playwright/test";
 
 export async function goHome(page: Page) {
@@ -43,36 +44,24 @@ export async function importCsv(page: Page, csv = SAMPLE_CSV) {
   await closeSettings(page);
 }
 
+/** The stored settings record (written in the background). */
+function storedSettings(page: Page) {
+  return readStored(page, "albums", "albums-settings") as Promise<
+    { collection?: unknown; lock?: unknown } | undefined
+  >;
+}
+
 /**
  * Waits until the collection prefs are persisted to IndexedDB — they're
  * written in the background, so a reload right after a click could beat
- * the write. Store and key names are duplicated by hand: this runs in the
- * page, which can't import from src/.
+ * the write.
  */
 export async function waitForStoredPrefs(
   page: Page,
   expected: Record<string, string>,
 ) {
   await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          new Promise<unknown>((resolve) => {
-            const request = indexedDB.open("albums");
-            request.onsuccess = () => {
-              const read = request.result
-                .transaction("kv")
-                .objectStore("kv")
-                .get("albums-settings");
-              read.onsuccess = () =>
-                resolve(
-                  (read.result as { collection?: unknown } | undefined)
-                    ?.collection,
-                );
-            };
-          }),
-      ),
-    )
+    .poll(async () => (await storedSettings(page))?.collection)
     .toMatchObject(expected);
 }
 
@@ -83,28 +72,7 @@ export async function waitForStoredPrefs(
  */
 export async function waitForStoredLock(page: Page) {
   await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          new Promise<boolean>((resolve) => {
-            const request = indexedDB.open("albums");
-            request.onerror = () => resolve(false);
-            request.onsuccess = () => {
-              const read = request.result
-                .transaction("kv")
-                .objectStore("kv")
-                .get("albums-settings");
-              read.onerror = () => resolve(false);
-              read.onsuccess = () =>
-                resolve(
-                  Boolean(
-                    (read.result as { lock?: unknown } | undefined)?.lock,
-                  ),
-                );
-            };
-          }),
-      ),
-    )
+    .poll(async () => Boolean((await storedSettings(page))?.lock))
     .toBe(true);
 }
 
