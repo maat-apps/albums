@@ -35,29 +35,33 @@ export function SearchView() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh w-[min(100%,480px)] flex-col gap-5 px-5 pt-27">
+    // One screen tall, the results scrolling inside: typing never changes the
+    // page's height, so the browser has nothing to re-scroll under the field.
+    <div className="mx-auto flex h-dvh w-[min(100%,480px)] flex-col px-5 pt-27">
       <AppBar
         title={t("searchCollection")}
         backLabel={t("back")}
         onBack={() => startTransition(back)}
       />
-      {!query && (
-        <p className="text-muted-foreground m-0 text-sm">
-          {t("searchCollectionHint")}
-        </p>
-      )}
-      {query && found.length === 0 && (
-        <p className="text-muted-foreground m-0">{t("noSearchMatches")}</p>
-      )}
-      {found.length > 0 && (
-        <AlbumCollection
-          albums={found}
-          viewMode="list"
-          label={t("searchResults")}
-          showStatus
-          onOpen={open}
-        />
-      )}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-5">
+        {!query && (
+          <p className="text-muted-foreground m-0 text-sm">
+            {t("searchCollectionHint")}
+          </p>
+        )}
+        {query && found.length === 0 && (
+          <p className="text-muted-foreground m-0">{t("noSearchMatches")}</p>
+        )}
+        {found.length > 0 && (
+          <AlbumCollection
+            albums={found}
+            viewMode="list"
+            label={t("searchResults")}
+            showStatus
+            onOpen={open}
+          />
+        )}
+      </div>
       <BottomBar>
         <Input
           type="search"

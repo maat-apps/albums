@@ -95,6 +95,15 @@ export function AddAlbumView() {
 
   const search: Search =
     answer?.query === query ? answer.search : { state: "loading" };
+  // While the next answer loads, the last results stay (dimmed), so the list
+  // doesn't collapse and refill with every keystroke.
+  const stale = search.state === "loading";
+  const shown =
+    search.state === "done"
+      ? search.groups
+      : stale && answer?.search.state === "done"
+        ? answer.search.groups
+        : [];
 
   function open(id: string) {
     // Adding is a forward step: the album replaces the search in history.
@@ -121,7 +130,9 @@ export function AddAlbumView() {
   }
 
   return (
-    <div className="mx-auto grid min-h-dvh w-[min(100%,480px)] content-start gap-5 px-5 pt-27 pb-[calc(32px+env(safe-area-inset-bottom))]">
+    // One screen tall, the results scrolling inside: typing never changes the
+    // page's height, so the browser has nothing to re-scroll under the field.
+    <div className="mx-auto flex h-dvh w-[min(100%,480px)] flex-col gap-5 px-5 pt-27">
       <AppBar
         title={t("addAlbum")}
         backLabel={t("back")}
@@ -133,69 +144,75 @@ export function AddAlbumView() {
         enterKeyHint="search"
         aria-label={t("searchAlbum")}
         placeholder={t("searchAlbumPlaceholder")}
+        className="shrink-0"
         value={text}
         onChange={(event) => setText(event.target.value)}
       />
-      {!searchable && (
-        <p className="text-muted-foreground m-0 text-sm">
-          {t("searchAlbumHint")}
-        </p>
-      )}
-      {searchable && search.state === "loading" && (
-        <p className="text-muted-foreground m-0">{t("searching")}</p>
-      )}
-      {searchable && search.state === "failed" && (
-        <p className="text-destructive m-0" role="alert">
-          {t(search.rateLimited ? "sourceRateLimited" : "sourceUnreachable", {
-            source: "MusicBrainz",
-          })}
-        </p>
-      )}
-      {searchable && search.state === "done" && search.groups.length === 0 && (
-        <p className="text-muted-foreground m-0">{t("noCandidates")}</p>
-      )}
-      {searchable && search.state === "done" && search.groups.length > 0 && (
-        <ul
-          className="m-0 grid list-none gap-1 p-0"
-          aria-label={t("searchResults")}
-        >
-          {search.groups.map((group) => (
-            <li key={group.id}>
-              <button
-                type="button"
-                className="hover:bg-muted flex w-full items-center gap-3 rounded-lg p-1.5 text-left"
-                onClick={() => add(group)}
-              >
-                <ResultCover
-                  id={group.id}
-                  onMissing={() => markMissingCover(group.id)}
-                />
-                <span className="grid min-w-0 flex-1 text-sm leading-tight">
-                  <span className="font-semibold break-words">
-                    {group.title}
-                  </span>
-                  <span className="text-muted-foreground break-words">
-                    {group.artist}
-                    {group.year !== null && ` · ${group.year}`}
-                    {group.primaryType && ` · ${group.primaryType}`}
-                  </span>
-                  {albums.some((album) => sameAlbum(album, group)) && (
-                    <span className="text-primary text-xs font-medium">
-                      {t("inCollection")}
+      <div className="grid min-h-0 flex-1 content-start gap-5 overflow-y-auto overscroll-contain pb-[calc(32px+env(safe-area-inset-bottom))]">
+        {!searchable && (
+          <p className="text-muted-foreground m-0 text-sm">
+            {t("searchAlbumHint")}
+          </p>
+        )}
+        {searchable && stale && shown.length === 0 && (
+          <p className="text-muted-foreground m-0">{t("searching")}</p>
+        )}
+        {searchable && search.state === "failed" && (
+          <p className="text-destructive m-0" role="alert">
+            {t(search.rateLimited ? "sourceRateLimited" : "sourceUnreachable", {
+              source: "MusicBrainz",
+            })}
+          </p>
+        )}
+        {searchable &&
+          search.state === "done" &&
+          search.groups.length === 0 && (
+            <p className="text-muted-foreground m-0">{t("noCandidates")}</p>
+          )}
+        {searchable && shown.length > 0 && (
+          <ul
+            className={`m-0 grid list-none gap-1 p-0 transition-opacity ${stale ? "opacity-50" : ""}`}
+            aria-label={t("searchResults")}
+            aria-busy={stale}
+          >
+            {shown.map((group) => (
+              <li key={group.id}>
+                <button
+                  type="button"
+                  className="hover:bg-muted flex w-full items-center gap-3 rounded-lg p-1.5 text-left"
+                  onClick={() => add(group)}
+                >
+                  <ResultCover
+                    id={group.id}
+                    onMissing={() => markMissingCover(group.id)}
+                  />
+                  <span className="grid min-w-0 flex-1 text-sm leading-tight">
+                    <span className="font-semibold break-words">
+                      {group.title}
                     </span>
-                  )}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      <Button
-        variant="ghost"
-        onClick={() => startTransition(() => navigate("/new/manual"))}
-      >
-        {t("addManually")}
-      </Button>
+                    <span className="text-muted-foreground break-words">
+                      {group.artist}
+                      {group.year !== null && ` · ${group.year}`}
+                      {group.primaryType && ` · ${group.primaryType}`}
+                    </span>
+                    {albums.some((album) => sameAlbum(album, group)) && (
+                      <span className="text-primary text-xs font-medium">
+                        {t("inCollection")}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <Button
+          variant="ghost"
+          onClick={() => startTransition(() => navigate("/new/manual"))}
+        >
+          {t("addManually")}
+        </Button>
+      </div>
     </div>
   );
 }

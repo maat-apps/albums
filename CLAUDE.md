@@ -72,10 +72,13 @@ scope are in [`PRODUCT.md`](./PRODUCT.md).
   so groups stay contiguous),
   `/search` (`views/search/search-view.tsx`: the collection filtered by
   `album-utils.ts`'s `searchAlbums`, as a list; the field pinned in a
-  `BottomBar`, the query in `?q=` so Back from an album keeps it),
+  `BottomBar`, the query in `?q=` so Back from an album keeps it; both
+  search screens are one `h-dvh` tall with the results scrolling inside, and
+  `index.html`'s viewport has `interactive-widget=resizes-content`, so typing
+  never re-scrolls the page),
   `/new` (`views/album/add-album-view.tsx`: a MusicBrainz text search —
   `musicbrainz.ts`'s `searchReleaseGroupsByText`, debounced for its rate
-  limit; tapping a result saves `album-form.ts`'s `releaseGroupToAlbum`, or
+  limit; the last results stay, dimmed, while the next search loads; tapping a result saves `album-form.ts`'s `releaseGroupToAlbum`, or
   opens the album already matching it per `sameAlbum`), `/new/manual` (the
   by-hand fallback) and `/:id/edit` (`views/album/album-form-view.tsx`,
   validated by `lib/album-form.ts`), `/:id` (`album-view.tsx`, one screen with no scrolling, opened at the
