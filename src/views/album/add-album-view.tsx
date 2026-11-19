@@ -144,7 +144,9 @@ export function AddAlbumView() {
         enterKeyHint="search"
         aria-label={t("searchAlbum")}
         placeholder={t("searchAlbumPlaceholder")}
-        className="shrink-0"
+        // The fixed header ends exactly where this column starts: 4px of
+        // room keep the 3px focus ring from being cut off under it.
+        className="mt-1 shrink-0"
         value={text}
         onChange={(event) => setText(event.target.value)}
       />
